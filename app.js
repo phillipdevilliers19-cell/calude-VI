@@ -7,7 +7,7 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const IND='Agriculture,Construction,Forestry,Hydraulics,Industrial,Marine,Mining,Pumps,Renewable Energy,Transport,Water & Wastewater,Valves'.split(',').join('\n');
 const SECS=['Overview','Problem','Solution','Result'];
-const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},ind:IND};
+const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},ind:IND,dw:{logo:'',logoR:1,showLogo:true,company:'VESCONITE',title:'INDUSTRIAL BEARING BUSH',prefix:'VI',rev:'A',paper:'a3',who:'auto',whoText:'',fit:true,notes:true,noteText:'1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.\n2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);\n    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.\n3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.\n4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.\n5. {FIT}'}};
 let S={...DS},ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
 const can=k=>k==='edit'?['admin','editor'].includes(ROLE):ROLE==='admin';
 const dc=(n,i)=>doc(db,n,i),col=n=>collection(db,n);
@@ -137,9 +137,10 @@ function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)
 
 /* ---------- Portfolio PDF (colours, logo, sections, footer all come from Admin settings) ---------- */
 const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const logoData=async()=>{if(!S.logo)return null;try{const r=await fetch('vesco-intelligence-logo-header.png');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
+const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
+const logoData=async()=>S.logo?(S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:repoLogo()):null;
 async function pdf(ids,o){
-  if(!window.jspdf)return alert('The PDF library did not load. Check your connection and try again.');
+  if(!window.jspdf)throw new Error('The PDF library did not load. Check your connection and try again.');
   const d=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),lg=await logoData(),acc=rgb(S.pdfAcc),ink=[14,26,32];
   const bg=S.cover==='light'?[255,255,255]:S.cover==='accent'?acc:ink,tc=S.cover==='light'?ink:[255,255,255],sc=S.cover==='accent'?[255,255,255]:acc;
   d.setFillColor(...bg);d.rect(0,0,210,297,'F');
@@ -157,7 +158,7 @@ async function pdf(ids,o){
     const secs={Overview:a.summary||a.desc,Problem:a.problem,Solution:a.solution,Result:a.proof};
     for(const k of SECS){if(!S.secs.includes(k)||!secs[k])continue;need(20);d.setFontSize(11);d.setTextColor(...acc);d.text(k,20,y);y+=5;d.setFontSize(10);d.setTextColor(...ink);const l=d.splitTextToSize(secs[k],170);for(const ln of l){need(5);d.text(ln,20,y);y+=4.6}y+=6}}
   const n=d.getNumberOfPages();for(let i=2;i<=n;i++){d.setPage(i);d.setFontSize(8);d.setTextColor(120);d.text(`${S.footer||S.company}${o.cust?'  |  '+o.cust:''}  |  ${i-1}`,20,287)}
-  d.save(`${S.company}-portfolio.pdf`);
+  return{blob:d.output('blob'),name:`${S.company}-portfolio.pdf`};
 }
 function tools(v){
   P=P.filter(id=>A.some(a=>a.id===id));
@@ -167,27 +168,50 @@ function tools(v){
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><button class="btn" id="so">Sign out</button></section>`;
   $('#so').onclick=()=>signOut(au);
   if(!$('#pdf'))return;
-  const pf=()=>{const free=A.filter(a=>!P.includes(a.id));$('#po').innerHTML=P.map((id,i)=>`<div class="ord"><span>${i+1}. ${esc(A.find(a=>a.id===id).name)}</span><button type="button" data-m="${i}:-1" aria-label="Move up">▲</button><button type="button" data-m="${i}:1" aria-label="Move down">▼</button><button type="button" data-m="${i}:x" aria-label="Remove">×</button></div>`).join('')||'<p class="mut">No applications selected yet.</p>';$('#pa').innerHTML=free.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');$('#pad').disabled=!free.length;
+  const pf=()=>{const pb=$('#pdf');pb._b=null;pb.textContent='Generate PDF';const free=A.filter(a=>!P.includes(a.id));$('#po').innerHTML=P.map((id,i)=>`<div class="ord"><span>${i+1}. ${esc(A.find(a=>a.id===id).name)}</span><button type="button" data-m="${i}:-1" aria-label="Move up">▲</button><button type="button" data-m="${i}:1" aria-label="Move down">▼</button><button type="button" data-m="${i}:x" aria-label="Remove">×</button></div>`).join('')||'<p class="mut">No applications selected yet.</p>';$('#pa').innerHTML=free.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');$('#pad').disabled=!free.length;
     $$('#po button').forEach(b=>b.onclick=()=>{const[i,m]=b.dataset.m.split(':'),k=+i;if(m==='x')P.splice(k,1);else{const j=k+ +m;if(j<0||j>=P.length)return;[P[k],P[j]]=[P[j],P[k]]}pf()})};pf();
   $('#pad').onclick=()=>{if($('#pa').value){P.push($('#pa').value);pf()}};
-  $('#pdf').onclick=async e=>{if(!P.length)return alert('Add at least one application.');e.target.disabled=true;try{await pdf(P,{cust:$('#pc1').value.trim(),intro:$('#pi').value.trim()})}catch(x){alert('Could not build the PDF: '+x.message)}e.target.disabled=false};
+  $('#pdf').onclick=async e=>{const b=e.currentTarget;if(b._b){await deliver(b._b,b._n);return}if(!P.length)return alert('Add at least one application.');b.disabled=true;b.textContent='Building…';try{const r=await pdf(P,{cust:$('#pc1').value.trim(),intro:$('#pi').value.trim()});b._b=r.blob;b._n=r.name;b.textContent='Open PDF'}catch(x){alert('Could not build the PDF: '+x.message);b.textContent='Generate PDF'}b.disabled=false};
 }
 
 /* ---------- Design: Industrial bearing (equations from the Vesconite design manual, metric) ---------- */
 const K=6e-5;  /* published linear thermal expansion, mm/mm/°C */
 const tol=(x,p,m)=>Math.max(x*p/100,m);
 const fx=(x,d=2)=>Number.isFinite(x)?x.toFixed(d):'–';
-const GRV=[[30,3,6,2.5,4],[50,4,8,3,8],[80,6,8,3,12],[120,6,10,3.5,18],[160,8,12,4,24],[200,10,12,4,30]];
+const GRV=[[30,3,6,2.5,4],[50,4,8,3,8],[80,6,8,3,12],[120,6,10,3.5,18],[160,8,12,4,24],[200,10,12,4,30]];  /* shaft Ø max, grooves, width, depth, water l/min */
 const GRADES={v:['VESCONITE',65,100,0xb58a4e],h:['VESCONITE HILUBE',65,100,0x3a342e],x:['HITEMP 150',125,150,0x8a7260]};
+const GTYPES={none:'NONE',spiral:'SPIRAL',blind:'BLIND RADIAL',long:'LONGITUDINAL'};
 let T3=null,LAST=null;
 
-/* 3D viewer (three.js): a lathe model of the bush, drag to rotate, pinch or scroll to zoom */
+/* Groove depth (mm) into the wall at angle th (rad) and axial position y (mm, 0 = middle). Cross-section is a round-bottomed groove of radius r and depth d. */
+function grooveFn(G,rI){
+  if(!G||G.type==='none'||!(G.d>0)||!(G.r>0)||!(G.n>0))return()=>0;
+  const sec=2*Math.PI/G.n,R=G.r,cd=G.d-R,t0=Math.PI/2;
+  const prof=x=>{const q=R*R-x*x;if(q<0)return 0;const z=cd+Math.sqrt(q);return z>0?Math.min(z,G.d):0};
+  const wrap=a=>{a=((a%sec)+sec)%sec;return a>sec/2?a-sec:a};
+  if(G.type==='long')return th=>prof(wrap(th-t0)*rI);
+  if(G.type==='blind'){const hl=(G.len||0)/2;return(th,y)=>prof(Math.hypot(wrap(th-t0)*rI,Math.max(0,Math.abs(y)-hl)))}
+  const lead=G.pitch>0?G.pitch:100,k=lead/Math.hypot(2*Math.PI*rI,lead);
+  return(th,y)=>prof(wrap(th-t0-2*Math.PI*y/lead)*rI*k);
+}
+const grooveWidth=(d,r)=>d>=r?2*r:2*Math.sqrt(2*r*d-d*d);
+/* Recommended groove from the manual's table (width, depth) for the shaft size; count, pitch and blind length are starting points. */
+function recGroove(type,D,wall,L){
+  const t=D>=20&&D<=200?GRV.find(x=>D<=x[0]):null;if(!t)return null;
+  const w=t[2];let d=t[3],lim=false;if(d>wall/2-0.3){d=Math.max(0.5,Math.floor((wall/2-0.3)*10)/10);lim=true}
+  const r=+((w*w/4+d*d)/(2*d)).toFixed(2),o={n:t[1],d,r,q:t[4],lim,w};
+  if(type==='spiral'){o.n=2;o.pitch=Math.round(L)}
+  if(type==='blind')o.len=Math.round(L*0.6);
+  return o;
+}
+
+/* 3D viewer (three.js): drag to rotate, pinch or scroll to zoom */
 function init3(box){
   if(!window.THREE){box.innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>';return null}
-  const R=new THREE.WebGLRenderer({antialias:true,alpha:true});R.setPixelRatio(Math.min(devicePixelRatio||1,2));box.appendChild(R.domElement);
+  const R=new THREE.WebGLRenderer({antialias:true,alpha:true});R.localClippingEnabled=true;R.setPixelRatio(Math.min(devicePixelRatio||1,2));box.appendChild(R.domElement);
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(32,1,.1,10000),grp=new THREE.Group();grp.rotation.order='YXZ';grp.rotation.set(.75,.6,0);
   sc.add(new THREE.HemisphereLight(0xffffff,0x556677,.95));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(2,3,4);sc.add(dl,grp);
-  const st={grp,zoom:1,size:100,drag:false},ps=new Map();let pd=0;
+  const st={grp,zoom:1,size:100,drag:false,cut:false,last:null},ps=new Map();let pd=0;
   box.onpointerdown=e=>{box.setPointerCapture(e.pointerId);ps.set(e.pointerId,[e.clientX,e.clientY]);st.drag=true};
   box.onpointermove=e=>{const o=ps.get(e.pointerId);if(!o)return;ps.set(e.pointerId,[e.clientX,e.clientY]);
     if(ps.size===2){const a=[...ps.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(pd)st.zoom=Math.min(4,Math.max(.4,st.zoom*pd/d));pd=d;return}
@@ -201,74 +225,117 @@ function init3(box){
   loop();return st;
 }
 function upd3(st,o){
-  const g=st.grp;[...g.children].forEach(m=>{m.geometry.dispose();g.remove(m)});
-  const rO=o.OD/2,rI=o.ID/2,h=o.L/2,c=Math.min(o.ch,(rO-rI)*.8,h*.5);
-  const mat=new THREE.MeshStandardMaterial({color:GRADES[o.g][3],roughness:.6,metalness:.05,side:THREE.DoubleSide});
-  const P=[[rI,-h],[rO-c,-h],[rO,-h+c],[rO,h-c],[rO-c,h],[rI,h]];
-  for(let i=0;i<6;i++){const a=P[i],b=P[(i+1)%6];g.add(new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(a[0],a[1]),new THREE.Vector2(b[0],b[1])],96),mat))}
-  const lm=new THREE.LineBasicMaterial({color:0x151515});
-  P.forEach(p=>{const pts=[];for(let k=0;k<=96;k++){const t=k/96*Math.PI*2;pts.push(new THREE.Vector3(p[0]*Math.cos(t),p[1],p[0]*Math.sin(t)))}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lm))});
-  st.size=Math.max(o.OD,o.L);
+  st.last=o;const g=st.grp;[...g.children].forEach(m=>{m.geometry.dispose();g.remove(m)});
+  const{OD,ID,L,ch,fl,gz,G}=o,rO=OD/2,rI=ID/2,h=L/2,c=Math.min(ch,(rO-rI)*.8,h*.5),rF=fl.on?fl.FD/2:rO,yF=h-(fl.on?fl.T:0);
+  const planes=st.cut?[new THREE.Plane(new THREE.Vector3(1,0,0),0)]:[];
+  const mat=new THREE.MeshStandardMaterial({color:GRADES[o.g][3],roughness:.6,metalness:.05,side:THREE.DoubleSide,clippingPlanes:planes});
+  const lm=new THREE.LineBasicMaterial({color:0x151515,clippingPlanes:planes});
+  const add=geo=>g.add(new THREE.Mesh(geo,mat)),V2=(a,b)=>new THREE.Vector2(a,b);
+  const out=fl.on?[[rO-c,-h],[rO,-h+c],[rO,yF],[rF,yF],[rF,h]]:[[rO-c,-h],[rO,-h+c],[rO,h-c],[rO-c,h]];
+  for(let i=0;i<out.length-1;i++)add(new THREE.LatheGeometry([V2(out[i][0],out[i][1]),V2(out[i+1][0],out[i+1][1])],128));
+  out.forEach(p=>{const pts=[];for(let k=0;k<=128;k++){const t=k/128*Math.PI*2;pts.push(new THREE.Vector3(p[0]*Math.cos(t),p[1],p[0]*Math.sin(t)))}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lm))});
+  const none=G.type==='none',Nt=none?128:720,Ny=none?1:140,pos=[],idx=[];
+  for(let j=0;j<=Ny;j++){const y=-h+L*j/Ny;for(let i=0;i<Nt;i++){const t=2*Math.PI*i/Nt,r=rI+gz(t,y);pos.push(r*Math.cos(t),y,r*Math.sin(t))}}
+  for(let j=0;j<Ny;j++)for(let i=0;i<Nt;i++){const a=j*Nt+i,b=j*Nt+(i+1)%Nt,c2=(j+1)*Nt+i,d=(j+1)*Nt+(i+1)%Nt;idx.push(a,c2,b,b,c2,d)}
+  const bg=new THREE.BufferGeometry();bg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));bg.setIndex(idx);bg.computeVertexNormals();add(bg);
+  const ring=(y,ro)=>{const p=[],ix=[],pts=[];
+    for(let i=0;i<Nt;i++){const t=2*Math.PI*i/Nt,r=rI+gz(t,y);p.push(r*Math.cos(t),y,r*Math.sin(t),ro*Math.cos(t),y,ro*Math.sin(t))}
+    for(let i=0;i<Nt;i++){const a=2*i,b=2*((i+1)%Nt);ix.push(a,a+1,b,b,a+1,b+1)}
+    const gm=new THREE.BufferGeometry();gm.setAttribute('position',new THREE.Float32BufferAttribute(p,3));gm.setIndex(ix);gm.computeVertexNormals();add(gm);
+    for(let i=0;i<=Nt;i++){const t=2*Math.PI*(i%Nt)/Nt,r=rI+gz(t,y);pts.push(new THREE.Vector3(r*Math.cos(t),y,r*Math.sin(t)))}
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lm))};
+  ring(-h,rO-c);ring(h,rF-(fl.on?0:c));
+  st.size=Math.max(fl.on?fl.FD:OD,L);
 }
 
-/* Engineering drawing (A3 landscape SVG, millimetres): end view, half section A-A, dimensions with tolerances, fit data, notes, title block */
+/* Engineering drawing (SVG in mm, A3 layout): end view, half section A-A, dimensions with tolerances, data table, notes, title block */
 function drawSVG(p){
-  const{OD,ID,L,ch,w,H,D,press,clo,c,g,tOD,tID,tW,tL,pf,drg}=p,e=esc;
-  const sa=[5,2,1,.5,.2,.1,.05,.02,.01],s=sa.find(x=>x<=Math.min(130/OD,140/L))||.01,scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
-  const cy=118,cx1=88,rO=OD*s/2,rI=ID*s/2,cs=Math.min(Math.max(ch*s,.8),(rO-rI)*.8),cx2=cx1+rO+50+L*s/2,x0=cx2-L*s/2,x1=cx2+L*s/2,yTO=cy-rO,yTI=cy-rI,yBI=cy+rI,yBO=cy+rO;
-  const n=v=>+v.toFixed(2);
+  const{OD,ID,L,ch,w,H,D,press,clo,c,g,tOD,tID,tW,tL,pf,drg,G,fl,dw,logo,gz}=p,e=esc,Dm=fl.on?fl.FD:OD;
+  const sa=[5,2,1,.5,.2,.1,.05,.02,.01],s=sa.find(x=>x<=Math.min(118/Dm,125/L))||.01,scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
+  const cy=118,cx1=80,rO=OD*s/2,rI=ID*s/2,rF=fl.on?fl.FD*s/2:rO,cs=Math.min(Math.max(ch*s,.8),(rO-rI)*.8),cx2=cx1+rF+(fl.on?52:46)+L*s/2,x0=cx2-L*s/2,x1=cx2+L*s/2,xF=x1-(fl.on?fl.T*s:0);
+  const yTO=cy-rO,yTI=cy-rI,yBI=cy+rI,yBO=cy+rO,yTF=cy-rF,yBF=cy+rF,hh=L/2,n=v=>+v.toFixed(2),pts=a=>a.map(q=>n(q[0])+','+n(q[1])).join(' ');
   const dh=(a,b,yr,y,t)=>{const k=y>yr?1:-1;return `<line class="k2" x1="${n(a)}" y1="${n(yr+k)}" x2="${n(a)}" y2="${n(y+k*2)}"/><line class="k2" x1="${n(b)}" y1="${n(yr+k)}" x2="${n(b)}" y2="${n(y+k*2)}"/><line class="k4" x1="${n(a)}" y1="${n(y)}" x2="${n(b)}" y2="${n(y)}"/><text x="${n((a+b)/2)}" y="${n(y-1.2)}" text-anchor="middle">${t}</text>`};
   const dv=(a,b,xr,x,t)=>{const k=x>xr?1:-1;return `<line class="k2" x1="${n(xr+k)}" y1="${n(a)}" x2="${n(x+k*2)}" y2="${n(a)}"/><line class="k2" x1="${n(xr+k)}" y1="${n(b)}" x2="${n(x+k*2)}" y2="${n(b)}"/><line class="k4" x1="${n(x)}" y1="${n(a)}" x2="${n(x)}" y2="${n(b)}"/><text transform="translate(${n(x-1.2)} ${n((a+b)/2)}) rotate(-90)" text-anchor="middle">${t}</text>`};
   const cell=(x,y,wd,h,l,t,sz=3.6)=>`<rect class="k1" x="${x}" y="${y}" width="${wd}" height="${h}"/><text class="lb" x="${x+1}" y="${y+2.6}">${l}</text><text x="${x+1.5}" y="${y+h-1.7}" style="font-size:${sz}px">${t}</text>`;
-  const fit=[['HOUSING Ø',fx(H)],['SHAFT Ø',fx(D)],['PRESS FIT',pf?fx(press,3):'NONE'],['BORE CLOSURE',fx(clo,3)],['ASSEMBLY CLEARANCE',fx(c,3)],['FITTED INSIDE Ø',fx(D+c,3)]];
-  const notes=['NOTES','1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.','2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);','    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.','3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.','4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.',pf?'5. INTERFERENCE FIT INTO HOUSING. FREEZE-FIT OR PRESS WITH A MANDREL.':'5. NO PRESS FIT: SECURE THE BEARING MECHANICALLY OR BY BONDING.'];
+  const inner=(th,sgn)=>{const a=[];for(let k=0;k<=160;k++)a.push([x0+(x1-x0)*k/160,(sgn<0?yTI:yBI)+(sgn<0?-1:1)*gz(th,-hh+L*k/160)*s]);return a};
+  const topOut=fl.on?[[x0,yTO+cs],[x0+cs,yTO],[xF,yTO],[xF,yTF],[x1,yTF]]:[[x0,yTO+cs],[x0+cs,yTO],[x1-cs,yTO],[x1,yTO+cs]];
+  const botOut=fl.on?[[x0,yBO-cs],[x0+cs,yBO],[xF,yBO],[xF,yBF],[x1,yBF]]:[[x0,yBO-cs],[x0+cs,yBO],[x1-cs,yBO],[x1,yBO-cs]];
+  const topP=[...topOut,...inner(Math.PI/2,-1).reverse()],botP=[...botOut,...inner(3*Math.PI/2,1).reverse()];
+  const idEnd=G.type==='none'?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>`:`<path class="k1" d="M${Array.from({length:720},(_,k)=>{const t=2*Math.PI*k/720,r=rI+gz(t,hh)*s;return n(cx1+r*Math.cos(t))+','+n(cy-r*Math.sin(t))}).join('L')}Z"/>`;
+  const gw=G.type==='none'?0:grooveWidth(G.d,G.r);
+  const fit=[['HOUSING Ø',fx(H)],['SHAFT Ø',fx(D)],['PRESS FIT',pf?fx(press,3):'NONE'],['BORE CLOSURE',fx(clo,3)],['ASSEMBLY CLEARANCE',fx(c,3)],['FITTED INSIDE Ø',fx(D+c,3)],['WALL',fx(w)]];
+  if(fl.on)fit.push(['FLANGE Ø',fx(fl.FD)],['FLANGE THICKNESS',fx(fl.T)]);
+  if(G.type!=='none'){fit.push(['GROOVE TYPE',GTYPES[G.type]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fx(G.d)],['GROOVE RADIUS',fx(G.r)],['GROOVE WIDTH',fx(gw)]);if(G.type==='spiral')fit.push(['SPIRAL PITCH',fx(G.pitch)]);if(G.type==='blind')fit.push(['GROOVE LENGTH',fx(G.len)])}
+  const fitSentence=pf?'INTERFERENCE FIT INTO HOUSING. FREEZE-FIT OR PRESS WITH A MANDREL.':'NO PRESS FIT: SECURE THE BEARING MECHANICALLY OR BY BONDING.';
+  const notes=dw.notes?['NOTES',...dw.noteText.replace('{FIT}',fitSentence).split('\n').slice(0,11)]:[];
+  const title=(dw.title||'BEARING')+(fl.on?' (FLANGED)':'')+' — '+GRADES[g][0];
+  const lgBox=logo&&dw.showLogo?(()=>{const wd=Math.min(38,12*logo.r),ht=wd/logo.r;return `<image href="${logo.u}" x="${n(220+(42-wd)/2)}" y="${n(245+(16-ht)/2)}" width="${n(wd)}" height="${n(ht)}" preserveAspectRatio="xMidYMid meet"/>`})():`<text x="241" y="254.5" text-anchor="middle" style="font-size:3.4px;font-weight:bold">${e(dw.company)}</text>`;
+  const rowH=4.8;
   return `<svg xmlns="http://www.w3.org/2000/svg" class="vd" width="420mm" height="297mm" viewBox="0 0 420 297" font-family="Arial Narrow,Arial,Helvetica,sans-serif">
-<defs><style>svg.vd .k1{stroke:#000;stroke-width:.5;fill:none}svg.vd .k2{stroke:#000;stroke-width:.25;fill:none}svg.vd .k3{stroke:#000;stroke-width:.25;stroke-dasharray:8 1.5 1.5 1.5;fill:none}svg.vd .k4{stroke:#000;stroke-width:.25;marker-start:url(#vA);marker-end:url(#vA)}svg.vd .k5{stroke:#000;stroke-width:.7;stroke-dasharray:8 2 1.5 2;fill:none}svg.vd text{font-size:3.5px;fill:#000}svg.vd .lb{font-size:2px;fill:#444}svg.vd .tt{font-size:5px;font-weight:bold}</style>
+<defs><style>svg.vd .k1{stroke:#000;stroke-width:.5;fill:none}svg.vd .k2{stroke:#000;stroke-width:.25;fill:none}svg.vd .k3{stroke:#000;stroke-width:.25;stroke-dasharray:8 1.5 1.5 1.5;fill:none}svg.vd .k4{stroke:#000;stroke-width:.25;marker-start:url(#vA);marker-end:url(#vA)}svg.vd .k5{stroke:#000;stroke-width:.7;stroke-dasharray:8 2 1.5 2;fill:none}svg.vd .k6{stroke:#000;stroke-width:.25;stroke-dasharray:3 1.5;fill:none}svg.vd text{font-size:3.5px;fill:#000}svg.vd .lb{font-size:2px;fill:#444}svg.vd .tt{font-size:5px;font-weight:bold}svg.vd .sm{font-size:2.7px}</style>
 <marker id="vA" viewBox="0 0 10 4" refX="10" refY="2" markerWidth="3.2" markerHeight="1.28" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0L10,2L0,4z" fill="#000"/></marker>
 <pattern id="vh" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.6" stroke="#000" stroke-width=".2"/></pattern></defs>
 <rect width="420" height="297" fill="#fff"/><rect class="k2" x="5" y="5" width="410" height="287"/><rect x="10" y="10" width="400" height="277" fill="none" stroke="#000" stroke-width=".7"/>
 <g>
-<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO)}"/><circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO-cs)}"/><circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>
-<line class="k3" x1="${n(cx1-rO-7)}" y1="${cy}" x2="${n(cx1+rO+7)}" y2="${cy}"/>
-<line class="k5" x1="${cx1}" y1="${n(cy-rO-12)}" x2="${cx1}" y2="${n(cy+rO+12)}"/>
-<path class="k1" d="M${cx1} ${n(cy-rO-12)}H${cx1+8}" marker-end="url(#vA)"/><path class="k1" d="M${cx1} ${n(cy+rO+12)}H${cx1+8}" marker-end="url(#vA)"/>
-<text x="${cx1-4.5}" y="${n(cy-rO-12)}" class="tt">A</text><text x="${cx1-4.5}" y="${n(cy+rO+15)}" class="tt">A</text>
-<text x="${cx1}" y="${n(cy+rO+27)}" text-anchor="middle" class="tt">END VIEW</text>
-<polygon class="k1" style="fill:url(#vh)" points="${n(x0)},${n(yTI)} ${n(x0)},${n(yTO+cs)} ${n(x0+cs)},${n(yTO)} ${n(x1-cs)},${n(yTO)} ${n(x1)},${n(yTO+cs)} ${n(x1)},${n(yTI)}"/>
-<polygon class="k1" style="fill:url(#vh)" points="${n(x0)},${n(yBI)} ${n(x0)},${n(yBO-cs)} ${n(x0+cs)},${n(yBO)} ${n(x1-cs)},${n(yBO)} ${n(x1)},${n(yBO-cs)} ${n(x1)},${n(yBI)}"/>
+${fl.on?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rF)}"/><circle class="k6" cx="${cx1}" cy="${cy}" r="${n(rO)}"/>`:`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO)}"/><circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO-cs)}"/>`}${idEnd}
+<line class="k3" x1="${n(cx1-rF-7)}" y1="${cy}" x2="${n(cx1+rF+7)}" y2="${cy}"/>
+<line class="k5" x1="${cx1}" y1="${n(cy-rF-12)}" x2="${cx1}" y2="${n(cy+rF+12)}"/>
+<path class="k1" d="M${cx1} ${n(cy-rF-12)}H${cx1+8}" marker-end="url(#vA)"/><path class="k1" d="M${cx1} ${n(cy+rF+12)}H${cx1+8}" marker-end="url(#vA)"/>
+<text x="${cx1-4.5}" y="${n(cy-rF-12)}" class="tt">A</text><text x="${cx1-4.5}" y="${n(cy+rF+15)}" class="tt">A</text>
+<text x="${cx1}" y="${n(cy+rF+27)}" text-anchor="middle" class="tt">END VIEW${fl.on?' (FLANGE END)':''}</text>
+<polygon class="k1" style="fill:url(#vh)" points="${pts(topP)}"/><polygon class="k1" style="fill:url(#vh)" points="${pts(botP)}"/>
 <line class="k3" x1="${n(x0-9)}" y1="${cy}" x2="${n(x1+9)}" y2="${cy}"/>
-<text x="${n(cx2)}" y="${n(yBO+27)}" text-anchor="middle" class="tt">SECTION A–A</text>
-${dh(x0,x1,yBO,yBO+11,`${fx(L)} +0/−${fx(tL)}`)}
-${dv(yTO,yBO,x1,x1+13,`Ø${fx(OD)} ±${fx(tOD,3)}`)}
+<text x="${n(cx2)}" y="${n(yBF+27)}" text-anchor="middle" class="tt">SECTION A–A</text>
+${dh(x0,x1,yBF,yBF+11,`${fx(L)} +0/−${fx(tL)}`)}
 ${dv(yTI,yBI,x0,x0-13,`Ø${fx(ID)} ±${fx(tID,3)}`)}
-${(()=>{const x=x1+27;return `<line class="k2" x1="${n(x1+1)}" y1="${n(yTO)}" x2="${n(x+2)}" y2="${n(yTO)}"/><line class="k2" x1="${n(x1+1)}" y1="${n(yTI)}" x2="${n(x+2)}" y2="${n(yTI)}"/><line class="k4" x1="${n(x)}" y1="${n(yTO)}" x2="${n(x)}" y2="${n(yTI)}"/><text x="${n(x+3)}" y="${n((yTO+yTI)/2+1.2)}">${fx(w)} +0/−${fx(tW,3)}</text>`})()}
+${fl.on?dv(yTO,yBO,x0,x0-27,`Ø${fx(OD)} ±${fx(tOD,3)}`)+dv(yTF,yBF,x1,x1+13,`Ø${fx(fl.FD)}`)+dh(xF,x1,yTF,yTF-11,`${fx(fl.T)}`):dv(yTO,yBO,x1,x1+11,`Ø${fx(OD)} ±${fx(tOD,3)}`)+(()=>{const x=x1+20;return `<line class="k2" x1="${n(x1+1)}" y1="${n(yTO)}" x2="${n(x+2)}" y2="${n(yTO)}"/><line class="k2" x1="${n(x1+1)}" y1="${n(yTI)}" x2="${n(x+2)}" y2="${n(yTI)}"/><line class="k4" x1="${n(x)}" y1="${n(yTO)}" x2="${n(x)}" y2="${n(yTI)}"/><text x="${n(x+3)}" y="${n((yTO+yTI)/2+1.2)}" style="font-size:3px">${fx(w)} +0/−${fx(tW,3)}</text>`})()}
 <polyline class="k2" marker-start="url(#vA)" points="${n(x0+cs*.4)},${n(yTO+cs*.4)} ${n(x0-6)},${n(yTO-12)} ${n(x0)},${n(yTO-12)}"/>
-<text x="${n(x0+1)}" y="${n(yTO-13)}">${fx(ch,1)} × 30° CHAMFER, OD BOTH ENDS</text>
+<text x="${n(x0+1)}" y="${n(yTO-13)}">${fx(ch,1)} × 30° CHAMFER, OD LEAD-IN</text>
 </g>
-<g><rect class="k1" x="310" y="16" width="95" height="${6*(fit.length+1)}"/><text x="312" y="20.2" class="tt" style="font-size:3.6px">FIT DATA (mm)</text>${fit.map((r,i)=>`<line class="k2" x1="310" y1="${22+i*6}" x2="405" y2="${22+i*6}"/><text x="312" y="${26.2+i*6}">${r[0]}</text><text x="403" y="${26.2+i*6}" text-anchor="end">${r[1]}</text>`).join('')}</g>
-<g>${notes.map((t,i)=>`<text x="14" y="${236+i*4.6}" style="font-size:${i?3:3.8}px;${i?'':'font-weight:bold'}" xml:space="preserve">${e(t)}</text>`).join('')}</g>
-<g>${cell(220,245,185,16,'TITLE','INDUSTRIAL BEARING BUSH — '+GRADES[g][0],5)}${cell(220,261,46,12,'MATERIAL',GRADES[g][0].replace('VESCONITE HILUBE','VES. HILUBE'),3.2)}${cell(266,261,46,12,'SCALE',scl)}${cell(312,261,46,12,'SIZE','A3')}${cell(358,261,47,12,'SHEET','1 OF 1')}${cell(220,273,92,14,'DRAWING NO.',e(drg),3.4)}${cell(312,273,46,14,'DATE',e(p.date))}${cell(358,273,47,14,'DRAWN BY',e(p.who),2.8)}</g>
+${dw.fit?`<g><rect class="k1" x="350" y="16" width="56" height="${n(rowH*(fit.length+1)+1)}"/><text x="352" y="20" class="sm" style="font-weight:bold;font-size:3px">FIT AND FEATURE DATA (mm)</text>${fit.map((r,i)=>`<line class="k2" x1="350" y1="${n(21+i*rowH)}" x2="406" y2="${n(21+i*rowH)}"/><text class="sm" x="352" y="${n(24.4+i*rowH)}">${r[0]}</text><text class="sm" x="404" y="${n(24.4+i*rowH)}" text-anchor="end">${r[1]}</text>`).join('')}</g>`:''}
+<g>${notes.map((t,i)=>`<text x="14" y="${236+i*4.4}" style="font-size:${i?3:3.8}px;${i?'':'font-weight:bold'}" xml:space="preserve">${e(t)}</text>`).join('')}</g>
+<g>${cell(220,245,185,16,'','',1).replace(/<rect[^>]*\/>/,'<rect class="k1" x="220" y="245" width="185" height="16"/>')}<line class="k1" x1="262" y1="245" x2="262" y2="261"/>${lgBox}<text class="lb" x="263" y="247.6">TITLE</text><text x="264" y="257" style="font-size:4.6px">${e(title)}</text>
+${cell(220,261,46,12,'MATERIAL',GRADES[g][0].replace('VESCONITE HILUBE','VES. HILUBE'),3.2)}${cell(266,261,46,12,'SCALE',scl)}${cell(312,261,46,12,'SIZE',e(dw.paper.toUpperCase()))}${cell(358,261,47,12,'SHEET','1 OF 1')}${cell(220,273,68,14,'DRAWING NO.',e(drg),3.2)}${cell(288,273,16,14,'REV',e(dw.rev))}${cell(304,273,50,14,'DATE',e(p.date))}${cell(354,273,51,14,'DRAWN BY',e(p.who),2.8)}</g>
 </svg>`;
 }
-const dlSVG=()=>{const u=URL.createObjectURL(new Blob([LAST.svg],{type:'image/svg+xml'})),a=document.createElement('a');a.href=u;a.download=LAST.drg+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
-const dlPDF=async()=>{if(!window.jspdf)throw new Error('PDF library not loaded');const u=URL.createObjectURL(new Blob([LAST.svg],{type:'image/svg+xml'})),im=await img(u),cv=document.createElement('canvas');cv.width=3360;cv.height=2376;const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,3360,2376);x.drawImage(im,0,0,3360,2376);URL.revokeObjectURL(u);const d=new window.jspdf.jsPDF({unit:'mm',format:'a3',orientation:'landscape'});d.addImage(cv.toDataURL('image/jpeg',.95),'JPEG',0,0,420,297);d.save(LAST.drg+'.pdf')};
+/* Files: iOS home-screen apps cannot download directly, so use the share sheet when available */
+async function deliver(blob,name){
+  const f=new File([blob],name,{type:blob.type});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return}catch(x){if(x.name==='AbortError')return}}
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),60000);
+}
+const svgBlob=()=>new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+LAST.svg],{type:'image/svg+xml'});
+async function makeDrawingPdf(){
+  if(!window.jspdf)throw new Error('The PDF library did not load. Check your connection.');
+  const u=URL.createObjectURL(svgBlob());let im;try{im=await img(u)}finally{URL.revokeObjectURL(u)}
+  const cv=document.createElement('canvas');cv.width=3360;cv.height=2376;const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,3360,2376);x.drawImage(im,0,0,3360,2376);
+  const a4=S.dw.paper==='a4',d=new window.jspdf.jsPDF({unit:'mm',format:S.dw.paper,orientation:'landscape'});
+  d.addImage(cv.toDataURL('image/jpeg',.95),'JPEG',0,0,a4?297:420,a4?210:297);
+  return d.output('blob');
+}
 function openDrawing(){
   if(!LAST)return;const o=document.createElement('div');o.className='ov';
-  o.innerHTML=`<div class="ovb"><strong>${esc(LAST.drg)}</strong><span class="sp"></span><button data-z="-1" aria-label="Zoom out">−</button><button data-z="1" aria-label="Zoom in">+</button><button data-a="pdf">PDF</button><button data-a="svg">SVG</button><button data-a="x">Close</button></div><div class="ovs">${LAST.svg}</div>`;
+  o.innerHTML=`<div class="ovb"><strong>${esc(LAST.drg)}</strong><span class="sp"></span><button data-z="-1" aria-label="Zoom out">−</button><button data-z="1" aria-label="Zoom in">+</button><button data-a="pdf">Make PDF</button><button data-a="svg">SVG</button><button data-a="x">Close</button></div><div class="ovs">${LAST.svg}</div>`;
   document.body.appendChild(o);document.body.style.overflow='hidden';
   const sv=$('svg',o);let wd=Math.min(1400,Math.max(innerWidth*2.4,900));sv.style.width=wd+'px';
   o.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.z){wd=Math.min(3200,Math.max(400,wd*(+b.dataset.z>0?1.3:1/1.3)));sv.style.width=wd+'px'}
     else if(b.dataset.a==='x'){o.remove();document.body.style.overflow=''}
-    else if(b.dataset.a==='svg')dlSVG();
-    else if(b.dataset.a==='pdf'){b.disabled=true;try{await dlPDF()}catch(x){alert('Could not build the PDF: '+x.message)}b.disabled=false}};
+    else if(b.dataset.a==='svg')deliver(svgBlob(),LAST.drg+'.svg');
+    else if(b.dataset.a==='pdf'){
+      if(b._b){await deliver(b._b,LAST.drg+'.pdf');return}   /* second tap: fresh tap lets iOS open the share sheet */
+      b.disabled=true;b.textContent='Building…';
+      try{b._b=await makeDrawingPdf();b.textContent='Open PDF'}catch(x){alert('Could not build the PDF: '+(x.message||x));b.textContent='Make PDF'}
+      b.disabled=false}};
 }
 function design(v){
   if(!S.feat.pv){location.hash='#/tools';return}
   T3=null;LAST=null;
-  const n=(id,l,u,val='')=>`<label>${l} <span class="mut">${u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}"></label>`;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Industrial bearing</h1><p class="mut">Bearing size, fit, clearance and PV using the equations in the Vesconite design manual (metric, free-standing bush, sizes at 20 °C). A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
-  <form class="card" id="DF"><div class="g2">${n('d1','Housing diameter','mm')}${n('d2','Shaft diameter','mm')}${n('d3','Bearing length','mm')}
+  if(!S.dw.logo)repoLogo().then(r=>{if(r&&!window.__rl){window.__rl=r;if($('#DF'))$('#DF').dispatchEvent(new Event('input'))}});
+  const n=(id,l,u,val='',att='')=>`<label>${l} <span class="mut">${u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${att}></label>`;
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Industrial bearing</h1><p class="mut">Bearing size, fit, clearance, grooves and PV using the equations in the Vesconite design manual (metric, free-standing bush, sizes at 20 °C). A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
+  <form class="card" id="DF"><div class="g2">${n('d1','Housing diameter','mm')}${n('d2','Shaft diameter','mm')}${n('d3','Bearing length (overall)','mm')}
   <label>Grade<select id="d18"><option value="v">Vesconite</option><option value="h">Vesconite Hilube</option><option value="x">Hitemp 150</option></select></label>
   <label>Press fit?<select id="d4"><option value="y">Yes</option><option value="n">No</option></select></label>
   <label>Operating condition<select id="d5"><option value="wet">Immersed in water</option><option value="dry">Dry, oil or grease</option></select></label>
@@ -277,51 +344,77 @@ function design(v){
   <div class="g2" data-m="rot">${n('d12','Speed','rpm')}</div>
   <div class="g2" data-m="osc" hidden>${n('d13','Swing angle','degrees')}${n('d14','Cycles per minute','')}</div>
   <div class="g2" data-m="lin" hidden>${n('d15','Travel per stroke','mm')}${n('d16','Cycles per minute','')}</div>
-  ${n('d17','PV limit for your grade (optional)','MPa·m/min')}</form>
+  ${n('d17','PV limit for your grade (optional)','MPa·m/min')}
+  <h3 style="margin-top:6px">Flange</h3><label>Flanged bearing?<select id="d30"><option value="n">No</option><option value="y">Yes</option></select></label>
+  <div class="g2" data-f hidden>${n('d31','Flange diameter','mm')}${n('d32','Flange thickness','mm')}</div>
+  <h3 style="margin-top:6px">Grooves</h3><label>Groove type<select id="d20"><option value="none">None</option><option value="spiral">Spiral</option><option value="blind">Blind radial</option><option value="long">Longitudinal</option></select></label>
+  <div data-g hidden><div class="g2">${n('d21','Number of grooves','')}${n('d22','Groove depth','mm')}${n('d23','Groove radius','mm')}
+  <div data-gt="spiral" hidden>${n('d24','Spiral pitch (advance per turn)','mm')}</div><div data-gt="blind" hidden>${n('d25','Groove length','mm')}</div></div>
+  <div id="GR" class="note-box"></div></div></form>
   <div class="card" id="MD" hidden><div class="seg"><button type="button" data-t="3d" class="on">3D model</button><button type="button" data-t="dr">Drawing</button></div><div class="m3" id="m3"></div><div id="mdr" class="mdr" hidden></div>
-  <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. Colours are illustrative. The drawing is generated from the sizes below.</p></div>
+  <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button><button type="button" class="btn" id="mc">Cutaway view</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. Colours are illustrative. The drawing is generated from the sizes below.</p></div>
   <div id="DO"></div>`;
   $('#DF').onsubmit=e=>e.preventDefault();
   $$('#MD .seg button').forEach(b=>b.onclick=()=>{$$('#MD .seg button').forEach(x=>x.classList.toggle('on',x===b));$('#m3').hidden=b.dataset.t!=='3d';$('#mdr').hidden=b.dataset.t!=='dr'});
   $('#mx').onclick=openDrawing;
+  $('#mc').onclick=()=>{if(T3){T3.cut=!T3.cut;$('#mc').textContent=T3.cut?'Full view':'Cutaway view';if(T3.last)upd3(T3,T3.last)}};
   const cv=()=>{
-    const g=id=>parseFloat($('#'+id).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=$('#d11').value,MD=$('#MD');
-    $$('[data-m]').forEach(x=>x.hidden=x.dataset.m!==mo);
-    if(!(H>0&&D>0&&L>0)){MD.hidden=true;O.innerHTML='<p class="mut">Enter housing diameter, shaft diameter and bearing length.</p>';return}
-    if(H<=D){MD.hidden=true;O.innerHTML='<p class="note bad">The housing diameter must be larger than the shaft diameter.</p>';return}
+    const g=id=>parseFloat($('#'+id).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=$('#d11').value,MD=$('#MD'),fl0=$('#d30').value==='y',gt=$('#d20').value;
+    $$('[data-m]').forEach(x=>x.hidden=x.dataset.m!==mo);$$('[data-f]').forEach(x=>x.hidden=!fl0);$$('[data-g]').forEach(x=>x.hidden=gt==='none');$$('[data-gt]').forEach(x=>x.hidden=x.dataset.gt!==gt);
+    const bad=m=>{MD.hidden=true;O.innerHTML=m};
+    if(!(H>0&&D>0&&L>0))return bad('<p class="mut">Enter housing diameter, shaft diameter and bearing length.</p>');
+    if(H<=D)return bad('<p class="note bad">The housing diameter must be larger than the shaft diameter.</p>');
     const gk=$('#d18').value,pf=$('#d4').value==='y',dry=$('#d5').value==='dry',tx=g('d6'),tn=g('d7'),nb=g('d10')>0?g('d10'):1;
     const press=pf?0.05+0.002*H:0,clo=press*D/H,OD=H+press,c=(0.05+0.01*(OD-D-clo))/1.01,ID=D+clo+c,w=(OD-ID)/2;
-    if(!(w>0)){MD.hidden=true;O.innerHTML='<p class="note bad">These sizes leave no bearing wall. Check the diameters.</p>';return}
+    if(!(w>0))return bad('<p class="note bad">These sizes leave no bearing wall. Check the diameters.</p>');
+    const fl={on:fl0,FD:g('d31'),T:g('d32')};
+    if(fl0){if(!(fl.FD>OD&&fl.T>0))return bad('<p class="note bad">Enter a flange diameter larger than the bearing outside diameter ('+fx(OD)+' mm) and a flange thickness.</p>');if(fl.T>=L)return bad('<p class="note bad">The flange thickness must be less than the overall bearing length.</p>')}
+    const G={type:gt,n:g('d21'),d:g('d22'),r:g('d23'),pitch:g('d24'),len:g('d25')},rec=gt!=='none'?recGroove(gt,D,w,L):null;
+    $('#GR').innerHTML=gt==='none'?'':rec?`<p class="mut" style="margin:6px 0">Recommended for a ${fx(D,0)} mm shaft: ${gt==='spiral'||gt==='blind'?'width, depth and radius from the manual\'s groove table; count, pitch and length are suggested starting points. ':''}<b>${rec.n} grooves, depth ${rec.d} mm, radius ${rec.r} mm</b> (about ${fx(grooveWidth(rec.d,rec.r),1)} mm wide)${gt==='spiral'?`, pitch ${rec.pitch} mm`:''}${gt==='blind'?`, length ${rec.len} mm`:''}. Water flow about ${rec.q} l/min.${rec.lim?' Depth reduced to keep it under half the wall.':''}</p><button type="button" class="btn" id="ra">Apply recommendation</button>`:'<p class="mut">The manual\'s groove table covers shaft diameters of 20–200 mm. Enter your own values.</p>';
+    if(rec&&$('#ra'))$('#ra').onclick=()=>{const set=(id,x)=>{$('#'+id).value=x!=null?x:''};set('d21',rec.n);set('d22',rec.d);set('d23',rec.r);if(gt==='spiral')set('d24',rec.pitch);if(gt==='blind')set('d25',rec.len);cv()};
+    const gOK=gt==='none'||(G.n>0&&G.d>0&&G.r>0&&(gt!=='spiral'||G.pitch>0)&&(gt!=='blind'||G.len>0));
+    const Gu=gOK?G:{type:'none'},gz=grooveFn(Gu,ID/2),gw=gOK&&gt!=='none'?grooveWidth(G.d,G.r):0;
     const ms=g('d9'),P=ms>0?ms*9.81/nb/(D*L):NaN;
     const V=mo==='rot'?Math.PI*D*g('d12')/1000:mo==='osc'?Math.PI*D/1000*(2*g('d13')/360)*g('d14'):2*g('d15')/1000*g('d16');
-    const PV=P*V,lim=g('d17'),wp=w/D*100,ck=[],gr=D>=20&&D<=200?GRV.find(x=>D<=x[0]):null;
+    let frac=0;if(gOK&&gt!=='none'){const circ=Math.PI*ID;frac=gt==='long'?G.n*gw/circ:gt==='blind'?G.n*gw*Math.min(G.len,L)/(circ*L):gw/((G.pitch/G.n)*circ/Math.hypot(circ,G.pitch))}
+    frac=Math.min(frac,0.9);const Pe=P/(1-frac),PV=Pe*V,lim=g('d17'),wp=w/D*100,ck=[];
     ck.push(wp>=5&&wp<=20?['ok',`Wall thickness is ${fx(wp,1)}% of the shaft diameter (recommended 5–20%).`]:['warn',`Wall thickness is ${fx(wp,1)}% of the shaft diameter, outside the recommended 5–20%.${wp<5?' Thin walls need care when machining and fitting; consider bonding or mechanical securing.':''}`]);
     if(L>D)ck.push(['warn','The bearing is longer than its diameter. Long bearings need additional care when machining and fitting.']);
-    if(Number.isFinite(P))ck.push(P<=30?['ok',`Pressure ${fx(P)} MPa is under the 30 MPa maximum design load for static, oscillating or occasional movement. Continuous rotation is limited by PV.`]:['bad',`Pressure ${fx(P)} MPa is over the 30 MPa maximum design load.`]);
+    if(Number.isFinite(Pe))ck.push(Pe<=30?['ok',`Pressure ${fx(Pe)} MPa is under the 30 MPa maximum design load for static, oscillating or occasional movement. Continuous rotation is limited by PV.`]:['bad',`Pressure ${fx(Pe)} MPa is over the 30 MPa maximum design load.`]);
     const tl=dry?GRADES[gk][2]:GRADES[gk][1];
     if(Number.isFinite(tx))ck.push(tx<=tl?['ok',`Max temperature ${tx} °C is within the typical ${tl} °C limit for ${GRADES[gk][0].toLowerCase()} ${dry?'dry or lubricated':'immersed'} use.`]:['bad',`Max temperature ${tx} °C is above the typical ${tl} °C limit for ${dry?'dry or lubricated':'immersed'} use. Contact Vesconite about a higher-temperature grade.`]);
     if(pf&&tx>70)ck.push(['warn','Above 70 °C a press fit may loosen. Secure the bearing mechanically or bond it.']);
     if(!pf)ck.push(['warn','No press fit: the bearing must be secured another way (bonding, keeper plate, screws). Outside diameter is taken as the housing diameter.']);
     if(lim>0&&Number.isFinite(PV))ck.push(PV<=lim?['ok',`PV ${fx(PV,1)} is ${Math.round(PV/lim*100)}% of the limit you entered.`]:['bad',`PV ${fx(PV,1)} exceeds the limit you entered (${lim}).`]);
-    if(gr&&gr[3]>=w/2)ck.push(['warn','The typical groove depth is half the wall or more. Grooves should be under half the wall thickness; add extra grooves instead of going deeper.']);
-    const chn=OD<10?0:OD<=20?0.5:OD<=50?1:OD<=100?1.5:OD<=250?2:3,t20=(x,t)=>x*(1+K*(t-20));
+    if(gt!=='none'&&!gOK)ck.push(['warn','Enter the groove number, depth and radius (and pitch or length) to include grooves.']);
+    if(gOK&&gt!=='none'){
+      ck.push(G.d<w/2?['ok',`Groove depth ${fx(G.d)} mm is under half the wall thickness (${fx(w/2)} mm).`]:['bad',`Groove depth ${fx(G.d)} mm is half the wall thickness or more. Keep it under ${fx(w/2)} mm and add extra grooves instead.`]);
+      if(G.d<2.5)ck.push(['warn','The manual prefers grooves deeper than 2.5 mm to avoid blockage by sand or coarse debris.']);
+      if(G.r<G.d/2)ck.push(['warn','Groove radius is small for this depth, giving a narrow slot. A radius of at least half the depth is usual.']);
+      ck.push(['ok',`Grooves remove about ${fx(frac*100,0)}% of the bore surface${frac>0?`, so contact pressure on the remaining surface is about ${fx(Pe)} MPa.`:'.'}`]);
+      if(gt==='long'&&G.n*gw>Math.PI*ID*0.5)ck.push(['warn','Grooves take up more than half the bore circumference.']);
+    }
+    if(fl0)ck.push(['ok','Flange: overall length includes the flange thickness. Flange sizes are as entered; the manual gives no flange sizing rule.']);
+    const chn=OD<10?0:OD<=20?0.5:OD<=50?1:OD<=100?1.5:OD<=250?2:3,t20=(x,t)=>x*(1+K*(t-20)),gr=D>=20&&D<=200?GRV.find(x=>D<=x[0]):null;
     const rows=[['5–10',7.5],['10–15',12.5],['15–20',17.5],['20–30',25],['30–35',32.5],['35–40',37.5]].map(([b,t])=>`<tr><td>${b} °C</td><td>${fx(t20(OD,t),2)}</td><td>${fx(t20(ID,t),2)}</td><td>${fx((t20(OD,t)-t20(ID,t))/2,2)}</td></tr>`).join('');
-    const tOD=tol(OD,.1,.025),tID=tol(ID,.1,.025),tW=tol(w,.5,.025),tL=tol(L,.5,.3),dt=new Date(),drg=`VI-${dt.toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`;
-    LAST={drg,svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,date:dt.toLocaleDateString(),who:(ME?.email||'').split('@')[0]})};
+    const tOD=tol(OD,.1,.025),tID=tol(ID,.1,.025),tW=tol(w,.5,.025),tL=tol(L,.5,.3),dt=new Date(),drg=`${S.dw.prefix||'VI'}-${dt.toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`;
+    const logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
+    LAST={drg,svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
     $('#mdr').innerHTML=LAST.svg;MD.hidden=false;
-    if(!T3)T3=init3($('#m3'));if(T3)upd3(T3,{OD,ID,L,ch:chn||0.5,g:gk});
+    if(!T3)T3=init3($('#m3'));if(T3)upd3(T3,{OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu});
     O.innerHTML=`<div class="card"><h2>Bearing dimensions at 20 °C</h2><dl class="spec" style="margin:0">
     <dt>Outside diameter</dt><dd>${fx(OD)} mm ± ${fx(tOD,3)}</dd><dt>Inside diameter</dt><dd>${fx(ID)} mm ± ${fx(tID,3)}</dd>
     <dt>Wall thickness</dt><dd>${fx(w)} mm +0 / −${fx(tW,3)}</dd><dt>Length</dt><dd>${fx(L)} mm +0 / −${fx(tL,2)}</dd>
+    ${fl0?`<dt>Flange</dt><dd>Ø${fx(fl.FD)} × ${fx(fl.T)} mm thick</dd>`:''}
     <dt>Press fit (interference)</dt><dd>${fx(press,3)} mm</dd><dt>Bore closure</dt><dd>${fx(clo,3)} mm</dd><dt>Assembly clearance</dt><dd>${fx(c,3)} mm</dd><dt>Fitted inside diameter</dt><dd>${fx(D+c,3)} mm</dd>
-    <dt>Lead-in chamfer</dt><dd>${chn||'–'} mm × 30°</dd>${gr?`<dt>Typical grooves</dt><dd>${gr[1]} × ${gr[2]} wide × ${gr[3]} deep mm, about ${gr[4]} l/min</dd>`:''}
+    <dt>Lead-in chamfer</dt><dd>${chn||'–'} mm × 30°</dd>${gOK&&gt!=='none'?`<dt>Grooves</dt><dd>${GTYPES[gt].toLowerCase()}, ${G.n} × ${fx(gw,1)} mm wide × ${fx(G.d)} deep (R${fx(G.r)})${gt==='spiral'?`, pitch ${fx(G.pitch,0)} mm`:''}${gt==='blind'?`, ${fx(G.len,0)} mm long`:''}</dd>`:gr?`<dt>Typical grooves (manual)</dt><dd>${gr[1]} × ${gr[2]} wide × ${gr[3]} deep mm, about ${gr[4]} l/min</dd>`:''}
     ${Number.isFinite(tx)?`<dt>Free-standing ID at ${tx} °C</dt><dd>${fx(t20(ID,tx),2)} mm</dd>`:''}${Number.isFinite(tn)?`<dt>Free-standing ID at ${tn} °C</dt><dd>${fx(t20(ID,tn),2)} mm</dd>`:''}</dl></div>
-    <div class="card"><h2>Loading</h2><div class="res"><div><b>${fx(P)}</b><span>MPa pressure</span></div><div><b>${fx(V,1)}</b><span>m/min speed</span></div><div><b>${fx(PV,1)}</b><span>MPa·m/min PV</span></div></div>${Number.isFinite(P)?'':'<p class="mut" style="margin-top:8px">Enter the supported mass to calculate pressure and PV.</p>'}</div>
+    <div class="card"><h2>Loading</h2><div class="res"><div><b>${fx(Pe)}</b><span>MPa pressure</span></div><div><b>${fx(V,1)}</b><span>m/min speed</span></div><div><b>${fx(PV,1)}</b><span>MPa·m/min PV</span></div></div>${Number.isFinite(P)?'':'<p class="mut" style="margin-top:8px">Enter the supported mass to calculate pressure and PV.</p>'}</div>
     <div class="card"><h2>Checks</h2>${ck.map(([k,t])=>`<p class="note ${k}">${k==='ok'?'✓':'⚠'} ${esc(t)}</p>`).join('')}</div>
     <div class="card"><h2>Size to cut at machining temperature</h2><p class="mut">Dimensions above are for a bearing at 20 °C. If you machine it warmer or cooler, cut to these sizes (mm).</p><div style="overflow-x:auto"><table class="tbl"><tr><th>Bearing temp</th><th>OD</th><th>ID</th><th>Wall</th></tr>${rows}</table></div></div>
-    <div class="card"><h2>How this is calculated</h2><p class="mut">Press fit = 0.05 + 0.002 × housing Ø. Bore closure = press fit × shaft Ø ÷ housing Ø. Assembly clearance = 0.05 + 0.02 × wall. OD = housing Ø + press fit. ID = shaft Ø + bore closure + assembly clearance. Wall = ½ (OD − ID), solved together with the clearance. Pressure = mass × 9.81 ÷ bearings ÷ (shaft Ø × length). Rotation speed = π × shaft Ø × rpm ÷ 1000; oscillation and linear speeds count each stroke out and back (an assumption). PV = pressure × speed. Thermal change uses 6 × 10⁻⁵ per °C. Tolerances are the standard machining tolerances. Source: Vesconite Pump Bearing Design Manual. Press-fit force and expansion gap are not included.</p></div>
+    <div class="card"><h2>How this is calculated</h2><p class="mut">Press fit = 0.05 + 0.002 × housing Ø. Bore closure = press fit × shaft Ø ÷ housing Ø. Assembly clearance = 0.05 + 0.02 × wall. OD = housing Ø + press fit. ID = shaft Ø + bore closure + assembly clearance. Wall = ½ (OD − ID), solved together with the clearance. Pressure = mass × 9.81 ÷ bearings ÷ (shaft Ø × length), divided by the share of bore left after grooving. Rotation speed = π × shaft Ø × rpm ÷ 1000; oscillation and linear speeds count each stroke out and back (an assumption). PV = pressure × speed. Thermal change uses 6 × 10⁻⁵ per °C. Tolerances are the standard machining tolerances. Groove width and depth come from the manual's groove table; groove radius is the round bottom of the groove; the groove area share is an estimate. Blind radial grooves are modelled as closed-ended slots cut into the bore. Source: Vesconite Pump Bearing Design Manual. Press-fit force and expansion gap are not included.</p></div>
     <button class="btn wide" id="dc" type="button">Copy results</button>`;
-    $('#dc').onclick=()=>navigator.clipboard.writeText([`Industrial bearing (${GRADES[gk][0]})`,`Housing ${H} mm, shaft ${D} mm, length ${L} mm, ${pf?'press fit':'no press fit'}`,`OD ${fx(OD)} mm, ID ${fx(ID)} mm, wall ${fx(w)} mm`,`Press fit ${fx(press,3)} mm, bore closure ${fx(clo,3)} mm, assembly clearance ${fx(c,3)} mm`,`P ${fx(P)} MPa, V ${fx(V,1)} m/min, PV ${fx(PV,1)} MPa·m/min`,...ck.map(([k,t])=>(k==='ok'?'OK: ':'CHECK: ')+t)].join('\n')).then(()=>alert('Results copied.'));
+    $('#dc').onclick=()=>navigator.clipboard.writeText([`Industrial bearing (${GRADES[gk][0]})`,`Housing ${H} mm, shaft ${D} mm, length ${L} mm, ${pf?'press fit':'no press fit'}${fl0?`, flange Ø${fl.FD} x ${fl.T}`:''}`,`OD ${fx(OD)} mm, ID ${fx(ID)} mm, wall ${fx(w)} mm`,`Press fit ${fx(press,3)} mm, bore closure ${fx(clo,3)} mm, assembly clearance ${fx(c,3)} mm`,gOK&&gt!=='none'?`Grooves: ${GTYPES[gt]}, ${G.n} x depth ${G.d}, radius ${G.r}`:'No grooves',`P ${fx(Pe)} MPa, V ${fx(V,1)} m/min, PV ${fx(PV,1)} MPa·m/min`,...ck.map(([k,t])=>(k==='ok'?'OK: ':'CHECK: ')+t)].join('\n')).then(()=>alert('Results copied.'));
   };
   $$('#DF input,#DF select').forEach(i=>{i.addEventListener('input',cv);i.addEventListener('change',cv)});cv();
 }
@@ -330,7 +423,7 @@ function design(v){
 const PRE=[['Steel & amber','#0f3f4a','#c9861a'],['Forest','#1d4a33','#d29a2c'],['Ocean','#0e3b66','#18a0b8'],['Graphite','#23282c','#e0592a'],['Crimson','#6e1423','#c98a1a'],['Violet','#3b2a6b','#e0a63a']];
 async function admin(v){
   if(!can('del')){location.hash='#/';return}
-  const s=S;
+  const s=S,dw=s.dw;let dwLogo={u:dw.logo,r:dw.logoR};
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Admin</h1><form id="AF">
   <section class="card"><h2>App appearance</h2><div class="acts">${PRE.map((p,i)=>`<button type="button" class="btn" data-p="${i}" style="border-left:8px solid ${p[2]}">${p[0]}</button>`).join('')}</div>
   <div class="g2"><label>Main colour<input type="color" name="pri" value="${s.pri}"></label><label>Accent colour<input type="color" name="amb" value="${s.amb}"></label>
@@ -340,12 +433,23 @@ async function admin(v){
   <label>Cover style${sel('cover',[['dark','Dark'],['light','Light'],['accent','Accent colour']],s.cover)}</label><label>Document accent<input type="color" name="pdfAcc" value="${s.pdfAcc}"></label>
   <label>Photos per application${sel('pp',[[0,'None'],[1,'1'],[2,'2'],[3,'3']],s.pp)}</label></div>
   ${ckb('logo',s.logo,'Show logo on documents')}<p class="mut" style="margin:8px 0 4px">Sections to include</p>${SECS.map(k=>ckb('secs',s.secs.includes(k),k,k)).join('')}</section>
+  <section class="card"><h2>Drawing template</h2>
+  <div class="acts"><label class="btn">Upload logo<input type="file" accept="image/*" hidden id="lgf"></label><button type="button" class="btn" id="lgx">Remove logo</button></div><div id="lgp" class="mut" style="margin-bottom:12px"></div>
+  <div class="g2"><label>Company name (when no logo)<input name="dw_company" value="${esc(dw.company)}"></label><label>Drawing title<input name="dw_title" value="${esc(dw.title)}"></label>
+  <label>Drawing number prefix<input name="dw_prefix" value="${esc(dw.prefix)}"></label><label>Revision<input name="dw_rev" value="${esc(dw.rev)}"></label>
+  <label>Paper size for PDF${sel('dw_paper',[['a3','A3'],['a4','A4']],dw.paper)}</label><label>Drawn by${sel('dw_who',[['auto','Signed-in user'],['custom','Custom text']],dw.who)}</label>
+  <label>Custom drawn-by text<input name="dw_whoText" value="${esc(dw.whoText)}"></label></div>
+  ${ckb('dw_showLogo',dw.showLogo,'Show logo in the title block')}${ckb('dw_fit',dw.fit,'Show the fit and feature table')}${ckb('dw_notes',dw.notes,'Show notes')}
+  <label style="margin-top:10px">Drawing notes, one per line. {FIT} inserts the securing note.<textarea name="dw_noteText" rows="8">${esc(dw.noteText)}</textarea></label></section>
   <section class="card"><h2>Features</h2>${ckb('oem',s.feat.oem,'OEM references')}${ckb('ins',s.feat.ins,'Insights page')}${ckb('qr',s.feat.qr,'Share links and QR codes')}${ckb('pv',s.feat.pv,'Design calculators')}</section>
   <section class="card"><h2>Industries</h2><p class="mut">One per line. Used as suggestions when capturing and adding OEM references.</p><textarea name="ind" rows="8">${esc(s.ind)}</textarea></section>
   <button class="btn pri wide">Save settings</button></form>
   <section class="card"><h2>Team</h2><p class="mut">New sign-ups start as Pending and cannot see anything until you set a role. Viewer reads, Editor adds and edits, Admin manages everything.</p><div id="tm"><p class="mut">Loading…</p></div></section>
   <section class="card"><h2>Data</h2><p class="mut">Back up before big changes. Backups from the earlier version import too.</p><div class="acts"><button class="btn" id="ex">Export backup</button><label class="btn">Import backup<input type="file" accept=".json,application/json" hidden id="im"></label><button class="btn bad" id="ca">Delete everything</button></div></section>`;
-  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind')}};
+  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind'),dw:{...S.dw,logo:dwLogo.u||'',logoR:dwLogo.r||1,company:f.get('dw_company').trim(),title:f.get('dw_title').trim(),prefix:f.get('dw_prefix').trim(),rev:f.get('dw_rev').trim(),paper:f.get('dw_paper'),who:f.get('dw_who'),whoText:f.get('dw_whoText').trim(),showLogo:f.has('dw_showLogo'),fit:f.has('dw_fit'),notes:f.has('dw_notes'),noteText:f.get('dw_noteText')}}};
+  const lgShow=()=>{$('#lgp').innerHTML=dwLogo.u?`<img src="${dwLogo.u}" alt="" style="max-height:48px;background:#fff;padding:4px;border-radius:6px;vertical-align:middle"> Uploaded logo is used on drawings and documents.`:'No uploaded logo. The logo file in your repo is used instead.'};lgShow();
+  $('#lgf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const u=URL.createObjectURL(f),im=await img(u);URL.revokeObjectURL(u);let m=500,out;do{const k=Math.min(1,m/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);out={u:cv.toDataURL('image/png'),r:cv.width/cv.height};m-=140}while(out.u.length>450000&&m>100);dwLogo=out;lgShow()}catch{alert('That image could not be read.')}e.target.value=''};
+  $('#lgx').onclick=()=>{dwLogo={u:'',r:1};lgShow()};
   $('#AF').addEventListener('input',()=>apply(read()));
   $$('[data-p]').forEach(b=>b.onclick=()=>{const p=PRE[+b.dataset.p];$('[name=pri]').value=p[1];$('[name=amb]').value=p[2];$('[name=pdfAcc]').value=p[2];apply(read())});
   $('#AF').onsubmit=async e=>{e.preventDefault();try{const n=read();await setDoc(dc('settings','app'),clean(n));S=n;apply(S);alert('Settings saved for everyone.')}catch(x){alert('Could not save: '+x.message)}};
@@ -381,7 +485,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ME&&['adm
 if(!C.firebase||/YOUR/.test(C.firebase.apiKey||'YOUR')){$('#v').innerHTML='<h1>Setup needed</h1><p class="lead">Paste your Firebase details into config.js, then reload.</p>'}
 else{
   const app=initializeApp(C.firebase);au=getAuth(app);db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true,ignoreUndefinedProperties:true});
-  (async()=>{try{const s=await getDoc(dc('settings','app'));if(s.exists())S={...DS,...s.data(),feat:{...DS.feat,...(s.data().feat||{})}};}catch{}
+  (async()=>{try{const s=await getDoc(dc('settings','app'));if(s.exists())S={...DS,...s.data(),feat:{...DS.feat,...(s.data().feat||{})},dw:{...DS.dw,...(s.data().dw||{})}};}catch{}
     if(!t0&&S.mode!=='auto')setT(S.mode);apply(S);
     onAuthStateChanged(au,u=>boot(u).catch(e=>{ready=true;$('#v').innerHTML=`<h1>Can't load data</h1><p class="mut">${esc(e.message)}</p><p class="mut">Check that the Firestore rules in firestore.rules are published.</p>`}));
   })();
