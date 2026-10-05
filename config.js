@@ -1,3 +1,6 @@
-/* Supabase > Project Settings > API: paste the Project URL and the "anon public" key.
-   The anon key is designed to be public. Never paste the service_role key here. */
-window.VI_CONFIG={url:'https://YOUR-PROJECT.supabase.co',key:'YOUR-ANON-PUBLIC-KEY'};
+/* Firebase console > Project settings > Your apps > Web app > "firebaseConfig". Paste the values below.
+   adminEmail must be the email you will sign up with first (lowercase) and must match firestore.rules. */
+window.VI_CONFIG={
+  adminEmail:'you@example.com',
+  firebase:{apiKey:'YOUR-API-KEY',authDomain:'YOUR-PROJECT.firebaseapp.com',projectId:'YOUR-PROJECT',appId:'YOUR-APP-ID'}
+};

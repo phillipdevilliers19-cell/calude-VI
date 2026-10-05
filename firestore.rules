@@ -1,0 +1,21 @@
+// Firebase console > Firestore Database > Rules: paste this, replace ADMIN_EMAIL (lowercase), Publish.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{d}/documents {
+    function role() { return get(/databases/$(d)/documents/members/$(request.auth.uid)).data.role; }
+    function member() { return request.auth != null && exists(/databases/$(d)/documents/members/$(request.auth.uid)) && role() in ['admin','editor','viewer']; }
+    function editor() { return member() && role() in ['admin','editor']; }
+    function admin()  { return member() && role() == 'admin'; }
+    match /members/{u} {
+      allow read: if member() || (request.auth != null && request.auth.uid == u);
+      allow create: if request.auth != null && request.auth.uid == u &&
+        (request.resource.data.role == 'pending' || (request.resource.data.role == 'admin' && request.auth.token.email == 'ADMIN_EMAIL'));
+      allow update: if admin();
+    }
+    match /apps/{id} { allow read: if member(); allow create, update: if editor(); allow delete: if editor(); }
+    match /oem/{id}  { allow read: if member(); allow create, update: if editor(); allow delete: if admin(); }
+    match /files/{id} { allow get: if true; allow list: if member(); allow create, delete: if editor(); }
+    match /shared/{id} { allow get: if true; allow write: if editor(); }
+    match /settings/{id} { allow read: if true; allow write: if admin(); }
+  }
+}
