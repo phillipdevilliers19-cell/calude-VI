@@ -1,6 +1,6 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,collection,doc,getDoc,getDocs,setDoc,deleteDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeFirestore,collection,doc,getDoc,getDocs,setDoc,deleteDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const C=window.VI_CONFIG||{};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -12,25 +12,26 @@ let S={...DS},ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
 const can=k=>k==='edit'?['admin','editor'].includes(ROLE):ROLE==='admin';
 const dc=(n,i)=>doc(db,n,i),col=n=>collection(db,n);
 const byDate=(x,y)=>(y.date||'').localeCompare(x.date||'');
+const T=(p,ms=40000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('Timed out. Check your connection and try again. If it keeps happening, check that the Firestore database exists and the rules are published.')),ms))]);
 const clean=o=>JSON.parse(JSON.stringify(o));
 const indList=()=>S.ind.split('\n').map(x=>x.trim()).filter(Boolean);
 
 /* ---------- Data (Firestore only: no paid Storage plan needed) ---------- */
 const load=async()=>{const[a,o]=await Promise.all([getDocs(col('apps')),getDocs(col('oem'))]);A=a.docs.map(d=>({photos:[],...d.data(),id:d.id})).sort(byDate);O=o.docs.map(d=>({...d.data(),id:d.id})).sort(byDate)};
 const CH=700000;  /* files are stored as base64 chunks, each under Firestore's 1 MiB document limit */
-const putFile=async s=>{const id=crypto.randomUUID(),n=Math.ceil(s.length/CH);for(let i=0;i<n;i++)await setDoc(dc('files',`${id}_${i}`),{d:s.slice(i*CH,(i+1)*CH)});return{id,n}};
+const putFile=async s=>{const id=crypto.randomUUID(),n=Math.ceil(s.length/CH);await Promise.all(Array.from({length:n},(_,i)=>setDoc(dc('files',`${id}_${i}`),{d:s.slice(i*CH,(i+1)*CH)})));return{id,n}};
 const getFile=async f=>(await Promise.all([...Array(f.n).keys()].map(i=>getDoc(dc('files',`${f.id}_${i}`))))).map(d=>d.data().d).join('');
 const delFile=f=>f?Promise.all([...Array(f.n).keys()].map(i=>deleteDoc(dc('files',`${f.id}_${i}`)))).catch(()=>{}):0;
 const safe=r=>clean({name:r.name,industry:r.industry,product:r.product,desc:r.summary||r.desc,problem:r.problem,solution:r.solution,proof:r.proof,photos:r.photos});
-const save=async r=>{const{id,...d}=clean(r);await setDoc(dc('apps',id),d);if(r.shared)await setDoc(dc('shared',id),safe(r));await load()};
-const commit=async(r,items)=>{const ph=[];for(const p of items)ph.push(p.ref||await putFile(p.src));r.photos=ph;r.thumb=items[0]?(items[0].src?await fit(items[0].src,200,.6):r.thumb||''):'';await save(r)};
-const remove=async a=>{await Promise.all(a.photos.map(delFile));await deleteDoc(dc('shared',a.id)).catch(()=>{});await deleteDoc(dc('apps',a.id));await load()};
+const save=async r=>{const{id,...d}=clean(r);await setDoc(dc('apps',id),d);if(r.shared)await setDoc(dc('shared',id),safe(r));A=[{photos:[],...clean(r)},...A.filter(x=>x.id!==id)].sort(byDate)};
+const commit=async(r,items,cb)=>{let n=0;const[ph,th]=await Promise.all([Promise.all(items.map(async p=>{const f=p.ref||await putFile(p.src);cb&&cb(++n,items.length);return f})),items[0]&&items[0].src?fit(items[0].src,160,.5):Promise.resolve(r.thumb||'')]);r.photos=ph;r.thumb=items[0]?th:'';await save(r)};
+const remove=async a=>{await Promise.all(a.photos.map(delFile));await deleteDoc(dc('shared',a.id)).catch(()=>{});await deleteDoc(dc('apps',a.id));A=A.filter(x=>x.id!==a.id)};
 const norm=r=>({name:r.name,industry:r.industry||'Other',product:r.product,desc:r.desc??r.description,problem:r.problem,solution:r.solution,proof:r.proof??r.outcome,summary:r.summary??r.customerSummary,orig:r.orig??r.original,env:r.env??r.environment,load:r.load,temp:r.temp??r.temperature,lube:r.lube??r.lubrication,customer:r.customer,author:r.author,id:crypto.randomUUID(),date:r.date||new Date().toISOString(),photos:[],src:(r.photos||(r.photo?[r.photo]:[])).map(p=>p.src||p).filter(p=>typeof p==='string'&&p.startsWith('data:'))});
 
 /* ---------- Helpers ---------- */
 const img=s=>new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=s});
 const fit=async(src,max,q)=>{const i=await img(src),s=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)};
-const shrink=async f=>{const u=URL.createObjectURL(f);try{return await fit(u,1200,.7)}finally{URL.revokeObjectURL(u)}};
+const shrink=async f=>{const u=URL.createObjectURL(f);try{return await fit(u,900,.6)}finally{URL.revokeObjectURL(u)}};
 const rd=f=>new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(f)});
 const score=a=>['problem','solution','proof','summary'].filter(k=>a[k]).length+(a.photos.length?1:0);
 const grade=a=>{const s=score(a);return s>=4?['Complete','ok']:s>=2?['Needs detail','warn']:['Draft','bad']};
@@ -111,7 +112,7 @@ async function form(v,id){
   const rp=()=>{$('#pg').innerHTML=ph.map((p,i)=>`<figure><img src="${p.src}" alt=""><button type="button" data-i="${i}" aria-label="Remove photo">×</button></figure>`).join('');$('#pc').textContent=`${ph.length}/10`;$$('#pg button').forEach(b=>b.onclick=()=>{const[x]=ph.splice(+b.dataset.i,1);if(x.ref)removed.push(x.ref);rp()})};rp();
   const add=async e=>{for(const fl of [...e.target.files]){if(ph.length>=10){alert('Maximum 10 photos per application.');break}try{ph.push({src:await shrink(fl)})}catch{alert('One photo could not be read.')}}e.target.value='';rp()};
   $('#p1').onchange=add;$('#p2').onchange=add;
-  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;b.textContent='Saving…';const d=Object.fromEntries(new FormData(e.target)),r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString()};try{await commit(r,ph);await Promise.all(removed.map(delFile));location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
+  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;b.textContent='Saving…';const d=Object.fromEntries(new FormData(e.target)),r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString()};try{await T(commit(r,ph,(d,t)=>{b.textContent=d<t?`Uploading photos ${d}/${t}…`:'Saving record…'}),90000);await Promise.all(removed.map(delFile));location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
 }
 function oem(v){
   const inds=[...new Set(O.map(o=>o.industry).filter(Boolean))].sort();
@@ -128,7 +129,7 @@ function oem(v){
     if(!u&&!has)return alert('Add a web link, a PDF, or both.');
     if(has&&file.size>3e6)return alert('That PDF is over 3 MB. Use a smaller file, or add its web link instead.');
     const b=e.submitter;b.disabled=true;b.textContent='Saving…';
-    try{if(has){d.pdf=await putFile(await rd(file));d.pdf.name=file.name}await setDoc(dc('oem',crypto.randomUUID()),d);await load();render()}catch(x){b.disabled=false;b.textContent='Save reference';alert('Could not save: '+(x.message||x))}};
+    try{if(has){d.pdf=await T(putFile(await rd(file)),90000);d.pdf.name=file.name}const oid=crypto.randomUUID();await T(setDoc(dc('oem',oid),d));O=[{...d,id:oid},...O];render()}catch(x){b.disabled=false;b.textContent='Save reference';alert('Could not save: '+(x.message||x))}};
 }
 const count=k=>A.reduce((m,a)=>{const x=a[k]||'Unspecified';m[x]=(m[x]||0)+1;return m},{});
 const bars=m=>{const e=Object.entries(m).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...e.map(x=>x[1]));return e.length?e.map(([k,n])=>`<div class="bar"><span>${esc(k)}</span><i style="--w:${n/mx*100}%"></i><b>${n}</b></div>`).join(''):'<p class="empty">No data yet.</p>'};
@@ -227,7 +228,7 @@ addEventListener('hashchange',render);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ME&&['admin','editor','viewer'].includes(ROLE))load().catch(()=>{})});
 if(!C.firebase||/YOUR/.test(C.firebase.apiKey||'YOUR')){$('#v').innerHTML='<h1>Setup needed</h1><p class="lead">Paste your Firebase details into config.js, then reload.</p>'}
 else{
-  const app=initializeApp(C.firebase);au=getAuth(app);db=getFirestore(app);
+  const app=initializeApp(C.firebase);au=getAuth(app);db=initializeFirestore(app,{experimentalAutoDetectLongPolling:true,ignoreUndefinedProperties:true});
   (async()=>{try{const s=await getDoc(dc('settings','app'));if(s.exists())S={...DS,...s.data(),feat:{...DS.feat,...(s.data().feat||{})}};}catch{}
     if(!t0&&S.mode!=='auto')setT(S.mode);apply(S);
     onAuthStateChanged(au,u=>boot(u).catch(e=>{ready=true;$('#v').innerHTML=`<h1>Can't load data</h1><p class="mut">${esc(e.message)}</p><p class="mut">Check that the Firestore rules in firestore.rules are published.</p>`}));
