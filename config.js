@@ -1,6 +1,9 @@
-/* Firebase console > Project settings > Your apps > Web app > "firebaseConfig". Paste the values below.
-   adminEmail must be the email you will sign up with first (lowercase) and must match firestore.rules. */
+/* Firebase settings for the vesco-intelligence project (public by design; the security rules protect the data). */
 window.VI_CONFIG={
-  adminEmail:'phillipdevilliers19@gmail.com',
-  firebase:{apiKey:'YOUR-API-KEY',authDomain:'YOUR-PROJECT.firebaseapp.com',projectId:'YOUR-PROJECT',appId:'YOUR-APP-ID'}
+  firebase:{
+    apiKey:'AIzaSyDQHQ0ThoRVhgIeCBMtVwAycHn0aHwiq7U',
+    authDomain:'vesco-intelligence.firebaseapp.com',
+    projectId:'vesco-intelligence',
+    appId:'1:723512519278:web:82034c96e9086da7add47f'
+  }
 };

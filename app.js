@@ -219,7 +219,7 @@ function render(){
 async function boot(u){
   ME=u;ROLE=null;
   if(u){let m=await getDoc(dc('members',u.uid));
-    if(!m.exists()){const role=C.adminEmail&&u.email&&u.email.toLowerCase()===C.adminEmail.toLowerCase()?'admin':'pending';await setDoc(dc('members',u.uid),{email:u.email.toLowerCase(),role});m=await getDoc(dc('members',u.uid))}
+    if(!m.exists()){const rec={email:(u.email||'').toLowerCase()};try{await setDoc(dc('members',u.uid),{...rec,role:'admin'})}catch{await setDoc(dc('members',u.uid),{...rec,role:'pending'})}m=await getDoc(dc('members',u.uid))}
     ROLE=m.data().role;if(['admin','editor','viewer'].includes(ROLE))await load()}
   ready=true;render();
 }
