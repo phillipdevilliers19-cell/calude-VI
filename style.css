@@ -49,3 +49,8 @@ fieldset{border:1px solid var(--line);border-radius:12px;margin:0 0 18px;padding
 .tabs .add{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0}.tabs .add i{display:grid;place-items:center;width:46px;height:46px;margin-top:-18px;border-radius:50%;background:var(--amb);color:#10181c;font:600 28px/1 var(--f2)}
 @media(prefers-reduced-motion:no-preference){.btn,.row{transition:border-color .15s,background .15s}}
 @media(max-width:420px){.g2{grid-template-columns:1fr}}
+body.bare .tabs{display:none}body.bare main{padding-bottom:40px}.tabs [hidden]{display:none}
+details.card summary{list-style:none;cursor:pointer}details.card summary::-webkit-details-marker{display:none}details.card form{margin-top:14px}
+#qc{display:inline-block;background:#fff;padding:12px;border-radius:10px;margin-bottom:10px}
+.ck select{width:auto;margin:0 0 0 auto;padding:6px 8px}
+.ord{display:grid;grid-template-columns:1fr 40px 40px 40px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.ord button{height:36px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}

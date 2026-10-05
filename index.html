@@ -7,12 +7,15 @@
 <title>Vesco Intelligence</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css">
+<script src="config.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body>
 <header class="top"><a href="#/" class="brand"><b>VI</b>Vesco Intelligence</a><button id="th" aria-label="Switch light and dark theme">◐</button></header>
-<main id="v"></main>
-<nav class="tabs" aria-label="Main"><a href="#/">Home</a><a href="#/library">Library</a><a href="#/new" class="add"><i>+</i>Capture</a><a href="#/insights">Insights</a><a href="#/tools">Tools</a></nav>
+<main id="v"><p class="empty">Loading…</p></main>
+<nav class="tabs" aria-label="Main"><a href="#/">Home</a><a href="#/library">Library</a><a href="#/new" class="add"><i>+</i>Capture</a><a href="#/oem">OEM</a><a href="#/tools">Tools</a></nav>
 </body>
 </html>
