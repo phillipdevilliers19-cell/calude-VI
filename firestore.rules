@@ -16,6 +16,7 @@ service cloud.firestore {
     match /oem/{id}  { allow read: if member(); allow create, update: if editor(); allow delete: if admin(); }
     match /files/{id} { allow get: if true; allow list: if member(); allow create, delete: if editor(); }
     match /shared/{id} { allow get: if true; allow write: if editor(); }
+    match /activity/{id} { allow read, delete: if admin(); allow create: if member() && request.resource.data.uid == request.auth.uid; }
     match /settings/{id} { allow read: if true; allow write: if admin(); }
   }
 }
