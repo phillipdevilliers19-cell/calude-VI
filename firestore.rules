@@ -11,6 +11,7 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == u &&
         (request.resource.data.role == 'pending' || (request.resource.data.role == 'admin' && request.auth.token.email == 'ADMIN_EMAIL'));
       allow update: if admin();
+      allow delete: if admin() && request.auth.uid != u;
     }
     match /apps/{id} { allow read: if member(); allow create, update: if editor(); allow delete: if editor(); }
     match /oem/{id}  { allow read: if member(); allow create, update: if editor(); allow delete: if admin(); }
