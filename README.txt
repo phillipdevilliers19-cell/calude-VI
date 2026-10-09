@@ -25,3 +25,5 @@ THIS UPDATE
   - STEP files rebuilt as proper solid B-reps (planes, cylinders, cones with seam edges; grooves as flat faces).
   - Vesconite 3D colour darkened. Container ship easter egg removed.
 Upload app.js and style.css. Firestore rules are unchanged. Delete textures.js from the repo if it is still there.
+
+RULES CHANGED: republish firestore.rules in Firebase (adds the scores collection for the leaderboard). Remember to put your admin email in it.

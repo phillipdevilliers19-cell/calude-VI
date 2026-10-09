@@ -95,7 +95,7 @@ function home(v){
 function playBush(){
   if(document.getElementById('bgame'))return;
   const root=document.createElement('div');root.id='bgame';
-  root.innerHTML='<canvas></canvas><button class="bgx" aria-label="Close">✕</button><button class="bgm" aria-label="Sound"></button>';
+  root.innerHTML='<canvas></canvas><button class="bgx" aria-label="Close">✕</button><button class="bgm" aria-label="Sound"></button><button class="bgt" aria-label="Leaderboard">🏆</button><div class="bglb" hidden></div>';
   document.body.appendChild(root);
   const cv=root.querySelector('canvas'),x=cv.getContext('2d'),bm=root.querySelector('.bgm');
   const PW=54,FL=44,GRAV=1500,HOP=-450;
@@ -115,7 +115,16 @@ function playBush(){
   /* state */
   let best=0;try{best=+localStorage.getItem('vi4g')||0}catch{}
   const B={x:96,y:300,vy:0,rot:0,sq:0,spin:0};
-  let st='idle',pipes=[],coins=[],parts=[],pops=[],score=0,cn=0,shield=false,inv=0,shake=0,flash=0,floorX=0,deadT=0,deadMsg='',newBest=false,combo=0,gap=200,speed=150,sky=0,since=0,star=[];
+  const uname=()=>(ME&&(ME.displayName||(ME.email||'').split('@')[0]))||'Player';
+  let plays=0,myRank=0;const lbEl=root.querySelector('.bglb');
+  const lbLoad=async()=>{const q=await getDocs(query(col('scores'),orderBy('best','desc'),limit(25)));return q.docs.map(d=>({id:d.id,...d.data()}))};
+  const rankMe=async()=>{try{const l=await lbLoad(),i=l.findIndex(r=>r.id===ME.uid);myRank=i>=0?i+1:0}catch{}};
+  if(ME&&db)getDoc(dc('scores',ME.uid)).then(d=>{if(d.exists()){const r=d.data();best=Math.max(best,r.best||0);plays=r.plays||0}rankMe()}).catch(()=>{});
+  const submit=()=>{if(!ME||!db)return;plays++;setDoc(dc('scores',ME.uid),{uid:ME.uid,name:uname(),email:ME.email||'',best,plays,t:new Date().toISOString()},{merge:true}).then(rankMe).catch(()=>{})};
+  const showLb=async()=>{lbEl.hidden=false;lbEl.innerHTML='<div class="lbh"><b>🏆 Leaderboard</b><button class="lbx" aria-label="Back">✕</button></div><p class="lbm">Loading…</p>';lbEl.querySelector('.lbx').onclick=()=>{lbEl.hidden=true};
+    try{const l=await lbLoad();lbEl.querySelector('.lbm').outerHTML=l.length?`<ol>${l.map((r,i)=>`<li class="${r.id===ME?.uid?'me':''}"><i>${i+1}</i><span>${esc(r.name||r.email||'Player')}</span><b>${r.best||0}</b><small>${r.plays||0} plays</small></li>`).join('')}</ol>`:'<p class="lbm">No scores yet. Be the first!</p>'}catch{lbEl.querySelector('.lbm').textContent='Leaderboard unavailable. Ask the admin to publish the latest Firestore rules.'}};
+  root.querySelector('.bgt').addEventListener('click',e=>{e.stopPropagation();showLb()});
+  let shT=0,st='idle',pipes=[],coins=[],parts=[],pops=[],score=0,cn=0,shield=false,inv=0,shake=0,flash=0,floorX=0,deadT=0,deadMsg='',newBest=false,combo=0,gap=200,speed=150,sky=0,since=0,star=[];
   for(let i=0;i<40;i++)star.push([Math.random()*440,Math.random()*300,Math.random()*1.6+.4,Math.random()*6]);
   const bld=[];for(let i=0,px=0;i<40;i++){const w=44+Math.random()*50,h=60+Math.random()*130;bld.push({x:px,w,h,st:Math.random()<.3,l:Math.random()});px+=w+4}
   const bw=bld[bld.length-1].x+bld[bld.length-1].w+4;
@@ -123,7 +132,7 @@ function playBush(){
   const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const puff=(px,py,n,cols,sp=120,life=.6,r=3)=>{for(let i=0;i<n;i++){const a=Math.random()*6.283,s=Math.random()*sp;parts.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,l:rnd(.5,1)*life,m:life,c:cols[i%cols.length],r:rnd(r*.6,r*1.4),g:300})}};
   const pop=(txt,px,py,c='#fff')=>pops.push({txt,x:px,y:py,l:1,c});
-  const reset=()=>{pipes=[];coins=[];parts=[];pops=[];score=0;cn=0;shield=false;inv=0;shake=0;combo=0;B.y=300;B.vy=0;B.rot=0;B.spin=0;newBest=false;since=0;st='idle'};
+  const reset=()=>{pipes=[];coins=[];parts=[];pops=[];score=0;cn=0;shield=false;shT=0;inv=0;shake=0;combo=0;B.y=300;B.vy=0;B.rot=0;B.spin=0;newBest=false;since=0;st='idle'};
   const addPipe=px=>{const prev=pipes[pipes.length-1],lo=gap/2+70,hi=640-FL-gap/2-60;let gy=rnd(lo,hi);if(prev)gy=clamp(gy,prev.gy-150,prev.gy+150);gy=clamp(gy,lo,hi);const mv=score>=8&&Math.random()<.55;pipes.push({x:px,gy,mv,ph:rnd(0,6),amp:mv?Math.min(48,10+score*1.4):0,pass:false,cy:gy});if(Math.random()<.65)coins.push({p:pipes[pipes.length-1],t:rnd(0,6),got:false})};
   const medal=s=>s>=100?['HILUBE LEGEND','#7fd0ff']:s>=50?['GOLD','#ffd23f']:s>=25?['SILVER','#d6dde3']:s>=10?['BRONZE','#d98a4a']:null;
   const MS={5:'Smooth running!',10:'Low friction!',15:'No wear here!',20:'Self-lubricating!',30:'Hilube hero!',40:'Zero maintenance!',50:'Unstoppable bush!',75:'Bearing royalty!',100:'LEGEND!'};
@@ -134,11 +143,11 @@ function playBush(){
   };
   const die=()=>{
     if(inv>0)return;
-    if(shield){shield=false;inv=1.4;shake=.25;flash=.5;B.vy=HOP*.8;puff(B.x,B.y,22,['#7fd0ff','#fff','#b6e6ff'],220,.7,4);pop('SHIELD POP!',B.x,B.y-40,'#7fd0ff');beep(300,.25,'sawtooth',.08,120);buzz(30);return}
+    if(shield){shield=false;shT=0;inv=1.4;shake=.25;flash=.5;B.vy=HOP*.8;puff(B.x,B.y,22,['#7fd0ff','#fff','#b6e6ff'],220,.7,4);pop('SHIELD POP!',B.x,B.y-40,'#7fd0ff');beep(300,.25,'sawtooth',.08,120);buzz(30);return}
     st='dead';deadT=t;shake=.5;flash=.8;B.vy=-280;B.spin=rnd(-9,9);buzz([40,40,80]);beep(180,.4,'sawtooth',.11,40);
     puff(B.x,B.y,26,['#fffaf0','#c6bca0','#3a50b4','#23272c'],300,.9,4);
     deadMsg=['Seized!','Needs more grease!','Out of tolerance!','Shaft happens!','Bush-ted!','Wear and tear!'][Math.floor(Math.random()*6)];
-    if(score>best){best=score;newBest=score>0;try{localStorage.setItem('vi4g',String(best))}catch{}}
+    if(score>best){best=score;newBest=score>0;try{localStorage.setItem('vi4g',String(best))}catch{}}submit();
   };
   const update=dt=>{
     t+=dt;sky+=(Math.min(score/40,1)*2-sky)*Math.min(1,dt*1.5);
@@ -154,7 +163,7 @@ function playBush(){
         const sp=speed*dt;pipes.forEach(p=>{p.x-=sp;p.cy=p.gy+(p.mv?Math.sin(t*1.7+p.ph)*p.amp:0)});
         if(pipes.length&&pipes[0].x<-PW-30)pipes.shift();coins=coins.filter(c=>c.p.x>-60&&!c.got);
         const lp=pipes[pipes.length-1];if(!lp||lp.x<W-(235+Math.min(score,30)))addPipe(W+60);
-        if(inv>0)inv-=dt;
+        if(inv>0)inv-=dt;if(shield){shT-=dt;if(shT<=0){shield=false;shT=0;pop('Shield expired',B.x,B.y-44,'#9fb4c4');beep(300,.2,'triangle',.05,160)}}
         const hx=B.x-13,hy=B.y-21,hw=26,hh=42;
         for(const p of pipes){
           if(!p.pass&&p.x+PW<B.x-10){p.pass=true;score++;beep(880,.09,'triangle',.07,1250);pop('+1',B.x+30,B.y-30);
@@ -162,7 +171,7 @@ function playBush(){
           const top=p.cy-gap/2,bot=p.cy+gap/2,hit=(rx,ry,rw,rh)=>hx<rx+rw&&hx+hw>rx&&hy<ry+rh&&hy+hh>ry;
           if(hit(p.x,0,PW,top-22)||hit(p.x-8,top-22,PW+16,22)||hit(p.x-8,bot,PW+16,22)||hit(p.x,bot+22,PW,640)){die();break}}
         if(st!=='dead')for(const c of coins){const cx=c.p.x+PW/2,cy=c.p.cy;if(!c.got&&Math.hypot(B.x-cx,B.y-cy)<30){c.got=true;cn++;combo++;beep(1046,.07,'square',.05);beep(1568,.12,'square',.05,undefined,.07);puff(cx,cy,12,['#35b34a','#b6f0bf','#fff'],170,.55,3);pop(combo>1?`+1 x${combo}`:'+1',cx,cy-20,'#8ff0a4');
-          if(cn%5===0&&!shield){shield=true;pop('SHIELD READY!',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
+          if(cn%5===0){shield=true;shT=5;pop('SHIELD! 5 seconds',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
       }
     }
     for(const p of parts){p.l-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.l>0);
@@ -201,17 +210,17 @@ function playBush(){
     for(const p of parts){x.globalAlpha=clamp(p.l/p.m,0,1);x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill()}x.globalAlpha=1;
     /* bush */
     if(!(inv>0&&Math.floor(t*16)%2)){x.save();x.translate(B.x,B.y);x.rotate(B.rot);x.scale(1-.2*B.sq,1+.26*B.sq);x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=10;x.shadowOffsetY=4;if(img.complete)x.drawImage(img,-21,-30,42,59);else{x.fillStyle='#fffaf0';x.fillRect(-16,-24,32,48)}x.restore();
-      if(shield){x.save();x.translate(B.x,B.y);const k=1+Math.sin(t*6)*.04;x.scale(k,k);const sg=x.createRadialGradient(0,0,18,0,0,40);sg.addColorStop(0,'rgba(127,208,255,.05)');sg.addColorStop(1,'rgba(127,208,255,.55)');x.fillStyle=sg;x.strokeStyle='rgba(200,236,255,.95)';x.lineWidth=2;x.beginPath();x.arc(0,0,38,0,6.283);x.fill();x.stroke();x.restore()}}
+      if(shield&&!(shT<1.5&&Math.floor(t*10)%2)){x.save();x.translate(B.x,B.y);const k=1+Math.sin(t*6)*.04;x.scale(k,k);const sg=x.createRadialGradient(0,0,18,0,0,40);sg.addColorStop(0,'rgba(127,208,255,.05)');sg.addColorStop(1,'rgba(127,208,255,.55)');x.fillStyle=sg;x.strokeStyle='rgba(200,236,255,.95)';x.lineWidth=2;x.beginPath();x.arc(0,0,38,0,6.283);x.fill();x.stroke();x.restore()}}
     for(const p of pops){x.globalAlpha=clamp(p.l*1.4,0,1);text(p.txt,p.x,p.y,p.txt.length>6?22:20,p.c,'center',4)}x.globalAlpha=1;
     if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.5})`;x.fillRect(-30,-30,W+60,700)}
     x.restore();
     /* HUD */
     if(st!=='idle'){text(String(score),W/2,92,64,'#fff','center',8);
-      x.font='700 15px system-ui,sans-serif';x.textAlign='left';text(`Coins ${cn%5}/5`,14,625-FL+0,13,'#8ff0a4','left',3);if(shield)text('SHIELD ON',W-14,625-FL,13,'#7fd0ff','right',3);else{}
+      x.font='700 15px system-ui,sans-serif';x.textAlign='left';text(`Coins ${cn%5}/5`,14,625-FL,13,'#8ff0a4','left',3);if(shield)text(`SHIELD ${Math.ceil(shT)}s`,W-14,625-FL,13,shT<2?'#ffb86b':'#7fd0ff','right',3);
       text(`Best ${best}`,W/2,122,14,'#fff','center',3)}
-    if(st==='idle'){text('BUSH HOP',W/2,150,50,'#ffd23f','center',8);text('Tap to hop. Dodge the shafts.',W/2,190,17,'#fff','center',4);text('Grab green coins. 5 coins = shield.',W/2,214,15,'#cfeeff','center',4);text(best?`Best ${best}`:'',W/2,246,18,'#fff','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('TAP TO START',W/2,420,24,'#fff','center',5);x.globalAlpha=1}
+    if(st==='idle'){text('BUSH HOP',W/2,150,50,'#ffd23f','center',8);text('Tap to hop. Dodge the shafts.',W/2,190,17,'#fff','center',4);text('Green coins: 5 = 5s shield.',W/2,214,15,'#cfeeff','center',4);text(best?`Best ${best}`:'',W/2,246,18,'#fff','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('TAP TO START',W/2,420,24,'#fff','center',5);x.globalAlpha=1}
     if(st==='dead'&&t-deadT>.5){const k=clamp((t-deadT-.5)*4,0,1);x.globalAlpha=k;x.fillStyle='rgba(8,20,32,.72)';roundRect(W/2-150,170,300,250,18);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=3;x.stroke();
-      text(deadMsg,W/2,214,28,'#ffd23f','center',5);text(String(score),W/2,292,66,'#fff','center',8);text(newBest?'NEW BEST!':`Best ${best}`,W/2,324,18,newBest?'#8ff0a4':'#cfeeff','center',4);
+      text(deadMsg,W/2,214,28,'#ffd23f','center',5);text(String(score),W/2,292,66,'#fff','center',8);text(newBest?'NEW BEST!':`Best ${best}`+(myRank?`  ·  Rank #${myRank}`:''),W/2,324,18,newBest?'#8ff0a4':'#cfeeff','center',4);
       const m=medal(score);if(m)text(m[0],W/2,358,20,m[1],'center',4);else text('Reach 10 for bronze',W/2,358,15,'#aab8c4','center',3);
       if(t-deadT>.75){x.globalAlpha=k*(.6+.4*Math.sin(t*5));text('TAP TO RETRY',W/2,402,20,'#fff','center',4)}x.globalAlpha=1}
   };
@@ -219,9 +228,9 @@ function playBush(){
   const close=()=>{alive=false;cancelAnimationFrame(raf);removeEventListener('resize',fit);removeEventListener('keydown',key);try{ac&&ac.close()}catch{}root.remove()};
   const key=e=>{if(e.code==='Escape'){close()}else if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){e.preventDefault();if(!e.repeat)flap()}else if(e.code==='KeyM'){bm.click()}};
   addEventListener('keydown',key);
-  root.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();flap()});
-  root.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
-  root.querySelector('.bgx').onclick=close;
+  root.addEventListener('pointerdown',e=>{if(e.target.closest('button,.bglb'))return;e.preventDefault();flap()});
+  root.addEventListener('touchstart',e=>{if(!e.target.closest('button,.bglb'))e.preventDefault()},{passive:false});
+  root.querySelector('.bgx').addEventListener('click',e=>{e.stopPropagation();close()});
   bm.onclick=()=>{mute=!mute;try{localStorage.setItem('vi4gm',mute?'1':'0')}catch{}icon();if(!mute)beep(660,.1,'triangle',.06)};
   reset();raf=requestAnimationFrame(loop);
 }
@@ -278,7 +287,7 @@ async function form(v,id){
   const rp=()=>{$('#pg').innerHTML=ph.map((p,i)=>`<figure><img src="${p.src}" alt=""><button type="button" data-i="${i}" aria-label="Remove photo">×</button></figure>`).join('');$('#pc').textContent=`${ph.length}/10`;$$('#pg button').forEach(b=>b.onclick=()=>{const[x]=ph.splice(+b.dataset.i,1);if(x.ref)removed.push(x.ref);rp()})};rp();
   const add=async e=>{for(const fl of [...e.target.files]){if(ph.length>=10){alert('Maximum 10 photos per application.');break}try{ph.push({src:await shrink(fl)})}catch{alert('One photo could not be read.')}}e.target.value='';rp()};
   $('#p1').onchange=add;$('#p2').onchange=add;indBind('indSel','indOtherW');
-  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter,d=Object.fromEntries(new FormData(e.target));if(d.industry==='__other'){d.industry=($('#indOther').value||'').trim();if(!d.industry){alert('Type the new industry name.');return}}b.disabled=true;b.textContent='Saving…';const r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString()};try{await T(commit(r,ph,(d,t)=>{b.textContent=d<t?`Uploading photos ${d}/${t}…`:'Saving record…'}),90000);await Promise.all(removed.map(delFile));log(a.id?'Edited application':'Created application',r.name);location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
+  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter,d=Object.fromEntries(new FormData(e.target));if(d.industry==='__other'){d.industry=($('#indOther').value||'').trim();if(!d.industry){alert('Type the new industry name.');return}}b.disabled=true;b.textContent='Saving…';const r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString(),uid:a.uid||ME?.uid||'',byEmail:a.byEmail||ME?.email||''};try{await T(commit(r,ph,(d,t)=>{b.textContent=d<t?`Uploading photos ${d}/${t}…`:'Saving record…'}),90000);await Promise.all(removed.map(delFile));log(a.id?'Edited application':'Created application',r.name);location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
 }
 function oem(v){
   const inds=[...new Set(O.map(o=>o.industry).filter(Boolean))].sort();
@@ -301,7 +310,12 @@ function oem(v){
 }
 const count=k=>A.reduce((m,a)=>{const x=a[k]||'Unspecified';m[x]=(m[x]||0)+1;return m},{});
 const bars=m=>{const e=Object.entries(m).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...e.map(x=>x[1]));return e.length?e.map(([k,n])=>`<div class="bar"><span>${esc(k)}</span><i style="--w:${n/mx*100}%"></i><b>${n}</b></div>`).join(''):'<p class="empty">No data yet.</p>'};
-function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)+1;return m},{});v.innerHTML=`<h1>Insights</h1><div class="card"><h2>By industry</h2>${bars(count('industry'))}</div><div class="card"><h2>By product</h2>${bars(count('product'))}</div><div class="card"><h2>Record quality</h2>${bars(q)}</div>`}
+function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)+1;return m},{});v.innerHTML=`<h1>Insights</h1><div class="card"><h2>By industry</h2>${bars(count('industry'))}</div><div class="card"><h2>By product</h2>${bars(count('product'))}</div><div class="card"><h2>Record quality</h2>${bars(q)}</div>${can('admin')?'<div class="card" id="UT"><h2>Applications by user</h2><p class="mut">Loading…</p></div>':''}`;
+  if(can('admin'))getDocs(col('members')).then(m=>{
+    const U={};m.docs.forEach(d=>{const e=d.data().email||'';U['u:'+d.id]={name:'',email:e,n:0,last:'',role:d.data().role,au:{}}});
+    A.forEach(a=>{const k=a.uid&&U['u:'+a.uid]?'u:'+a.uid:'a:'+((a.author||'').trim()||'Not recorded');const u=U[k]||(U[k]={name:k.slice(2),email:'',n:0,last:'',role:'',au:{}});u.n++;if((a.date||'')>u.last)u.last=a.date;if(a.author&&a.uid)u.au[a.author]=(u.au[a.author]||0)+1});
+    const rows=Object.values(U).map(u=>{const top=Object.entries(u.au).sort((x,y)=>y[1]-x[1])[0];return{...u,name:u.name||(top?top[0]:(u.email.split('@')[0]||'?'))}}).sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name)),mx=Math.max(1,...rows.map(r=>r.n));
+    $('#UT').innerHTML=`<h2>Applications by user</h2><p class="mut" style="margin:0 0 8px">Only admins see this. Older records without a saved user are grouped by their "Recorded by" name.</p>${rows.map(r=>`<div class="ur"><div><b>${esc(r.name)}</b><small>${esc(r.email||'no account')}${r.role?` · ${esc(r.role)}`:''}${r.last?` · last ${new Date(r.last).toLocaleDateString()}`:''}</small></div><strong>${r.n}</strong><i style="width:${Math.round(r.n/mx*100)}%"></i></div>`).join('')||'<p class="mut">No users yet.</p>'}`}).catch(()=>{const e=$('#UT');if(e)e.innerHTML='<h2>Applications by user</h2><p class="mut">Could not load users.</p>'})}
 
 /* ---------- Portfolio PDF (colours, logo, sections, footer all come from Admin settings) ---------- */
 const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
@@ -750,7 +764,7 @@ function openDrawing(){
 /* ---------- Design a bearing: industrial, pump, marine rudder and marine stern calculators ---------- */
 const MODES={ind:'Industrial',pump:'Pump',rud:'Marine rudder',stern:'Marine stern'};
 const GRS=[[79,7,7,4,12],[119,7,9,5,18],[159,7,10,6,24],[199,7,12,7,30],[249,7,12,8,38],[299,7,14,8,45],[349,8,15,8,53],[399,8,15,8,60],[499,9,15,9,75],[599,10,18,9,90],[699,11,18,9,105],[800,12,18,9,120]];  /* stern tube: shaft Ø max, grooves, width, depth, water l/min */
-let DV={};
+const DV={};
 /* All sizes from the Vesconite size-calculation equations (metric). Industrial and pump share one set; rudder and stern use the marine set. */
 function bearCalc(mode,i){
   const{H,D,L,pf,tx,tn,gk}=i,mar=mode==='rud'||mode==='stern',Hn=i.Hmin>0?i.Hmin:H;
@@ -777,7 +791,7 @@ function design(v,id){
     rud:'Rudder bearing sizes from the Vesconite marine equations: press fit from the minimum operating temperature, assembly clearance 0.2 mm + 0.0015 × shaft diameter. Rudder bearings generally need no grooves.',
     stern:'Water-lubricated stern tube and strut bearing sizes from the Vesconite marine equations: assembly clearance 0.2 mm + 0.002 × shaft diameter, with the manual\'s groove table. Do not grease these bearings.'}[mode];
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Design a bearing</h1>
-  <div class="seg" id="MS" style="margin:10px 0">${Object.entries(MODES).map(([k,l])=>`<a href="#/design/${k}" class="${k===mode?'on':''}">${l}</a>`).join('')}</div>
+  <div class="dts" id="MS">${Object.entries(MODES).map(([k,l])=>`<a href="#/design/${k}" class="dt dt-${k} ${k===mode?'on':''}"><i>${{ind:'⚙️',pump:'💧',rud:'🧭',stern:'⚓'}[k]}</i><span>${l.replace('Marine ','Marine<br>')}</span></a>`).join('')}</div>
   <p class="mut">${intro} A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
   <form class="card" id="DF"><div class="g2">${mar?`${n('d1','Maximum housing size','mm')}${n('d33','Minimum housing size','mm')}`:n('d1','Housing diameter','mm')}${n('d2','Shaft diameter','mm')}${n('d3','Bearing length (overall)','mm')}
   <label>Grade<select id="d18"><option value="v">Vesconite</option><option value="h" ${mar||pump?'selected':''}>Vesconite Hilube</option></select></label>
@@ -799,14 +813,14 @@ function design(v,id){
   <div class="card" id="MD" hidden><div class="seg"><button type="button" data-t="3d" class="on">3D model</button><button type="button" data-t="dr">Drawing</button></div><div class="m3" id="m3"></div><div id="mdr" class="mdr" hidden></div>
   <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button><button type="button" class="btn" id="mc">Cutaway view</button><button type="button" class="btn" id="mstep">STEP file</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. The drawing is generated from the sizes below.</p><p class="mut" id="stn" style="margin:6px 0 0"></p></div>
   <div id="DO"></div>`;
-  Object.entries(DV).forEach(([k,x])=>{const e=$('#'+k);if(e&&x!==undefined&&k!=='d18')e.value=x});
+  Object.entries(DV[mode]||{}).forEach(([k,x])=>{const e=$('#'+k);if(e&&x!==undefined)e.value=x});
   $('#DF').onsubmit=e=>e.preventDefault();
   $$('#MD .seg button').forEach(b=>b.onclick=()=>{$$('#MD .seg button').forEach(x=>x.classList.toggle('on',x===b));$('#m3').hidden=b.dataset.t!=='3d';$('#mdr').hidden=b.dataset.t!=='dr'});
   $('#mx').onclick=openDrawing;$('#mstep').onclick=stepDownload;
   $('#mc').onclick=()=>{if(T3){T3.cut=!T3.cut;$('#mc').textContent=T3.cut?'Full view':'Cutaway view';if(T3.last)upd3(T3,T3.last)}};
   let lastGt='none',autoDone=false;
   const cv=()=>{
-    $$('#DF input,#DF select').forEach(e=>{DV[e.id]=e.value});
+    $$('#DF input,#DF select').forEach(e=>{(DV[mode]=DV[mode]||{})[e.id]=e.value});
     const g=id=>parseFloat(($('#'+id)||{}).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=mode==='ind'?$('#d11').value:'rot',MD=$('#MD'),fl0=$('#d30').value==='y',gt=$('#d20').value;
     $$('[data-m]').forEach(x=>x.hidden=x.dataset.m!==mo);$$('[data-f]').forEach(x=>x.hidden=!fl0);$$('[data-g]').forEach(x=>x.hidden=gt==='none');$$('[data-gt]').forEach(x=>x.hidden=x.dataset.gt!==gt);
     const bad=m=>{MD.hidden=true;O.innerHTML=m};
