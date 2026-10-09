@@ -1,5 +1,5 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,sendEmailVerification,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {initializeFirestore,collection,doc,getDoc,getDocs,setDoc,deleteDoc,updateDoc,query,orderBy,limit} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const C=window.VI_CONFIG||{};
@@ -9,7 +9,7 @@ const IND='Agriculture,Construction,Forestry,Hydraulics,Industrial,Marine,Mining
 const SECS=['Overview','Problem','Solution','Result'];
 const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},bk:{every:7,last:''},ind:IND,dw:{logo:'',logoR:1,showLogo:true,company:'VESCONITE',title:'INDUSTRIAL BEARING BUSH',prefix:'VI',rev:'A',paper:'a3',who:'auto',whoText:'',fit:true,notes:true,noteText:'1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.\n2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);\n    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.\n3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.\n4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.\n5. {FIT}'}};
 DS.dsc={v:{c:'#8a8d91',a:.3},h:{c:'#efe6cf',a:.6},h10:{c:'#e6dcc0',a:.55},h20:{c:'#ddd0ab',a:.55},s:{c:'#7fa3b8',a:.35},t150:{c:'#d9822b',a:.3},t160:{c:'#c9472b',a:.3},t230:{c:'#8f2d2d',a:.3},f:{c:'#3d3d42',a:.3},n:{c:'#d8d2c4',a:.55},pc:{c:'#c5ccd2',a:.55}};
-let S={...DS},ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
+let S={...DS},MYN='',ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
 try{P=JSON.parse(localStorage.getItem('vi4p')||'[]')}catch{}
 const can=k=>k==='edit'?['admin','editor'].includes(ROLE):ROLE==='admin';
 const dc=(n,i)=>doc(db,n,i),col=n=>collection(db,n);
@@ -19,9 +19,9 @@ const clean=o=>JSON.parse(JSON.stringify(o));
 const LIBS={three:['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],qr:['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js']},LP={};
 const lib=k=>LP[k]||(LP[k]=(async()=>{for(const u of LIBS[k]){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});return}catch{}}delete LP[k];throw new Error('Could not load the '+k+' library. Check your connection.')})());
 const OKR=['admin','editor','viewer'];
-const cacheSave=()=>{try{localStorage.setItem('vi4d',JSON.stringify({uid:ME&&ME.uid,role:ROLE,A,O}))}catch{}};
+const cacheSave=()=>{try{localStorage.setItem('vi4d',JSON.stringify({uid:ME&&ME.uid,role:ROLE,nm:MYN,A,O}))}catch{}};
 const cacheGet=()=>{try{return JSON.parse(localStorage.getItem('vi4d')||'null')}catch{return null}};
-const log=(action,target='',detail='')=>{if(!ME||!db)return;setDoc(dc('activity',crypto.randomUUID()),{t:new Date().toISOString(),uid:ME.uid,email:ME.email||'',action,target:String(target||''),detail:String(detail||'')}).catch(()=>{})};
+const log=(action,target='',detail='')=>{if(!ME||!db)return;setDoc(dc('activity',crypto.randomUUID()),{t:new Date().toISOString(),uid:ME.uid,email:ME.email||'',name:MYN||'',action,target:String(target||''),detail:String(detail||'')}).catch(()=>{})};
 let NB=0;
 async function notifCheck(){   /* admin badge: people waiting for access + changes by others since the admin last opened Admin */
   if(!ME||!can('del'))return;
@@ -77,11 +77,39 @@ $('#th').onclick=()=>setT(document.documentElement.dataset.t==='dark'?'light':'d
 $('#ad').onclick=()=>{location.hash='#/admin'};
 
 /* ---------- Views ---------- */
-function login(v){
-  v.innerHTML=`<h1>Sign in</h1><form id="LF"><label>Email<input name="e" type="email" required autocomplete="username"></label><label>Password<input name="p" type="password" required minlength="6" autocomplete="current-password"></label><button class="btn pri wide">Sign in</button><button type="button" class="btn wide" id="su" style="margin-top:10px">Create account</button></form><p class="mut" style="margin-top:14px">New accounts need approval from an admin before they can see any data.</p>`;
-  const go=async mk=>{const f=new FormData($('#LF')),e=f.get('e').trim(),p=f.get('p');try{mk?await createUserWithEmailAndPassword(au,e,p):await signInWithEmailAndPassword(au,e,p)}catch(x){alert(x.message.replace('Firebase: ',''))}};
-  $('#LF').onsubmit=e=>{e.preventDefault();go(false)};$('#su').onclick=()=>$('#LF').reportValidity()&&go(true);
+const DOMAINS=['vesconite.com','vesconite.co.za'];
+const okDomain=e=>DOMAINS.includes(((e||'').toLowerCase().split('@')[1]||'').trim());
+const busy=(b,t)=>{b.disabled=true;b.dataset.l=b.innerHTML;b.innerHTML=`<span class="spn"></span>${t}`;return()=>{b.disabled=false;b.innerHTML=b.dataset.l}};
+const authErr=x=>({'vi/domain':'Sign-up is limited to @vesconite.com and @vesconite.co.za email addresses.','auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'Wrong email or password.','auth/invalid-email':'That email address does not look right.','auth/email-already-in-use':'An account with that email already exists. Sign in instead, or use Forgot password.','auth/weak-password':'Choose a password of at least 6 characters.','auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.','auth/network-request-failed':'No connection. Check your internet and try again.'}[x&&x.code]||String((x&&x.message)||x).replace('Firebase: ',''));
+async function notifyAdmin(u,name){   /* optional email to the admins through EmailJS (see README); silent when not configured */
+  const E=C.emailjs;if(!E||!E.service||!E.template||!E.key)return;
+  try{await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:E.service,template_id:E.template,user_id:E.key,template_params:{name:name||'(no name given)',email:u.email||'',when:new Date().toLocaleString(),link:location.href.split('#')[0]+'#/admin'}})})}catch{}
 }
+function login(v,mode='in'){
+  const up=mode==='up',fg=mode==='fg';
+  v.innerHTML=`<h1>${up?'Create account':fg?'Reset password':'Sign in'}</h1><form id="LF" novalidate>${up?'<label>Full name<input name="n" required autocomplete="name" maxlength="60"></label>':''}<label>Email<input name="e" type="email" required autocomplete="username" placeholder="you@vesconite.com"></label>${fg?'':`<label>Password<input name="p" type="password" required minlength="6" autocomplete="${up?'new-password':'current-password'}"></label>`}<p class="note" id="LM" role="status" aria-live="polite" hidden></p><button class="btn pri wide" id="LB">${up?'Create account':fg?'Send reset link':'Sign in'}</button></form>
+  <p style="margin:14px 0 0">${mode==='in'?'<a href="#" data-m="fg">Forgot password?</a><br><a href="#" data-m="up">New here? Create an account</a>':'<a href="#" data-m="in">Back to sign in</a>'}</p>
+  <p class="mut" style="margin-top:14px">${up?'Sign-up is open to @vesconite.com and @vesconite.co.za email addresses. We will email you a link to verify your address, then an admin approves your access.':'New accounts need approval from an admin before they can see any data.'}</p>`;
+  $$('[data-m]').forEach(a=>a.onclick=e=>{e.preventDefault();login(v,a.dataset.m)});
+  const msg=(t,k)=>{const m=$('#LM');m.hidden=!t;m.textContent=t||'';m.className='note '+(k||'')};
+  $('#LF').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),em=(f.get('e')||'').trim(),p=f.get('p')||'',nm=(f.get('n')||'').trim();
+    if(!em||(!fg&&p.length<6)||(up&&!nm)){msg(up&&!nm?'Enter your full name.':!em?'Enter your email address.':'Enter your password (at least 6 characters).','bad');return}
+    msg('');const done=busy($('#LB'),up?'Creating account…':fg?'Sending…':'Signing in…');
+    try{
+      if(fg){await sendPasswordResetEmail(au,em);msg('If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.','ok');done();return}
+      if(up){if(!okDomain(em))throw{code:'vi/domain'};try{localStorage.setItem('vi4pn',nm)}catch{}const cr=await createUserWithEmailAndPassword(au,em,p);updateProfile(cr.user,{displayName:nm}).catch(()=>{});sendEmailVerification(cr.user).catch(()=>{});return}
+      await signInWithEmailAndPassword(au,em,p);
+    }catch(x){msg(authErr(x),'bad');done()}
+  };
+}
+function verify(v){
+  v.innerHTML=`<h1>Check your email</h1><p class="lead">We sent a verification link to <b>${esc(ME.email)}</b>. Open it, then press Continue. If it is not there after a minute or two, look in your spam folder.</p><p class="note" id="VM" hidden></p><button class="btn pri wide" id="vc">I have verified, continue</button><button class="btn wide" id="vr" style="margin-top:10px">Send the email again</button><button class="btn wide" id="so" style="margin-top:10px">Sign out</button>`;
+  const msg=(t,k)=>{const m=$('#VM');m.hidden=!t;m.textContent=t||'';m.className='note '+(k||'')};
+  $('#so').onclick=()=>signOut(au);
+  $('#vc').onclick=async()=>{const done=busy($('#vc'),'Checking…');msg('');try{await reload(ME);await ME.getIdToken(true);if(!ME.emailVerified){msg('Not verified yet. Open the link in the email first.','bad');done();return}await boot(ME)}catch(x){msg(authErr(x),'bad');done()}};
+  $('#vr').onclick=async()=>{const done=busy($('#vr'),'Sending…');msg('');try{await sendEmailVerification(ME);msg('Sent. Check your inbox and spam folder.','ok')}catch(x){msg(authErr(x),'bad')}done()};
+}
+function blocked(v){v.innerHTML=`<h1>Access is limited</h1><p class="lead">Sign-up is open to @vesconite.com and @vesconite.co.za email addresses. Your account (${esc(ME.email)}) is not one of them, so it cannot be approved. Ask an admin if you think this is a mistake.</p><button class="btn" id="so">Sign out</button>`;$('#so').onclick=()=>signOut(au)}
 function pending(v){v.innerHTML=`<h1>Waiting for approval</h1><p class="lead">Your account (${esc(ME.email)}) is created. An admin needs to give you access.</p><button class="btn" id="so">Sign out</button>`;$('#so').onclick=()=>signOut(au)}
 const bkDue=()=>{if(!can('admin')||!S.bk||!(S.bk.every>0))return false;let sn=0;try{sn=+localStorage.getItem('vi4bks')||0}catch{}if(Date.now()<sn)return false;const l=S.bk.last?Date.parse(S.bk.last):0;return !l||Date.now()-l>S.bk.every*864e5};
 async function exportBackup(btn,label='Export backup'){
@@ -92,13 +120,15 @@ async function exportBackup(btn,label='Export backup'){
     setDoc(dc('settings','app'),{bk:S.bk},{merge:true}).catch(()=>{});return true}
   catch(x){alert(x.message);return false}finally{if(btn)btn.textContent=label}
 }
+async function saveName(n,btn){n=(n||'').trim().slice(0,60);if(!n){alert('Enter your name.');return false}const done=btn?busy(btn,'Saving…'):()=>{};try{await updateDoc(dc('members',ME.uid),{name:n});MYN=n;cacheSave();done();if(btn)btn.textContent='Saved ✓';return true}catch(x){alert(x.message);done();return false}}
 function home(v){
   const need=A.filter(a=>!a.proof||!a.photos.length).slice(0,4);
-  v.innerHTML=`${bkDue()?`<section class="card bkb"><b>Time for a backup</b><p class="mut">${S.bk.last?'Last backup was '+new Date(S.bk.last).toLocaleDateString()+'.':'No backup has been taken yet.'} Download one now so nothing is lost.</p><div class="acts"><button class="btn pri" id="bkn">Back up now</button><button class="btn" id="bks">Remind me tomorrow</button></div></section>`:''}<section class="hero"><h1>Every installation, on the record.</h1><p>Capture the problem, the fix and the proof while it is fresh. Then turn the best of it into a customer portfolio.</p><div class="acts">${can('edit')?'<a class="btn pri" href="#/new">Capture application</a>':''}<a class="btn" href="#/library">Open library</a>${S.feat.ins?'<a class="btn" href="#/insights">Insights</a>':''}</div></section>
+  v.innerHTML=`${!MYN?`<section class="card bkb"><b>What should we call you?</b><p class="mut">Your name shows next to your applications and on the leaderboard.</p><div class="acts"><input id="hn" placeholder="Full name" maxlength="60" style="flex:1;min-width:160px"><button class="btn pri" id="hns" type="button">Save</button></div></section>`:''}${bkDue()?`<section class="card bkb"><b>Time for a backup</b><p class="mut">${S.bk.last?'Last backup was '+new Date(S.bk.last).toLocaleDateString()+'.':'No backup has been taken yet.'} Download one now so nothing is lost.</p><div class="acts"><button class="btn pri" id="bkn">Back up now</button><button class="btn" id="bks">Remind me tomorrow</button></div></section>`:''}<section class="hero"><h1>Every installation, on the record.</h1><p>Capture the problem, the fix and the proof while it is fresh. Then turn the best of it into a customer portfolio.</p><div class="acts">${can('edit')?'<a class="btn pri" href="#/new">Capture application</a>':''}<a class="btn" href="#/library">Open library</a>${S.feat.ins?'<a class="btn" href="#/insights">Insights</a>':''}</div></section>
   <div class="stats"><div><b>${A.length}</b><span>applications</span></div><div><b>${new Set(A.map(a=>a.industry)).size}</b><span>industries</span></div><div><b>${A.reduce((n,a)=>n+a.photos.length,0)}</b><span>photos</span></div></div>
   ${A.length?charts():''}<h2>Needs evidence</h2>${need.length?`<div class="list">${need.map(row).join('')}</div>`:`<p class="empty">${A.length?'Every record has a result and a photo.':'Nothing captured yet. Start with your best-known installation.'}</p>`}
   ${A.length?`<h2>Recent</h2><div class="list">${A.slice(0,3).map(row).join('')}</div>`:''}`;
   eggTap(v);
+  const hs=$('#hns');if(hs)hs.onclick=async()=>{if(await saveName($('#hn').value,hs))home(v)};
   const bn=$('#bkn');if(bn){bn.onclick=async()=>{if(await exportBackup(bn,'Back up now'))home(v)};$('#bks').onclick=()=>{try{localStorage.setItem('vi4bks',Date.now()+864e5)}catch{}home(v)}}
 }
 /* ---------- Easter egg: Bush Hop. Click the industries counter on Home 7 times in a row. ---------- */
@@ -125,7 +155,7 @@ function playBush(){
   /* state */
   let best=0;try{best=+localStorage.getItem('vi4g')||0}catch{}
   const B={x:96,y:300,vy:0,rot:0,sq:0,spin:0};
-  const uname=()=>(ME&&(ME.displayName||(ME.email||'').split('@')[0]))||'Player';
+  const uname=()=>(ME&&(MYN||ME.displayName||(ME.email||'').split('@')[0]))||'Player';
   let plays=0,myRank=0;const lbEl=root.querySelector('.bglb');
   const lbLoad=async()=>{const q=await getDocs(query(col('scores'),orderBy('best','desc'),limit(25)));return q.docs.map(d=>({id:d.id,...d.data()}))};
   const rankMe=async()=>{try{const l=await lbLoad(),i=l.findIndex(r=>r.id===ME.uid);myRank=i>=0?i+1:0}catch{}};
@@ -287,7 +317,7 @@ async function form(v,id){
   v.innerHTML='<p class="empty">Loading…</p>';
   let ph;try{ph=await Promise.all(a.photos.map(async r=>({ref:r,src:await getFile(r)})))}catch{v.innerHTML='<p class="empty">Could not load photos.</p>';return}
   const removed=[];
-  const f=(k,l,t,ex='')=>`<label>${l}${t==='area'?`<textarea name="${k}" rows="3">${esc(a[k])}</textarea>`:`<input name="${k}" value="${esc(a[k])}" ${ex}>`}</label>`;
+  const f=(k,l,t,ex='')=>`<label>${l}${t==='area'?`<textarea name="${k}" rows="3">${esc(a[k])}</textarea>`:`<input name="${k}" value="${esc(a[k]||(k==='author'&&!id?MYN:''))}" ${ex}>`}</label>`;
   v.innerHTML=`<a class="back" href="#/${id?'app/'+id:'library'}">← Cancel</a><h1>${id?'Edit':'Capture'} application</h1><form id="F">
   ${f('name','Application name','','required')}${indSelect(a.industry,'indSel','indOther','indOtherW')}${f('product','Product / material')}${f('desc','What does it do, and where is it used?','area')}
   <fieldset><legend>Customer story</legend>${f('problem','Problem','area')}${f('solution','Solution','area')}${f('proof','Result / proof','area')}${f('summary','Customer-safe summary','area')}</fieldset>
@@ -297,7 +327,7 @@ async function form(v,id){
   const rp=()=>{$('#pg').innerHTML=ph.map((p,i)=>`<figure><img src="${p.src}" alt=""><button type="button" data-i="${i}" aria-label="Remove photo">×</button></figure>`).join('');$('#pc').textContent=`${ph.length}/10`;$$('#pg button').forEach(b=>b.onclick=()=>{const[x]=ph.splice(+b.dataset.i,1);if(x.ref)removed.push(x.ref);rp()})};rp();
   const add=async e=>{for(const fl of [...e.target.files]){if(ph.length>=10){alert('Maximum 10 photos per application.');break}try{ph.push({src:await shrink(fl)})}catch{alert('One photo could not be read.')}}e.target.value='';rp()};
   $('#p1').onchange=add;$('#p2').onchange=add;indBind('indSel','indOtherW');
-  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter,d=Object.fromEntries(new FormData(e.target));if(d.industry==='__other'){d.industry=($('#indOther').value||'').trim();if(!d.industry){alert('Type the new industry name.');return}}b.disabled=true;b.textContent='Saving…';const r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString(),uid:a.uid||ME?.uid||'',byEmail:a.byEmail||ME?.email||''};try{await T(commit(r,ph,(d,t)=>{b.textContent=d<t?`Uploading photos ${d}/${t}…`:'Saving record…'}),90000);await Promise.all(removed.map(delFile));log(a.id?'Edited application':'Created application',r.name);location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
+  $('#F').onsubmit=async e=>{e.preventDefault();const b=e.submitter,d=Object.fromEntries(new FormData(e.target));if(d.industry==='__other'){d.industry=($('#indOther').value||'').trim();if(!d.industry){alert('Type the new industry name.');return}}b.disabled=true;b.textContent='Saving…';const r={...a,...d,id:a.id||crypto.randomUUID(),date:a.date||new Date().toISOString(),uid:a.uid||ME?.uid||'',byEmail:a.byEmail||ME?.email||'',byName:a.byName||MYN||''};try{await T(commit(r,ph,(d,t)=>{b.textContent=d<t?`Uploading photos ${d}/${t}…`:'Saving record…'}),90000);await Promise.all(removed.map(delFile));log(a.id?'Edited application':'Created application',r.name);location.hash='#/app/'+r.id}catch(x){b.disabled=false;b.textContent='Save application';alert('Could not save: '+(x.message||x))}};
 }
 function oem(v){
   const inds=[...new Set(O.map(o=>o.industry).filter(Boolean))].sort();
@@ -322,7 +352,7 @@ const count=k=>A.reduce((m,a)=>{const x=a[k]||'Unspecified';m[x]=(m[x]||0)+1;ret
 const bars=m=>{const e=Object.entries(m).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...e.map(x=>x[1]));return e.length?e.map(([k,n])=>`<div class="bar"><span>${esc(k)}</span><i style="--w:${n/mx*100}%"></i><b>${n}</b></div>`).join(''):'<p class="empty">No data yet.</p>'};
 function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)+1;return m},{});v.innerHTML=`<h1>Insights</h1><div class="card"><h2>By industry</h2>${bars(count('industry'))}</div><div class="card"><h2>By product</h2>${bars(count('product'))}</div><div class="card"><h2>Record quality</h2>${bars(q)}</div>${can('admin')?'<div class="card" id="UT"><h2>Applications by user</h2><p class="mut">Loading…</p></div>':''}`;
   if(can('admin'))getDocs(col('members')).then(m=>{
-    const U={};m.docs.forEach(d=>{const e=d.data().email||'';U['u:'+d.id]={name:'',email:e,n:0,last:'',role:d.data().role,au:{}}});
+    const U={};m.docs.forEach(d=>{const e=d.data().email||'';U['u:'+d.id]={name:d.data().name||'',email:e,n:0,last:'',role:d.data().role,au:{}}});
     A.forEach(a=>{const k=a.uid&&U['u:'+a.uid]?'u:'+a.uid:'a:'+((a.author||'').trim()||'Not recorded');const u=U[k]||(U[k]={name:k.slice(2),email:'',n:0,last:'',role:'',au:{}});u.n++;if((a.date||'')>u.last)u.last=a.date;if(a.author&&a.uid)u.au[a.author]=(u.au[a.author]||0)+1});
     const rows=Object.values(U).map(u=>{const top=Object.entries(u.au).sort((x,y)=>y[1]-x[1])[0];return{...u,name:u.name||(top?top[0]:(u.email.split('@')[0]||'?'))}}).sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name)),mx=Math.max(1,...rows.map(r=>r.n));
     $('#UT').innerHTML=`<h2>Applications by user</h2><p class="mut" style="margin:0 0 8px">Only admins see this. Older records without a saved user are grouped by their "Recorded by" name.</p>${rows.map(r=>`<div class="ur"><div><b>${esc(r.name)}</b><small>${esc(r.email||'no account')}${r.role?` · ${esc(r.role)}`:''}${r.last?` · last ${new Date(r.last).toLocaleDateString()}`:''}</small></div><strong>${r.n}</strong><i style="width:${Math.round(r.n/mx*100)}%"></i></div>`).join('')||'<p class="mut">No users yet.</p>'}`}).catch(()=>{const e=$('#UT');if(e)e.innerHTML='<h2>Applications by user</h2><p class="mut">Could not load users.</p>'})}
@@ -428,7 +458,8 @@ function tools(v){
   ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a><a class="row" href="#/freezer" style="margin-top:8px"><div class="th">❄</div><div><strong>Freezer shrink time</strong><small>How long to cool a bush so it slides into the housing</small></div><span class="chip ok">Open</span></a></section>':''}
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
-  <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><button class="btn" id="so">Sign out</button></section>`;
+  <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><div class="g2"><label>Your name<input id="myn" value="${esc(MYN)}" maxlength="60" placeholder="Full name"></label><div style="display:flex;align-items:flex-end"><button class="btn" id="mys" type="button">Save name</button></div></div><button class="btn" id="so" style="margin-top:12px">Sign out</button></section>`;
+  $('#mys').onclick=()=>saveName($('#myn').value,$('#mys'));
   $('#so').onclick=()=>signOut(au);
 }
 
@@ -1013,16 +1044,17 @@ const nz=x=>Number.isFinite(x)&&x>0?x:0;
 const tolStr=(p,m)=>{p=nz(p);m=nz(m);return !p&&!m?'':p===m?`±${fx(p,3)}`:`+${fx(p,3)}/−${fx(m,3)}`};
 const QNOTES='1. ALL DIMENSIONS IN mm UNLESS STATED OTHERWISE.\n2. TOLERANCES AS SHOWN ON THE DIMENSIONS.\n3. REMOVE BURRS AND BREAK SHARP EDGES.';
 function quickdraw(v){
-  T3=null;LAST=null;let edited=false;
-  const num=(id,l,u='',val='')=>`<label>${l} <span class="mut">${u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}"></label>`;
+  T3=null;LAST=null;let edited=false,im=false;try{im=localStorage.getItem('vi4u_qd')==='i'}catch{}
+  const fq=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uu=()=>im?'in':'mm';
+  const num=(id,l,u='',val='',q='L')=>`<label>${l} <span class="mut" ${q&&u?'data-u="L"':''}>${q&&u?(im?'in':'mm'):u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${q?`data-q="${q}"`:''}></label>`;
   const txt=(id,l,val='',ph='')=>`<label>${l}<input id="${id}" value="${esc(val)}" placeholder="${esc(ph)}"></label>`;
   const today=new Date().toLocaleDateString(),dw=S.dw;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>QuickDraw</h1><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
   <form class="card" id="QF">
   <h2>Part</h2><div class="g2">${txt('qName','Part name / title','BEARING BUSH')}${txt('qMat','Material / grade','VESCONITE')}${txt('qDrg','Drawing number','','Auto')}${txt('qRev','Revision',dw.rev)}${txt('qCo','Company (when no logo)',dw.company)}${txt('qWho','Drawn by',(ME?.email||'').split('@')[0])}${txt('qDate','Date',today)}
   <label>Paper size<select id="qPaper"><option value="a3">A3</option><option value="a4" ${dw.paper==='a4'?'selected':''}>A4</option></select></label>
   <label>Scale<select id="qScale"><option value="0">Auto</option><option value="5">5:1</option><option value="2">2:1</option><option value="1">1:1</option><option value="0.5">1:2</option><option value="0.2">1:5</option><option value="0.1">1:10</option><option value="0.05">1:20</option></select></label></div>
-  <h2>Sizes <span class="mut" style="font:400 14px var(--f2)">mm, with tolerances</span></h2>
+  <h2>Sizes <span class="mut" style="font:400 14px var(--f2)"><span id="qhu">${im?'in':'mm'}</span>, with tolerances</span></h2>
   <div class="g2">${num('qOD','Outside diameter (OD)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qODp','OD tolerance +')}${num('qODm','OD tolerance −')}</div>
   ${num('qID','Inside diameter (ID)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qIDp','ID tolerance +')}${num('qIDm','ID tolerance −')}</div>
   ${num('qL','Length (overall)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qLp','Length tolerance +')}${num('qLm','Length tolerance −')}</div></div>
@@ -1032,7 +1064,7 @@ function quickdraw(v){
   <div class="g2">${num('qCh','OD chamfer size (0 = none)')}</div>
   <h2>Grooves <span class="mut" style="font:400 14px var(--f2)">optional</span></h2>
   <label>Groove type<select id="qG"><option value="none">None</option><option value="spiral">Spiral</option><option value="blind">Blind radial</option><option value="long">Longitudinal</option></select></label>
-  <div data-qg hidden><div class="g2">${num('qGn','Number of grooves')}${num('qGd','Groove depth','mm')}${num('qGr','Groove radius','mm')}<div data-qgt="spiral" hidden>${num('qGp','Spiral pitch','mm')}</div><div data-qgt="blind" hidden>${num('qGl','Groove length','mm')}</div></div>
+  <div data-qg hidden><div class="g2">${num('qGn','Number of grooves','','','')}${num('qGd','Groove depth','mm')}${num('qGr','Groove radius','mm')}<div data-qgt="spiral" hidden>${num('qGp','Spiral pitch','mm')}</div><div data-qgt="blind" hidden>${num('qGl','Groove length','mm')}</div></div>
   <div class="acts" style="margin-top:0"><button type="button" class="btn" id="qrec">Suggest from the manual's table</button></div></div>
   <details class="card" style="margin:14px 0"><summary class="btn">Edit dimension text</summary><p class="mut" style="margin:10px 0">Leave blank to use the text made from your sizes and tolerances.</p><div class="g2">${txt('qlOD','OD text')}${txt('qlID','ID text')}${txt('qlL','Length text')}${txt('qlFD','Flange OD text')}${txt('qlT','Flange length text')}${txt('qlW','Wall text')}${txt('qlCh','Chamfer note')}</div></details>
   <h2>Data table</h2><p class="mut" style="margin:0 0 6px">One row per line as LABEL | VALUE. It updates from your sizes until you edit it.</p><textarea id="qTab" rows="7"></textarea>
@@ -1041,7 +1073,9 @@ function quickdraw(v){
   <div style="margin-top:8px"><label class="ck"><input type="checkbox" id="qLg" ${dw.showLogo?'checked':''}>Show logo</label><label class="ck"><input type="checkbox" id="qSt" checked>Show data table</label><label class="ck"><input type="checkbox" id="qSn" checked>Show notes</label></div>
   </form><div id="QM"></div>
   <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. </p><p class="mut" id="qsn" style="margin:6px 0 0"></p></div>`;
-  const gv=id=>$('#'+id).value,gn=id=>parseFloat(gv(id));
+  const gv=id=>$('#'+id).value,gn=id=>{const e=$('#'+id),x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return x*25.4};
+  const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}if(e.dataset.q&&im){e.value=+(+x/25.4).toFixed(4);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
+  const tS=(p,m)=>{p=nz(p);m=nz(m);return !p&&!m?'':p===m?`±${fq(p,3)}`:`+${fq(p,3)}/−${fq(m,3)}`};
   let lastQ='none',autoQ=false;
   const gen=()=>{
     const fl0=gv('qFl')==='y',gt=gv('qG');
@@ -1051,35 +1085,37 @@ function quickdraw(v){
     if(OD<=ID)return stop('<p class="note bad">The outside diameter must be larger than the inside diameter.</p>');
     const w=(OD-ID)/2,fl={on:fl0,FD:gn('qFD'),T:gn('qT')};
     if(gt!==lastQ){lastQ=gt;autoQ=false}
-    if(gt!=='none'&&!autoQ){const rc=recGroove(gt,ID,w,L);if(rc){autoQ=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){$('#'+id).value=x;ch=true}};set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);if(ch)return gen()}}
+    if(gt!=='none'&&!autoQ){const rc=recGroove(gt,ID,w,L);if(rc){autoQ=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){put(id,x);ch=true}};set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);if(ch)return gen()}}
     if(fl0&&!(fl.FD>OD&&fl.T>0&&fl.T<L))return stop('<p class="note bad">For a flanged part, enter a flange OD larger than the OD and a flange length shorter than the overall length.</p>');
     const G={type:gt,n:gn('qGn'),d:gn('qGd'),r:gn('qGr'),pitch:gn('qGp'),len:gn('qGl')},gOK=gt==='none'||(G.n>0&&G.d>0&&G.r>0&&(gt!=='spiral'||G.pitch>0)&&(gt!=='blind'||G.len>0)),Gu=gOK?G:{type:'none'};
     const ch=nz(gn('qCh')),warn=[];
     if(gt!=='none'&&!gOK)warn.push('Enter the groove number, depth and radius (and pitch or length) to draw the grooves.');
-    if(gOK&&gt!=='none'&&G.d>=w/2)warn.push(`Groove depth ${fx(G.d)} mm is half the wall (${fx(w)} mm) or more.`);
+    if(gOK&&gt!=='none'&&G.d>=w/2)warn.push(`Groove depth ${fq(G.d)} ${uu()} is half the wall (${fq(w)} ${uu()}) or more.`);
     if(ch>0&&ch>=w)warn.push('The chamfer is as large as the wall thickness.');
     M.innerHTML=warn.map(t=>`<p class="note warn">⚠ ${esc(t)}</p>`).join('');
-    const tx=(base,p,m,pre='')=>`${pre}${fx(base)}${tolStr(p,m)?' '+tolStr(p,m):''}`;
-    const lab={OD:gv('qlOD').trim()||tx(OD,gn('qODp'),gn('qODm'),'Ø'),ID:gv('qlID').trim()||tx(ID,gn('qIDp'),gn('qIDm'),'Ø'),L:gv('qlL').trim()||tx(L,gn('qLp'),gn('qLm')),W:gv('qlW').trim()||`(${fx(w)})`,FD:gv('qlFD').trim()||tx(fl.FD,gn('qFDp'),gn('qFDm'),'Ø'),T:gv('qlT').trim()||tx(fl.T,gn('qTp'),gn('qTm'))};
-    const auto=[['OUTSIDE Ø',lab.OD.replace(/^Ø/,'')],['INSIDE Ø',lab.ID.replace(/^Ø/,'')],['LENGTH',lab.L],['WALL (REF)',fx(w)]];
+    const tx=(base,p,m,pre='')=>`${pre}${fq(base)}${tS(p,m)?' '+tS(p,m):''}`;
+    const lab={OD:gv('qlOD').trim()||tx(OD,gn('qODp'),gn('qODm'),'Ø'),ID:gv('qlID').trim()||tx(ID,gn('qIDp'),gn('qIDm'),'Ø'),L:gv('qlL').trim()||tx(L,gn('qLp'),gn('qLm')),W:gv('qlW').trim()||`(${fq(w)})`,FD:gv('qlFD').trim()||tx(fl.FD,gn('qFDp'),gn('qFDm'),'Ø'),T:gv('qlT').trim()||tx(fl.T,gn('qTp'),gn('qTm'))};
+    const auto=[['OUTSIDE Ø',lab.OD.replace(/^Ø/,'')],['INSIDE Ø',lab.ID.replace(/^Ø/,'')],['LENGTH',lab.L],['WALL (REF)',fq(w)]];
     if(fl0)auto.push(['FLANGE Ø',lab.FD.replace(/^Ø/,'')],['FLANGE LENGTH',lab.T]);
-    if(ch>0)auto.push(['OD CHAMFER',fx(ch,2)]);
-    if(Gu.type!=='none'){auto.push(['GROOVE TYPE',GTYPES[gt]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fx(G.d)],['GROOVE RADIUS',fx(G.r)],['GROOVE WIDTH',fx(grooveWidth(G.d,G.r))]);if(gt==='spiral')auto.push(['SPIRAL PITCH',fx(G.pitch)]);if(gt==='blind')auto.push(['GROOVE LENGTH',fx(G.len)])}
+    if(ch>0)auto.push(['OD CHAMFER',fq(ch,2)]);
+    if(Gu.type!=='none'){auto.push(['GROOVE TYPE',GTYPES[gt]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fq(G.d)],['GROOVE RADIUS',fq(G.r)],['GROOVE WIDTH',fq(grooveWidth(G.d,G.r))]);if(gt==='spiral')auto.push(['SPIRAL PITCH',fq(G.pitch)]);if(gt==='blind')auto.push(['GROOVE LENGTH',fq(G.len)])}
     if(!edited)$('#qTab').value=auto.map(r=>r.join(' | ')).join('\n');
     const table=gv('qTab').split('\n').map(l=>l.trim()).filter(Boolean).slice(0,20).map(l=>{const k=l.indexOf('|');return k<0?[l,'']:[l.slice(0,k).trim(),l.slice(k+1).trim()]});
     const name=gv('qName').trim()||'BEARING BUSH',mat=gv('qMat').trim()||'—',date=gv('qDate'),
       drg=gv('qDrg').trim()||`QD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`,
       dwq={...S.dw,company:gv('qCo'),rev:gv('qRev'),paper:gv('qPaper'),showLogo:$('#qLg').checked,fit:$('#qSt').checked,notes:$('#qSn').checked,noteText:gv('qNotes')},
       logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
-    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fx(ch,2)} × 45° CHAMFER`:'')}})};
-    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file contains: the bush body'+(fl0?', flange':'')+(ch>0?', chamfer':'')+(Gu.type!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
+    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fq(ch,2)} × 45° CHAMFER`:'')},imp:im})};
+    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file (always in millimetres) contains: the bush body'+(fl0?', flange':'')+(ch>0?', chamfer':'')+(Gu.type!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
   };
   if(!S.dw.logo&&!window.__rl)repoLogo().then(r=>{if(r){window.__rl=r;gen()}});
   $('#QF').onsubmit=e=>e.preventDefault();
   $('#qTab').addEventListener('input',e=>{if(e.isTrusted)edited=true});
   $('#qtr').onclick=()=>{edited=false;gen()};
-  $('#qstd').onclick=()=>{const OD=gn('qOD'),ID=gn('qID'),L=gn('qL'),set=(id,x)=>{$('#'+id).value=x?+x.toFixed(3):''};if(OD>0){set('qODp',tol(OD,.1,.025));set('qODm',tol(OD,.1,.025))}if(ID>0){set('qIDp',tol(ID,.1,.025));set('qIDm',tol(ID,.1,.025))}if(L>0){set('qLp',0);set('qLm',tol(L,.5,.3))}gen()};
-  $('#qrec').onclick=()=>{const ID=gn('qID'),OD=gn('qOD'),L=gn('qL'),gt=gv('qG'),rc=ID>0&&OD>ID?recGroove(gt,ID,(OD-ID)/2,L):null;if(!rc){alert('Enter the OD, ID and length first. The manual\'s groove table covers shaft diameters of 20–200 mm.');return}const set=(id,x)=>{$('#'+id).value=x!=null?x:''};set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);gen()};
+  $('#qstd').onclick=()=>{const OD=gn('qOD'),ID=gn('qID'),L=gn('qL'),set=(id,x)=>put(id,x?+x.toFixed(3):null);if(OD>0){set('qODp',tol(OD,.1,.025));set('qODm',tol(OD,.1,.025))}if(ID>0){set('qIDp',tol(ID,.1,.025));set('qIDm',tol(ID,.1,.025))}if(L>0){set('qLp',0);set('qLm',tol(L,.5,.3))}gen()};
+  $('#qrec').onclick=()=>{const ID=gn('qID'),OD=gn('qOD'),L=gn('qL'),gt=gv('qG'),rc=ID>0&&OD>ID?recGroove(gt,ID,(OD-ID)/2,L):null;if(!rc){alert('Enter the OD, ID and length first. The manual\'s groove table covers shaft diameters of 20–200 mm.');return}const set=(id,x)=>put(id,x);set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);gen()};
+  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#QF input[data-q]').map(e=>[e.id,e.value===''?null:gn(e.id)]);im=ni;try{localStorage.setItem('vi4u_qd',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#QF [data-u]').forEach(x=>x.textContent=im?'in':'mm');$('#qhu').textContent=im?'in':'mm';$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));gen()};
+  $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
   $('#qx').onclick=openDrawing;$('#qp').onclick=e=>pdfStep(e.currentTarget);$('#qs').onclick=()=>deliver(svgBlob(),LAST.drg+'.svg');$('#qstp').onclick=stepDownload;
   $$('#QF input,#QF select,#QF textarea').forEach(i=>{i.addEventListener('input',gen);i.addEventListener('change',gen)});gen();
 }
@@ -1123,14 +1159,14 @@ async function admin(v){
   $('#AF').addEventListener('input',()=>apply(read()));
   $$('[data-p]').forEach(b=>b.onclick=()=>{const p=PRE[+b.dataset.p];$('[name=pri]').value=p[1];$('[name=amb]').value=p[2];$('[name=pdfAcc]').value=p[2];apply(read())});
   $('#AF').onsubmit=async e=>{e.preventDefault();try{const n=read();await setDoc(dc('settings','app'),clean(n));log('Changed settings');S=n;try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}apply(S);alert('Settings saved for everyone.')}catch(x){alert('Could not save: '+x.message)}};
-  const loadTeam=()=>getDocs(col('members')).then(q=>{$('#tm').innerHTML=q.docs.map(d=>{const m=d.data();return `<label class="ck"><span class="em">${esc(m.email)}</span><select data-u="${d.id}" data-e="${esc(m.email)}" data-r="${m.role}" ${d.id===ME.uid?'disabled':''}>${['pending','viewer','editor','admin'].map(r=>`<option ${r===m.role?'selected':''}>${r}</option>`).join('')}</select>${d.id===ME.uid?'':`<button type="button" class="btn bad" data-rm="${d.id}" data-e="${esc(m.email)}" style="min-height:34px;padding:0 10px;margin-left:8px">Remove</button>`}</label>`}).join('');$$('#tm [data-rm]').forEach(b=>b.onclick=async()=>{if(!confirm(`Remove ${b.dataset.e}? They lose access to the app. To delete their sign-in completely, also remove them in Firebase > Authentication > Users.`))return;try{await deleteDoc(dc('members',b.dataset.rm));log('Removed user',b.dataset.e);loadTeam();notifCheck()}catch(x){alert(x.message)}});$$('#tm select').forEach(s=>s.onchange=async()=>{try{await updateDoc(dc('members',s.dataset.u),{role:s.value});log('Changed role',s.dataset.e,`${s.dataset.r} → ${s.value}`);s.dataset.r=s.value}catch(x){alert(x.message)}})}).catch(x=>{$('#tm').textContent=x.message});loadTeam();
+  const loadTeam=()=>getDocs(col('members')).then(q=>{$('#tm').innerHTML=q.docs.map(d=>{const m=d.data();return `<label class="ck"><span class="em">${m.name?`<b>${esc(m.name)}</b> `:''}${esc(m.email)} <button type="button" class="lnk" data-nm="${d.id}" data-n="${esc(m.name||'')}">${m.name?'rename':'add name'}</button></span><select data-u="${d.id}" data-e="${esc(m.email)}" data-r="${m.role}" ${d.id===ME.uid?'disabled':''}>${['pending','viewer','editor','admin'].map(r=>`<option ${r===m.role?'selected':''}>${r}</option>`).join('')}</select>${d.id===ME.uid?'':`<button type="button" class="btn bad" data-rm="${d.id}" data-e="${esc(m.email)}" style="min-height:34px;padding:0 10px;margin-left:8px">Remove</button>`}</label>`}).join('');$$('#tm [data-rm]').forEach(b=>b.onclick=async()=>{if(!confirm(`Remove ${b.dataset.e}? They lose access to the app. To delete their sign-in completely, also remove them in Firebase > Authentication > Users.`))return;try{await deleteDoc(dc('members',b.dataset.rm));log('Removed user',b.dataset.e);loadTeam();notifCheck()}catch(x){alert(x.message)}});$$('#tm [data-nm]').forEach(b=>b.onclick=async()=>{const n=prompt('Name for this person:',b.dataset.n);if(n===null)return;try{await updateDoc(dc('members',b.dataset.nm),{name:n.trim().slice(0,60)});if(b.dataset.nm===ME.uid){MYN=n.trim();cacheSave()}loadTeam()}catch(x){alert(x.message)}});$$('#tm select').forEach(s=>s.onchange=async()=>{try{await updateDoc(dc('members',s.dataset.u),{role:s.value});log('Changed role',s.dataset.e,`${s.dataset.r} → ${s.value}`);s.dataset.r=s.value}catch(x){alert(x.message)}})}).catch(x=>{$('#tm').textContent=x.message});loadTeam();
   let ACT=[],lim=100;const prevSeen=localStorage.getItem('vi4seen')||'';
   const fmt=t=>{const d=new Date(t);return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
   const drawAct=()=>{const f=$('#alf').value.toLowerCase(),l=ACT.filter(x=>!f||[x.email,x.action,x.target,x.detail].join(' ').toLowerCase().includes(f));
-    $('#ALL').innerHTML=l.length?l.map(x=>`<div class="lr${x.t>prevSeen&&x.uid!==ME.uid?' nw':''}"><b>${esc(x.action)}${x.target?': '+esc(x.target):''}</b><small>${esc((x.email||'').split('@')[0])} · ${fmt(x.t)}${x.detail?' · '+esc(x.detail):''}</small></div>`).join(''):'<p class="empty">No activity yet.</p>'};
+    $('#ALL').innerHTML=l.length?l.map(x=>`<div class="lr${x.t>prevSeen&&x.uid!==ME.uid?' nw':''}"><b>${esc(x.action)}${x.target?': '+esc(x.target):''}</b><small>${esc(x.name||(x.email||'').split('@')[0])} · ${fmt(x.t)}${x.detail?' · '+esc(x.detail):''}</small></div>`).join(''):'<p class="empty">No activity yet.</p>'};
   const loadAct=async()=>{try{const q=await getDocs(query(col('activity'),orderBy('t','desc'),limit(lim)));ACT=q.docs.map(d=>({id:d.id,...d.data()}));drawAct();return true}catch(x){$('#ALL').innerHTML=`<p class="note bad">Could not load the log: ${esc(x.message)} Publish the latest firestore.rules in Firebase.</p>`;return false}};
   const drawNotif=async()=>{try{const m=await getDocs(col('members')),pend=m.docs.filter(d=>d.data().role==='pending'),nw=ACT.filter(x=>x.t>prevSeen&&x.uid!==ME.uid).length;
-    $('#NT').innerHTML=`<h2>Notifications</h2>${pend.length?pend.map(d=>`<div class="nrow"><span><b>${esc(d.data().email)}</b><small class="mut" style="display:block">is waiting for access</small></span><button type="button" class="btn" data-ap="${d.id}:viewer">Viewer</button><button type="button" class="btn" data-ap="${d.id}:editor">Editor</button></div>`).join(''):'<p class="mut">Nobody is waiting for access.</p>'}<p style="margin:12px 0 0">${nw?`<b>${nw}</b> change${nw>1?'s':''} by other people since your last visit, highlighted in the log below.`:'No new changes by other people since your last visit.'}</p>`;
+    $('#NT').innerHTML=`<h2>Notifications</h2>${pend.length?pend.map(d=>`<div class="nrow"><span><b>${esc(d.data().name||d.data().email)}</b><small class="mut" style="display:block">${d.data().name?esc(d.data().email)+' · ':''}is waiting for access</small></span><button type="button" class="btn" data-ap="${d.id}:viewer">Viewer</button><button type="button" class="btn" data-ap="${d.id}:editor">Editor</button></div>`).join(''):'<p class="mut">Nobody is waiting for access.</p>'}<p style="margin:12px 0 0">${nw?`<b>${nw}</b> change${nw>1?'s':''} by other people since your last visit, highlighted in the log below.`:'No new changes by other people since your last visit.'}</p>`;
     $$('[data-ap]').forEach(b=>b.onclick=async()=>{const[u,r]=b.dataset.ap.split(':');try{await updateDoc(dc('members',u),{role:r});log('Approved user',pend.find(x=>x.id===u).data().email,r);drawNotif();loadTeam();notifCheck();setTimeout(loadAct,500)}catch(x){alert(x.message)}})}catch(x){$('#NT').innerHTML=`<h2>Notifications</h2><p class="note bad">${esc(x.message)}</p>`}};
   $('#alf').oninput=drawAct;$('#alm').onclick=()=>{lim+=100;loadAct()};
   $('#alc').onclick=async()=>{if(ACT.length&&confirm(`Delete the ${ACT.length} activity entries shown?`)){try{await Promise.all(ACT.map(x=>deleteDoc(dc('activity',x.id))));await loadAct();drawNotif()}catch(x){alert(x.message)}}};
@@ -1155,10 +1191,12 @@ const splOff=()=>{const s=$('#spl');if(!s||s.dataset.x)return;s.dataset.x=1;setT
 function render(){
   const[p='',id]=location.hash.slice(2).split('/'),v=$('#v');
   if(!ready&&p!=='share')return;splOff();
-  apply(S);document.body.classList.toggle('bare',p==='share'||!ME||ROLE==='pending');
+  apply(S);document.body.classList.toggle('bare',p==='share'||!ME||['pending','verify','blocked'].includes(ROLE));
   $('#ad').hidden=!(ME&&can('del'));
   if(p==='share')return share(v,id);
   if(!ME)return login(v);
+  if(ROLE==='verify')return verify(v);
+  if(ROLE==='blocked')return blocked(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
   const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,admin};
   (m[p]||home)(v,id);
@@ -1168,14 +1206,23 @@ function render(){
 const soft=()=>{const p=location.hash.slice(2).split('/')[0];if(['','library','oem','insights'].includes(p))render()};
 async function refresh(u){
   const[m0]=await Promise.all([getDoc(dc('members',u.uid)),load().catch(()=>0)]);let m=m0;
-  if(!m.exists()){const rec={email:(u.email||'').toLowerCase()};try{await setDoc(dc('members',u.uid),{...rec,role:'admin'})}catch{await setDoc(dc('members',u.uid),{...rec,role:'pending'})}m=await getDoc(dc('members',u.uid));await load().catch(()=>0)}
-  ROLE=m.data().role;if(!OKR.includes(ROLE)){A=[];O=[]}cacheSave();
+  if(!m.exists()){
+    let nm=u.displayName||'';try{nm=localStorage.getItem('vi4pn')||nm}catch{}
+    const rec={email:(u.email||'').toLowerCase(),name:nm};let made=false;
+    try{await setDoc(dc('members',u.uid),{...rec,role:'admin'});made=true}catch{}
+    if(!made){
+      if(!okDomain(u.email)){ROLE='blocked';MYN='';return}
+      if(!u.emailVerified){ROLE='verify';MYN='';return}
+      await setDoc(dc('members',u.uid),{...rec,role:'pending'});notifyAdmin(u,nm);try{localStorage.removeItem('vi4pn')}catch{}
+    }
+    m=await getDoc(dc('members',u.uid));await load().catch(()=>0)}
+  MYN=m.data().name||'';ROLE=m.data().role;if(!OKR.includes(ROLE)){A=[];O=[]}cacheSave();
 }
 async function boot(u){
   ME=u;
   if(!u){ROLE=null;A=[];O=[];try{localStorage.removeItem('vi4d')}catch{}ready=true;render();return}
   const c=cacheGet();
-  if(c&&c.uid===u.uid&&OKR.includes(c.role)){ROLE=c.role;A=c.A||[];O=c.O||[];ready=true;render();notifCheck();refresh(u).then(()=>{soft();notifCheck()}).catch(()=>{});return}   /* show cached data instantly, refresh in the background */
+  if(c&&c.uid===u.uid&&OKR.includes(c.role)){ROLE=c.role;MYN=c.nm||'';A=c.A||[];O=c.O||[];ready=true;render();notifCheck();refresh(u).then(()=>{soft();notifCheck()}).catch(()=>{});return}   /* show cached data instantly, refresh in the background */
   ROLE=null;await refresh(u);ready=true;render();notifCheck();
 }
 addEventListener('hashchange',render);

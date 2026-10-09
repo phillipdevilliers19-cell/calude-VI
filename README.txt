@@ -1,3 +1,14 @@
+NEW IN THIS UPDATE
+- Sign-up is limited to @vesconite.com and @vesconite.co.za. New people verify their email (link sent by Firebase), then an admin approves them. The Firestore rules enforce this too, so REPUBLISH firestore.rules (replace ADMIN_EMAIL with your lowercase admin email again).
+- Sign in / Create account show a spinner while working. "Forgot password?" sends a reset email.
+- Names: asked at sign-up, editable in Tools > Account, shown in the team list, leaderboard, insights and activity log. Admins can add or rename anyone in Admin > Team.
+- QuickDraw has a metric / imperial toggle (STEP files stay in mm).
+- ADMIN EMAIL ALERT when someone signs up (free, takes 5 minutes):
+  1. Make a free account at emailjs.com, add an Email Service (Gmail or Outlook) and note the Service ID.
+  2. Create an Email Template. Set "To Email" to the admin address(es). Subject: New Vesco Intelligence sign-up. Body can use {{name}}, {{email}}, {{when}} and {{link}}. Note the Template ID.
+  3. In Account > General copy your Public Key. In Account > Security, restrict allowed domains to your GitHub Pages address.
+  4. Put the three values into config.js (service, template, key) and upload it. Leave them blank to switch the alert off.
+
 LATEST CHANGES
 - Drawings: OD and ID now say "OD" / "ID", the wall dimension says "WALL", and the data table lists OD, ID and wall thickness with tolerances. The centre line no longer runs through the OD text.
 - Each Design a bearing calculator now remembers its own units (metric or imperial) separately.
