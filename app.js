@@ -89,6 +89,149 @@ function home(v){
   <div class="stats"><div><b>${A.length}</b><span>applications</span></div><div><b>${new Set(A.map(a=>a.industry)).size}</b><span>industries</span></div><div><b>${A.reduce((n,a)=>n+a.photos.length,0)}</b><span>photos</span></div></div>
   ${A.length?charts():''}<h2>Needs evidence</h2>${need.length?`<div class="list">${need.map(row).join('')}</div>`:`<p class="empty">${A.length?'Every record has a result and a photo.':'Nothing captured yet. Start with your best-known installation.'}</p>`}
   ${A.length?`<h2>Recent</h2><div class="list">${A.slice(0,3).map(row).join('')}</div>`:''}`;
+  eggTap(v);
+}
+/* ---------- Easter egg: Bush Hop. Click the industries counter on Home 7 times in a row. ---------- */
+function playBush(){
+  if(document.getElementById('bgame'))return;
+  const root=document.createElement('div');root.id='bgame';
+  root.innerHTML='<canvas></canvas><button class="bgx" aria-label="Close">✕</button><button class="bgm" aria-label="Sound"></button>';
+  document.body.appendChild(root);
+  const cv=root.querySelector('canvas'),x=cv.getContext('2d'),bm=root.querySelector('.bgm');
+  const PW=54,FL=44,GRAV=1500,HOP=-450;
+  let cw=0,ch=0,sc=1,W=420,ox=0,dpr=Math.min(devicePixelRatio||1,2),raf=0,last=0,t=0,alive=true;
+  const fit=()=>{cw=innerWidth;ch=innerHeight;cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);sc=ch/640;W=Math.min(cw/sc,440);ox=(cw/sc-W)/2};
+  fit();addEventListener('resize',fit);
+  /* sprite: the Hilube bush from the refresh icon */
+  const notch=Array.from({length:6},(_,k)=>{const a=(90+k*60)*Math.PI/180;return `<circle cx="${(30+16*Math.cos(a)).toFixed(2)}" cy="${(20+5.1*Math.sin(a)).toFixed(2)}" r="1.9" fill="#2a2e33"/>`}).join('');
+  const lines=[210,250,290,330].map(a=>{const r=a*Math.PI/180,px=(30+16*Math.cos(r)).toFixed(2),py=(20+5.1*Math.sin(r)).toFixed(2);return `<line x1="${px}" y1="${py}" x2="${px}" y2="${(+py+11).toFixed(2)}" stroke="#555b63" stroke-width="1.6"/>`}).join('');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 84" width="120" height="168"><defs><linearGradient id="a" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="c"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#a)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#b)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#c)">${lines}</g>${notch}</svg>`;
+  const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  /* sound */
+  let ac=null,mute=false;try{mute=localStorage.getItem('vi4gm')==='1'}catch{}
+  const icon=()=>{bm.textContent=mute?'🔇':'🔊'};icon();
+  const beep=(f,d,ty='square',v=.05,f2,dl=0)=>{if(mute)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const s=ac.currentTime+dl,o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f,s);if(f2)o.frequency.exponentialRampToValueAtTime(f2,s+d);g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+d)}catch{}};
+  const buzz=n=>{try{navigator.vibrate&&navigator.vibrate(n)}catch{}};
+  /* state */
+  let best=0;try{best=+localStorage.getItem('vi4g')||0}catch{}
+  const B={x:96,y:300,vy:0,rot:0,sq:0,spin:0};
+  let st='idle',pipes=[],coins=[],parts=[],pops=[],score=0,cn=0,shield=false,inv=0,shake=0,flash=0,floorX=0,deadT=0,deadMsg='',newBest=false,combo=0,gap=200,speed=150,sky=0,since=0,star=[];
+  for(let i=0;i<40;i++)star.push([Math.random()*440,Math.random()*300,Math.random()*1.6+.4,Math.random()*6]);
+  const bld=[];for(let i=0,px=0;i<40;i++){const w=44+Math.random()*50,h=60+Math.random()*130;bld.push({x:px,w,h,st:Math.random()<.3,l:Math.random()});px+=w+4}
+  const bw=bld[bld.length-1].x+bld[bld.length-1].w+4;
+  const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),mix=(a,b,k)=>{const A=hex(a),Bb=hex(b);return `rgb(${A.map((v,i)=>Math.round(v+(Bb[i]-v)*k)).join(',')})`};
+  const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const puff=(px,py,n,cols,sp=120,life=.6,r=3)=>{for(let i=0;i<n;i++){const a=Math.random()*6.283,s=Math.random()*sp;parts.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,l:rnd(.5,1)*life,m:life,c:cols[i%cols.length],r:rnd(r*.6,r*1.4),g:300})}};
+  const pop=(txt,px,py,c='#fff')=>pops.push({txt,x:px,y:py,l:1,c});
+  const reset=()=>{pipes=[];coins=[];parts=[];pops=[];score=0;cn=0;shield=false;inv=0;shake=0;combo=0;B.y=300;B.vy=0;B.rot=0;B.spin=0;newBest=false;since=0;st='idle'};
+  const addPipe=px=>{const prev=pipes[pipes.length-1],lo=gap/2+70,hi=640-FL-gap/2-60;let gy=rnd(lo,hi);if(prev)gy=clamp(gy,prev.gy-150,prev.gy+150);gy=clamp(gy,lo,hi);const mv=score>=8&&Math.random()<.55;pipes.push({x:px,gy,mv,ph:rnd(0,6),amp:mv?Math.min(48,10+score*1.4):0,pass:false,cy:gy});if(Math.random()<.65)coins.push({p:pipes[pipes.length-1],t:rnd(0,6),got:false})};
+  const medal=s=>s>=100?['HILUBE LEGEND','#7fd0ff']:s>=50?['GOLD','#ffd23f']:s>=25?['SILVER','#d6dde3']:s>=10?['BRONZE','#d98a4a']:null;
+  const MS={5:'Smooth running!',10:'Low friction!',15:'No wear here!',20:'Self-lubricating!',30:'Hilube hero!',40:'Zero maintenance!',50:'Unstoppable bush!',75:'Bearing royalty!',100:'LEGEND!'};
+  const flap=()=>{
+    if(st==='dead'){if(t-deadT>.75){reset();flap()}return}
+    if(st==='idle'){st='run';addPipe(W+130)}
+    B.vy=HOP;B.sq=1;puff(B.x,B.y+26,7,['#fffaf0','#e8dfc6','#cfd6dc'],90,.45,3);beep(420,.12,'square',.05,700);buzz(6);
+  };
+  const die=()=>{
+    if(inv>0)return;
+    if(shield){shield=false;inv=1.4;shake=.25;flash=.5;B.vy=HOP*.8;puff(B.x,B.y,22,['#7fd0ff','#fff','#b6e6ff'],220,.7,4);pop('SHIELD POP!',B.x,B.y-40,'#7fd0ff');beep(300,.25,'sawtooth',.08,120);buzz(30);return}
+    st='dead';deadT=t;shake=.5;flash=.8;B.vy=-280;B.spin=rnd(-9,9);buzz([40,40,80]);beep(180,.4,'sawtooth',.11,40);
+    puff(B.x,B.y,26,['#fffaf0','#c6bca0','#3a50b4','#23272c'],300,.9,4);
+    deadMsg=['Seized!','Needs more grease!','Out of tolerance!','Shaft happens!','Bush-ted!','Wear and tear!'][Math.floor(Math.random()*6)];
+    if(score>best){best=score;newBest=score>0;try{localStorage.setItem('vi4g',String(best))}catch{}}
+  };
+  const update=dt=>{
+    t+=dt;sky+=(Math.min(score/40,1)*2-sky)*Math.min(1,dt*1.5);
+    speed=150+Math.min(score,45)*2.4;gap=Math.max(148,205-score*1.3);
+    const dead=st==='dead';
+    if(st==='idle'){B.y=300+Math.sin(t*3.2)*9;B.rot=Math.sin(t*3.2)*.08;floorX=(floorX+speed*.6*dt)%48}
+    else{
+      B.vy+=GRAV*dt;B.y+=B.vy*dt;
+      if(dead){B.rot+=B.spin*dt}else{B.rot+=(clamp(B.vy/650,-.55,1.1)-B.rot)*Math.min(1,dt*10);floorX=(floorX+speed*dt)%48}
+      if(B.y<26&&!dead){B.y=26;B.vy=Math.max(B.vy,0)}
+      if(B.y>640-FL-26){B.y=640-FL-26;if(!dead){die();if(st==='dead'){B.vy=-220}}else{B.vy=0;B.spin*=.8}}
+      if(!dead){
+        const sp=speed*dt;pipes.forEach(p=>{p.x-=sp;p.cy=p.gy+(p.mv?Math.sin(t*1.7+p.ph)*p.amp:0)});
+        if(pipes.length&&pipes[0].x<-PW-30)pipes.shift();coins=coins.filter(c=>c.p.x>-60&&!c.got);
+        const lp=pipes[pipes.length-1];if(!lp||lp.x<W-(235+Math.min(score,30)))addPipe(W+60);
+        if(inv>0)inv-=dt;
+        const hx=B.x-13,hy=B.y-21,hw=26,hh=42;
+        for(const p of pipes){
+          if(!p.pass&&p.x+PW<B.x-10){p.pass=true;score++;beep(880,.09,'triangle',.07,1250);pop('+1',B.x+30,B.y-30);
+            if(MS[score]){pop(MS[score],W/2,200,'#ffd23f');flash=.35;buzz(25);for(let i=0;i<40;i++)parts.push({x:W/2+rnd(-30,30),y:210,vx:rnd(-260,260),vy:rnd(-380,-60),l:rnd(.8,1.5),m:1.5,c:['#ffd23f','#35b34a','#7fd0ff','#ff6b6b','#fff'][i%5],r:rnd(2,4.5),g:520});[0,.1,.2].forEach((d,i)=>beep(520+i*180,.18,'triangle',.07,undefined,d))}}
+          const top=p.cy-gap/2,bot=p.cy+gap/2,hit=(rx,ry,rw,rh)=>hx<rx+rw&&hx+hw>rx&&hy<ry+rh&&hy+hh>ry;
+          if(hit(p.x,0,PW,top-22)||hit(p.x-8,top-22,PW+16,22)||hit(p.x-8,bot,PW+16,22)||hit(p.x,bot+22,PW,640)){die();break}}
+        if(st!=='dead')for(const c of coins){const cx=c.p.x+PW/2,cy=c.p.cy;if(!c.got&&Math.hypot(B.x-cx,B.y-cy)<30){c.got=true;cn++;combo++;beep(1046,.07,'square',.05);beep(1568,.12,'square',.05,undefined,.07);puff(cx,cy,12,['#35b34a','#b6f0bf','#fff'],170,.55,3);pop(combo>1?`+1 x${combo}`:'+1',cx,cy-20,'#8ff0a4');
+          if(cn%5===0&&!shield){shield=true;pop('SHIELD READY!',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
+      }
+    }
+    for(const p of parts){p.l-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.l>0);
+    for(const p of pops){p.l-=dt*.8;p.y-=40*dt}pops=pops.filter(p=>p.l>0);
+    B.sq=Math.max(0,B.sq-dt*4.5);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt*1.6);
+    if(shield&&Math.random()<.5)parts.push({x:B.x+rnd(-18,18),y:B.y+rnd(-24,24),vx:rnd(-20,20),vy:rnd(-30,10),l:.5,m:.5,c:'#9edcff',r:2,g:0});
+  };
+  const roundRect=(px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath()};
+  const text=(s,px,py,size,col='#fff',al='center',lw=5)=>{x.font=`800 ${size}px system-ui,-apple-system,Segoe UI,sans-serif`;x.textAlign=al;x.lineJoin='round';x.lineWidth=lw;x.strokeStyle='rgba(8,20,32,.85)';x.strokeText(s,px,py);x.fillStyle=col;x.fillText(s,px,py)};
+  const draw=()=>{
+    x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#050a10';x.fillRect(0,0,cw,ch);
+    x.setTransform(dpr*sc,0,0,dpr*sc,ox*sc*dpr,0);
+    const sx=shake>0?rnd(-1,1)*shake*26:0,sy=shake>0?rnd(-1,1)*shake*26:0;x.save();x.translate(sx,sy);
+    x.beginPath();x.rect(-30,-30,W+60,700);x.clip();
+    const p1=Math.min(sky,1),p2=Math.max(0,sky-1),top=sky<1?mix('#5fc3e6','#5b3f8c',p1):mix('#5b3f8c','#070b22',p2),bot=sky<1?mix('#e8f6fa','#f4a261',p1):mix('#f4a261','#243a73',p2);
+    const g=x.createLinearGradient(0,0,0,640);g.addColorStop(0,top);g.addColorStop(1,bot);x.fillStyle=g;x.fillRect(-30,-30,W+60,700);
+    const night=Math.max(0,sky-1.05);
+    if(night>0){x.globalAlpha=night;star.forEach(s=>{x.globalAlpha=night*(.5+.5*Math.sin(t*2+s[3]));x.fillStyle='#fff';x.fillRect(s[0]%W,s[1],s[2],s[2])});x.globalAlpha=1}
+    /* sun / moon */
+    const sunY=120+sky*95;x.fillStyle=sky>1.4?'#f4f0d8':sky>.8?'#ffd9a0':'#fff6c8';x.beginPath();x.arc(W*.78,sunY,28,0,6.283);x.fill();
+    /* skyline */
+    const off=(t*speed*.18)%bw,bc=mix('#3d6577','#0a1030',Math.min(sky/2,1));
+    for(let rep=-1;rep<2;rep++)for(const b of bld){const bx=b.x-off+rep*bw;if(bx>W+10||bx+b.w<-10)continue;x.fillStyle=bc;x.fillRect(bx,640-FL-b.h,b.w,b.h);
+      if(b.st){x.fillRect(bx+b.w*.65,640-FL-b.h-34,10,36);if(st!=='dead'||true)for(let k=0;k<3;k++){const pt=(t*.5+k*.33+b.l)%1;x.globalAlpha=.4*(1-pt);x.fillStyle='#e8eef2';x.beginPath();x.arc(bx+b.w*.65+5+pt*18,640-FL-b.h-34-pt*46,5+pt*9,0,6.283);x.fill()}x.globalAlpha=1}
+      if(night>0){x.fillStyle='#ffd77a';x.globalAlpha=night*.8;for(let wy=640-FL-b.h+10;wy<640-FL-14;wy+=18)for(let wx=bx+7;wx<bx+b.w-9;wx+=14)if(((wx*7+wy*3+b.l*50)|0)%3)x.fillRect(wx,wy,5,7);x.globalAlpha=1}}
+    /* shafts */
+    for(const p of pipes){const top=p.cy-gap/2,bot=p.cy+gap/2;
+      const rod=(y0,y1)=>{const gr=x.createLinearGradient(p.x,0,p.x+PW,0);gr.addColorStop(0,'#58626b');gr.addColorStop(.3,'#dfe4e8');gr.addColorStop(.55,'#a4aeb7');gr.addColorStop(1,'#4d565f');x.fillStyle=gr;x.fillRect(p.x,y0,PW,y1-y0);x.fillStyle='rgba(255,255,255,.18)';for(let yy=y0+10-(y0%36);yy<y1;yy+=36)if(yy>y0)x.fillRect(p.x,yy,PW,2)};
+      const collar=cy=>{const gr=x.createLinearGradient(p.x-8,0,p.x+PW+8,0);gr.addColorStop(0,'#3d464e');gr.addColorStop(.35,'#c3cbd2');gr.addColorStop(1,'#39424a');x.fillStyle=gr;roundRect(p.x-8,cy,PW+16,22,4);x.fill();x.fillStyle='#35b34a';x.fillRect(p.x-8,cy+8,PW+16,6);x.fillStyle='rgba(0,0,0,.35)';[p.x-2,p.x+PW+2].forEach(bx=>{x.beginPath();x.arc(bx,cy+4,1.6,0,6.283);x.arc(bx,cy+18,1.6,0,6.283);x.fill()})};
+      rod(-10,top-22);collar(top-22);rod(bot+22,640-FL);collar(bot)}
+    /* coins */
+    for(const c of coins){if(c.got)continue;const cx=c.p.x+PW/2,cy=c.p.cy+Math.sin(t*4+c.t)*4,sw=Math.abs(Math.cos(t*3+c.t))*.8+.2;x.save();x.translate(cx,cy);x.scale(sw,1);x.fillStyle='#1f8f36';x.beginPath();x.arc(0,0,13,0,6.283);x.fill();x.fillStyle='#35b34a';x.beginPath();x.arc(0,0,10.5,0,6.283);x.fill();x.restore();x.fillStyle='#fff';x.font='800 12px system-ui,sans-serif';x.textAlign='center';x.fillText('V',cx,cy+4)}
+    /* floor: hazard conveyor */
+    const fy=640-FL;x.fillStyle='#252c33';x.fillRect(-30,fy,W+60,FL+30);x.fillStyle='#ffc61a';for(let i=-2;i<W/24+3;i++){const bx=i*48-floorX;x.beginPath();x.moveTo(bx,fy+6);x.lineTo(bx+24,fy+6);x.lineTo(bx+12,fy+26);x.lineTo(bx-12,fy+26);x.closePath();x.fill()}x.fillStyle='#10151a';x.fillRect(-30,fy,W+60,6);
+    /* particles */
+    for(const p of parts){x.globalAlpha=clamp(p.l/p.m,0,1);x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill()}x.globalAlpha=1;
+    /* bush */
+    if(!(inv>0&&Math.floor(t*16)%2)){x.save();x.translate(B.x,B.y);x.rotate(B.rot);x.scale(1-.2*B.sq,1+.26*B.sq);x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=10;x.shadowOffsetY=4;if(img.complete)x.drawImage(img,-21,-30,42,59);else{x.fillStyle='#fffaf0';x.fillRect(-16,-24,32,48)}x.restore();
+      if(shield){x.save();x.translate(B.x,B.y);const k=1+Math.sin(t*6)*.04;x.scale(k,k);const sg=x.createRadialGradient(0,0,18,0,0,40);sg.addColorStop(0,'rgba(127,208,255,.05)');sg.addColorStop(1,'rgba(127,208,255,.55)');x.fillStyle=sg;x.strokeStyle='rgba(200,236,255,.95)';x.lineWidth=2;x.beginPath();x.arc(0,0,38,0,6.283);x.fill();x.stroke();x.restore()}}
+    for(const p of pops){x.globalAlpha=clamp(p.l*1.4,0,1);text(p.txt,p.x,p.y,p.txt.length>6?22:20,p.c,'center',4)}x.globalAlpha=1;
+    if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.5})`;x.fillRect(-30,-30,W+60,700)}
+    x.restore();
+    /* HUD */
+    if(st!=='idle'){text(String(score),W/2,92,64,'#fff','center',8);
+      x.font='700 15px system-ui,sans-serif';x.textAlign='left';text(`Coins ${cn%5}/5`,14,625-FL+0,13,'#8ff0a4','left',3);if(shield)text('SHIELD ON',W-14,625-FL,13,'#7fd0ff','right',3);else{}
+      text(`Best ${best}`,W/2,122,14,'#fff','center',3)}
+    if(st==='idle'){text('BUSH HOP',W/2,150,50,'#ffd23f','center',8);text('Tap to hop. Dodge the shafts.',W/2,190,17,'#fff','center',4);text('Grab green coins. 5 coins = shield.',W/2,214,15,'#cfeeff','center',4);text(best?`Best ${best}`:'',W/2,246,18,'#fff','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('TAP TO START',W/2,420,24,'#fff','center',5);x.globalAlpha=1}
+    if(st==='dead'&&t-deadT>.5){const k=clamp((t-deadT-.5)*4,0,1);x.globalAlpha=k;x.fillStyle='rgba(8,20,32,.72)';roundRect(W/2-150,170,300,250,18);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=3;x.stroke();
+      text(deadMsg,W/2,214,28,'#ffd23f','center',5);text(String(score),W/2,292,66,'#fff','center',8);text(newBest?'NEW BEST!':`Best ${best}`,W/2,324,18,newBest?'#8ff0a4':'#cfeeff','center',4);
+      const m=medal(score);if(m)text(m[0],W/2,358,20,m[1],'center',4);else text('Reach 10 for bronze',W/2,358,15,'#aab8c4','center',3);
+      if(t-deadT>.75){x.globalAlpha=k*(.6+.4*Math.sin(t*5));text('TAP TO RETRY',W/2,402,20,'#fff','center',4)}x.globalAlpha=1}
+  };
+  const loop=ts=>{if(!alive)return;const dt=Math.min(.033,(ts-(last||ts))/1000||.016);last=ts;update(dt);draw();raf=requestAnimationFrame(loop)};
+  const close=()=>{alive=false;cancelAnimationFrame(raf);removeEventListener('resize',fit);removeEventListener('keydown',key);try{ac&&ac.close()}catch{}root.remove()};
+  const key=e=>{if(e.code==='Escape'){close()}else if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){e.preventDefault();if(!e.repeat)flap()}else if(e.code==='KeyM'){bm.click()}};
+  addEventListener('keydown',key);
+  root.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();flap()});
+  root.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+  root.querySelector('.bgx').onclick=close;
+  bm.onclick=()=>{mute=!mute;try{localStorage.setItem('vi4gm',mute?'1':'0')}catch{}icon();if(!mute)beep(660,.1,'triangle',.06)};
+  reset();raf=requestAnimationFrame(loop);
+}
+function eggTap(v){
+  const el=v.querySelector('.stats div:nth-child(2)');if(!el)return;let n=0,tm=0;
+  el.style.cursor='pointer';el.style.userSelect='none';el.style.webkitUserSelect='none';el.style.webkitTapHighlightColor='transparent';
+  el.addEventListener('click',e=>{e.stopPropagation();const now=Date.now();if(now-tm>1500)n=0;tm=now;n++;
+    const b=el.querySelector('b');if(b&&b.animate)b.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:140});
+    if(n>=7){n=0;try{navigator.vibrate&&navigator.vibrate([20,30,20])}catch{}playBush()}});
+  v.addEventListener('click',()=>{n=0});
 }
 const F={q:'',i:'',c:''};
 function library(v){
@@ -258,7 +401,7 @@ function portfolio(v){
 function tools(v){
   P=P.filter(id=>A.some(a=>a.id===id));
   v.innerHTML=`<h1>Tools</h1>
-  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Industrial bearing</strong><small>Size, fit, clearance, PV and tolerances</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a></section>':''}
+  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a></section>':''}
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><button class="btn" id="so">Sign out</button></section>`;
@@ -330,9 +473,9 @@ function grooveFn(G,rI){
 }
 const grooveWidth=(d,r)=>d>=r?2*r:2*Math.sqrt(2*r*d-d*d);
 /* Recommended groove from the manual's table (width, depth) for the shaft size; count, pitch and blind length are starting points. */
-function recGroove(type,D,wall,L){
-  const t=D>=20&&D<=200?GRV.find(x=>D<=x[0]):null;if(!t)return null;
-  const w=t[2];let d=t[3],lim=false;if(d>wall/2-0.3){d=Math.max(0.5,Math.floor((wall/2-0.3)*10)/10);lim=true}
+function recGroove(type,D,wall,L,mode){
+  const st=mode==='stern',t=st?(D>=60&&D<=800?GRS.find(x=>D<=x[0]):null):(D>=20&&D<=200?GRV.find(x=>D<=x[0]):null);if(!t)return null;
+  const fr=mode==='rud'?1/3:1/2,w=t[2];let d=t[3],lim=false;if(d>wall*fr-0.3){d=Math.max(0.5,Math.floor((wall*fr-0.3)*10)/10);lim=true}
   const r=+((w*w/4+d*d)/(2*d)).toFixed(2),o={n:t[1],d,r,q:t[4],lim,w};
   if(type==='spiral'){o.n=2;o.pitch=Math.round(L)}
   if(type==='blind')o.len=Math.round(L*0.6);
@@ -359,7 +502,7 @@ function init3(box){
   loop();return st;
 }
 function matTex(g){   /* plain material colours: Vesconite is grey, Hilube is whitish */
-  return g==='h'?{c:0xf4efe3,t:null,rough:.62}:{c:0x8c9095,t:null,rough:.7};
+  return g==="h"?{c:0xf4efe3,t:null,rough:.62}:{c:0x40454b,t:null,rough:.72};
 }
 function upd3(st,o){
   st.last=o;const g=st.grp;[...g.children].forEach(m=>{m.geometry.dispose();g.remove(m)});
@@ -408,12 +551,12 @@ function drawSVG(p){
   const idEnd=G.type==='none'?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>`:`<path class="k1" d="M${Array.from({length:720},(_,k)=>{const t=2*Math.PI*k/720,r=rI+gz(t,hh)*s;return n(cx1+r*Math.cos(t))+','+n(cy-r*Math.sin(t))}).join('L')}Z"/>`;
   const lab=q?q.lab:{OD:`Ø${fx(OD)} ±${fx(tOD,3)}`,ID:`Ø${fx(ID)} ±${fx(tID,3)}`,L:`${fx(L)} +0/−${fx(tL)}`,W:`${fx(w)} +0/−${fx(tW,3)}`,FD:`Ø${fx(fl.FD)}`,T:`${fx(fl.T)}`};
   const gw=G.type==='none'?0:grooveWidth(G.d,G.r);
-  const fit=[['HOUSING Ø',fx(H)],['SHAFT Ø',fx(D)],['PRESS FIT',pf?fx(press,3):'NONE'],['BORE CLOSURE',fx(clo,3)],['ASSEMBLY CLEARANCE',fx(c,3)],['FITTED INSIDE Ø',fx(D+c,3)],['WALL',fx(w)]];
+  const ex=p.ex||0,fit=[[p.Hmin>0?'HOUSING Ø MAX':'HOUSING Ø',fx(H)]];if(p.Hmin>0)fit.push(['HOUSING Ø MIN',fx(p.Hmin)]);fit.push(['SHAFT Ø',fx(D)],['PRESS FIT',pf&&!(p.gap>0)?fx(press,3):'NONE'],['BORE CLOSURE',fx(clo,3)],['ASSEMBLY CLEARANCE',fx(c,3)]);if(ex>0)fit.push(['ADDITIONAL CLEARANCE',fx(ex,3)]);if(p.gap>0)fit.push(['EXPANSION GAP',fx(p.gap,2)]);fit.push(['FITTED INSIDE Ø',fx(D+c+ex,3)],['WALL',fx(w)]);
   if(fl.on)fit.push(['FLANGE Ø',fx(fl.FD)],['FLANGE THICKNESS',fx(fl.T)]);
   if(G.type!=='none'){fit.push(['GROOVE TYPE',GTYPES[G.type]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fx(G.d)],['GROOVE RADIUS',fx(G.r)],['GROOVE WIDTH',fx(gw)]);if(G.type==='spiral')fit.push(['SPIRAL PITCH',fx(G.pitch)]);if(G.type==='blind')fit.push(['GROOVE LENGTH',fx(G.len)])}
   const fitSentence=pf?'INTERFERENCE FIT INTO HOUSING. FREEZE-FIT OR PRESS WITH A MANDREL.':'NO PRESS FIT: SECURE THE BEARING MECHANICALLY OR BY BONDING.';
   const notes=dw.notes?['NOTES',...dw.noteText.replace('{FIT}',fitSentence).split('\n').slice(0,11)]:[];
-  const title=q?q.title:(dw.title||'BEARING')+(fl.on?' (FLANGED)':'')+' — '+GRADES[g][0],fitRows=q?q.table:fit;
+  const title=q?q.title:(p.tt||dw.title||'BEARING')+(fl.on?' (FLANGED)':'')+' — '+GRADES[g][0],fitRows=q?q.table:fit;
   const lgBox=logo&&dw.showLogo?(()=>{const wd=Math.min(38,12*logo.r),ht=wd/logo.r;return `<image href="${logo.u}" xlink:href="${logo.u}" x="${n(220+(42-wd)/2)}" y="${n(245+(16-ht)/2)}" width="${n(wd)}" height="${n(ht)}" preserveAspectRatio="xMidYMid meet"/>`})():`<text x="241" y="254.5" text-anchor="middle" style="font-size:3.4px;font-weight:bold">${e(dw.company)}</text>`;
   const rowH=4.8;
   let gdim='',call='',det='';
@@ -500,80 +643,76 @@ const pageSvg=inner=>`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http:
 const _mc=document.createElement('canvas').getContext('2d');
 function wrapLines(t,maxMm,fs,bold){_mc.font=`${bold?'bold ':''}100px Arial`;const k=fs/100,out=[];for(const para of String(t||'').split('\n')){let line='';for(const w of para.split(/\s+/)){const tr=line?line+' '+w:w;if(_mc.measureText(tr).width*k>maxMm&&line){out.push(line);line=w}else line=tr}out.push(line)}return out}
 
-/* ---------- STEP (ISO 10303-21, AP214) export of the bush body: plain faces of revolution (cylinders, cones, planes). Grooves are not modelled. ---------- */
+/* ---------- STEP (ISO 10303-21, AP214) export. Solid B-rep that opens in common CAD programs: the outside is made of true planes, cylinders and cones (with seam edges), and when grooves exist the bore is a closed skin of small flat faces on real line edges. ---------- */
 function stepFile(p){
-  if(p.G&&p.G.type!=='none'&&p.gz)return stepFaceted(p);
-  return stepPlain(p);
-}
-/* Faceted STEP (FACETED_BREP) used when grooves are present: the whole bush, grooves included, as small flat faces. */
-function stepFaceted(p){
-  const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0,G=p.G,gz=p.gz,hh=L/2;
+  const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0,G=p.G||{type:'none'},gz=p.gz,hh=L/2,hasG=G.type!=='none'&&typeof gz==='function';
   const c=Math.max(0,Math.min(p.ch||0,(rO-rI)*.8,(L-T)*.4));
-  const P=[[rI,0]];if(c>0)P.push([rO-c,0],[rO,c]);else P.push([rO,0]);
-  if(fl)P.push([rO,L-T],[rF,L-T],[rF,L]);else if(c>0)P.push([rO,L-c],[rO-c,L]);else P.push([rO,L]);
-  P.push([rI,L]);
-  const gw=grooveWidth(G.d,G.r),Nt=Math.min(360,Math.max(180,Math.ceil(2*Math.PI*rI/(gw/9))));
-  let ys;
-  if(G.type==='long')ys=[hh,-hh];
-  else if(G.type==='blind'){const s=new Set([hh,-hh,0]),hl=G.len/2;for(let k=0;k<=14;k++){const d=hl+G.r*k/14;[d,-d].forEach(v=>{if(Math.abs(v)<hh)s.add(+v.toFixed(4))})}[hl,-hl].forEach(v=>{if(Math.abs(v)<hh)s.add(v)});ys=[...s].sort((a,b)=>b-a)}
-  else{const n=Math.min(110,Math.max(40,Math.ceil(L/(gw/6))));ys=Array.from({length:n+1},(_,j)=>hh-L*j/n)}
-  const fm=x=>{x=Math.abs(x)<1e-9?0:x;return x.toFixed(5).replace(/0+$/,'')};
+  const OP=[];if(c>0)OP.push([rO-c,0],[rO,c]);else OP.push([rO,0]);
+  if(fl)OP.push([rO,L-T],[rF,L-T],[rF,L]);else if(c>0)OP.push([rO,L-c],[rO-c,L]);else OP.push([rO,L]);
+  const r6=x=>{x=Math.round(x*1e6)/1e6;return Object.is(x,-0)?0:x},fm=x=>{const s=r6(x).toFixed(6).replace(/0+$/,'');return s};
   const E=[];let n=0;const add=s=>{E.push(`#${++n}=${s};`);return n};
-  const ring=(z,rf)=>{const ids=[];for(let i=0;i<Nt;i++){const t=2*Math.PI*i/Nt,r=rf(t);ids.push(add(`CARTESIAN_POINT('',(${fm(r*Math.cos(t))},${fm(r*Math.sin(t))},${fm(z)}))`))}return ids};
-  const rows=[{z:0,g:1,ids:ring(0,t=>rI+gz(t,-hh))}];
-  for(const[r,z]of P.slice(1,-1))rows.push({z,g:0,ids:ring(z,()=>r)});
-  rows.push({z:L,g:1,ids:ring(L,t=>rI+gz(t,hh))});
-  for(let j=1;j<ys.length-1;j++){const y=ys[j];rows.push({z:y+hh,g:1,ids:ring(y+hh,t=>rI+gz(t,y))})}
-  rows.push(rows[0]);
+  const PC=new Map(),DC=new Map(),VC=new Map(),LC=new Map(),CC=new Map();
+  const cp=(x,y,z)=>{const k=fm(x)+','+fm(y)+','+fm(z);let i=PC.get(k);if(!i){i=add(`CARTESIAN_POINT('',(${k}))`);PC.set(k,i)}return i};
+  const di=(x,y,z)=>{const m=Math.hypot(x,y,z)||1,k=fm(x/m)+','+fm(y/m)+','+fm(z/m);let i=DC.get(k);if(!i){i=add(`DIRECTION('',(${k}))`);DC.set(k,i)}return i};
+  const ax=(o,d,r)=>add(`AXIS2_PLACEMENT_3D('',#${cp(...o)},#${di(...d)},#${di(...r)})`);
+  const vt=(x,y,z)=>{x=r6(x);y=r6(y);z=r6(z);const k=x+','+y+','+z;let v=VC.get(k);if(!v){const pid=cp(x,y,z);v={id:add(`VERTEX_POINT('',#${pid})`),pid,p:[x,y,z]};VC.set(k,v)}return v};
+  const ln=(a,b)=>{const lo=a.id<b.id?a:b,hi=lo===a?b:a,k=lo.id+'_'+hi.id;let e=LC.get(k);
+    if(!e){const d=[hi.p[0]-lo.p[0],hi.p[1]-lo.p[1],hi.p[2]-lo.p[2]],len=Math.hypot(...d),ve=add(`VECTOR('',#${di(...d)},${fm(len)})`),li=add(`LINE('',#${lo.pid},#${ve})`);e=add(`EDGE_CURVE('',#${lo.id},#${hi.id},#${li},.T.)`);LC.set(k,e)}
+    return[e,a===lo?'.T.':'.F.']};
+  const ce=(r,z)=>{const k=fm(r)+'_'+fm(z);let o=CC.get(k);if(!o){const v=vt(r,0,z),ci=add(`CIRCLE('',#${ax([0,0,z],[0,0,1],[1,0,0])},${fm(r)})`);o={v,e:add(`EDGE_CURVE('',#${v.id},#${v.id},#${ci},.T.)`)};CC.set(k,o)}return o};
+  const loop=it=>add(`EDGE_LOOP('',(${it.map(([e,s])=>'#'+add(`ORIENTED_EDGE('',*,*,#${e},${s})`)).join(',')}))`);
   const faces=[];
-  const mk=ids=>{const lp=add(`POLY_LOOP('',(${ids.map(x=>'#'+x).join(',')}))`),fb=add(`FACE_BOUND('',#${lp},.T.)`);faces.push(add(`FACE('',(#${fb}))`))};
-  for(let k=0;k<rows.length-1;k++){const A=rows[k],B=rows[k+1],flat=A.z===B.z||(!A.g&&!B.g)||(G.type==='long'&&A.g&&B.g);
-    for(let i=0;i<Nt;i++){const j=(i+1)%Nt,a=A.ids[i],b=A.ids[j],c2=B.ids[j],d=B.ids[i];if(flat)mk([a,b,c2,d]);else{mk([a,b,c2]);mk([a,c2,d])}}}
-  const nm=String(p.name||'BUSH').replace(/[^\x20-\x7E]/g,'').replace(/'/g,"''")||'BUSH';
-  const shell=add(`CLOSED_SHELL('',(${faces.map(x=>'#'+x).join(',')}))`),fb=add(`FACETED_BREP('${nm}',#${shell})`);
-  const dZ=add("DIRECTION('',(0.,0.,1.))"),dX=add("DIRECTION('',(1.,0.,0.))"),o0=add("CARTESIAN_POINT('',(0.,0.,0.))"),a0=add(`AXIS2_PLACEMENT_3D('',#${o0},#${dZ},#${dX})`);
-  const len=add("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))"),ang=add("(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.))"),sa=add("(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT())");
-  const unc=add(`UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#${len},'distance_accuracy_value','confusion accuracy')`);
-  const ctx=add(`(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#${unc}))GLOBAL_UNIT_ASSIGNED_CONTEXT((#${len},#${ang},#${sa}))REPRESENTATION_CONTEXT('Context3d','3D Context with UNIT and UNCERTAINTY'))`);
-  const rep=add(`FACETED_BREP_SHAPE_REPRESENTATION('',(#${a0},#${fb}),#${ctx})`);
-  const ac=add("APPLICATION_CONTEXT('core data for automotive mechanical design processes')"),pc=add(`PRODUCT_CONTEXT('',#${ac},'mechanical')`),pr=add(`PRODUCT('${nm}','${nm}','',(#${pc}))`);
-  const pf=add(`PRODUCT_DEFINITION_FORMATION('','',#${pr})`),pdc=add(`PRODUCT_DEFINITION_CONTEXT('part definition',#${ac},'design')`),pd=add(`PRODUCT_DEFINITION('design','',#${pf},#${pdc})`),pds=add(`PRODUCT_DEFINITION_SHAPE('','',#${pd})`);
-  add(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${rep})`);add(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#${ac})`);add(`PRODUCT_RELATED_PRODUCT_CATEGORY('part','',(#${pr}))`);
-  return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence bush with grooves, faceted solid'),'2;1');\nFILE_NAME('${nm}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
-}
-function stepPlain(p){
-  const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0;
-  const c=Math.max(0,Math.min(p.ch||0,(rO-rI)*.8,(L-T)*.4));
-  const P=[[rI,0]];if(c>0)P.push([rO-c,0],[rO,c]);else P.push([rO,0]);
-  if(fl)P.push([rO,L-T],[rF,L-T],[rF,L]);else if(c>0)P.push([rO,L-c],[rO-c,L]);else P.push([rO,L]);
-  P.push([rI,L]);
-  const fm=x=>{x=Math.abs(x)<1e-9?0:x;const s=x.toFixed(6).replace(/0+$/,'');return s.endsWith('.')?s:s}; /* e.g. "5." or "5.25" */
-  const E=[];let n=0;const add=s=>{E.push(`#${++n}=${s};`);return n};
-  const pt=(x,y,z)=>add(`CARTESIAN_POINT('',(${fm(x)},${fm(y)},${fm(z)}))`),dr=(x,y,z)=>add(`DIRECTION('',(${fm(x)},${fm(y)},${fm(z)}))`);
-  const dZ=dr(0,0,1),dNZ=dr(0,0,-1),dX=dr(1,0,0);
-  const ax=(z,d)=>add(`AXIS2_PLACEMENT_3D('',#${pt(0,0,z)},#${d},#${dX})`);
-  const vert=P.map(([r,z])=>{const v=add(`VERTEX_POINT('',#${pt(r,0,z)})`),ci=add(`CIRCLE('',#${ax(z,dZ)},${fm(r)})`);return add(`EDGE_CURVE('',#${v},#${v},#${ci},.T.)`)});
-  const loop=(e,s)=>add(`EDGE_LOOP('',(#${add(`ORIENTED_EDGE('',*,*,#${e},${s})`)}))`);
-  const faces=[];
-  for(let i=0;i<P.length;i++){const j=(i+1)%P.length,a=P[i],b=P[j];let f;
-    if(a[1]===b[1]){const down=b[0]>a[0],o=a[0]>b[0]?i:j,inn=o===i?j:i,so=down?'.F.':'.T.',si=down?'.T.':'.F.';
-      const pl=add(`PLANE('',#${ax(a[1],down?dNZ:dZ)})`);
-      f=add(`ADVANCED_FACE('',(#${add(`FACE_OUTER_BOUND('',#${loop(vert[o],so)},.T.)`)},#${add(`FACE_BOUND('',#${loop(vert[inn],si)},.T.)`)}),#${pl},.T.)`)}
-    else if(a[0]===b[0]){const out=b[1]>a[1],lo=a[1]<b[1]?i:j,hi=lo===i?j:i,cy=add(`CYLINDRICAL_SURFACE('',#${ax(0,dZ)},${fm(a[0])})`);
-      f=add(`ADVANCED_FACE('',(#${add(`FACE_BOUND('',#${loop(vert[lo],out?'.T.':'.F.')},.T.)`)},#${add(`FACE_BOUND('',#${loop(vert[hi],out?'.F.':'.T.')},.T.)`)}),#${cy},${out?'.T.':'.F.'})`)}
-    else{const bottom=a[0]<b[0],al=Math.atan(Math.abs(b[0]-a[0])/Math.abs(b[1]-a[1])),co=bottom?add(`CONICAL_SURFACE('',#${ax(a[1],dZ)},${fm(a[0])},${al.toFixed(8)})`):add(`CONICAL_SURFACE('',#${ax(b[1],dNZ)},${fm(b[0])},${al.toFixed(8)})`);
-      f=add(`ADVANCED_FACE('',(#${add(`FACE_BOUND('',#${loop(vert[i],'.T.')},.T.)`)},#${add(`FACE_BOUND('',#${loop(vert[j],'.F.')},.T.)`)}),#${co},.T.)`)}
-    faces.push(f)}
+  const face=(outer,inner,surf,sense)=>faces.push(add(`ADVANCED_FACE('',(#${add(`FACE_OUTER_BOUND('',#${loop(outer)},.T.)`)}${inner?`,#${add(`FACE_BOUND('',#${loop(inner)},.T.)`)}`:''}),#${surf},${sense})`));
+  /* ID ring at the two ends: circle, or a polygon when grooves exist */
+  let rows=null;
+  if(hasG){
+    const gw=grooveWidth(G.d,G.r),R=G.r,cdp=G.d-R;let ys,angs=[];
+    if(G.type==='spiral'){const nr=Math.min(48,Math.max(24,Math.ceil(L/(gw/2.5)))),Nt=Math.max(72,Math.min(180,Math.floor(9000/(2*(nr-1)))));ys=Array.from({length:nr+1},(_,j)=>-hh+L*j/nr);for(let i=0;i<Nt;i++)angs.push(2*Math.PI*i/Nt)}
+    else{
+      if(G.type==='long')ys=[-hh,hh];
+      else{const s=new Set([-hh,hh,0]),hl=(G.len||0)/2;for(let k=0;k<=14;k++){const d=hl+R*k/14;[d,-d].forEach(v=>{if(Math.abs(v)<hh-1e-9)s.add(r6(v))})}ys=[...s].sort((a,b)=>a-b)}
+      const M=G.type==='long'?12:8,sec=2*Math.PI/G.n,t0=Math.PI/2,ph=Math.min(sec/2*.999,gw/2/rI);
+      for(let k=0;k<G.n;k++){const th=t0+k*sec;for(let j=0;j<=M;j++)angs.push(th-ph+2*ph*j/M);if(cdp>0)angs.push(th-ph-.002,th+ph+.002)}
+      const m=Math.ceil(2*Math.PI/(4*Math.PI/180));for(let i=0;i<m;i++)angs.push(2*Math.PI*i/m);
+    }
+    const norm=a=>{a=a%(2*Math.PI);return a<0?a+2*Math.PI:a};
+    angs=[...new Set(angs.map(a=>Math.round(norm(a)*1e7)/1e7))].sort((a,b)=>a-b).filter((a,i,s)=>i===0||a-s[i-1]>2e-6);
+    if(angs.length>1&&2*Math.PI-angs[angs.length-1]+angs[0]<2e-6)angs.pop();
+    rows=ys.map(y=>{const rr=angs.map(t=>rI+gz(t,y));return{z:y+hh,rr,vs:angs.map((t,i)=>vt(rr[i]*Math.cos(t),rr[i]*Math.sin(t),y+hh))}});
+  }
+  const inner0=hasG?rows[0].vs:null,inner1=hasG?rows[rows.length-1].vs:null;
+  const Z=[[0,0,1]],ringLoop=(vs,rev)=>{const N=vs.length,it=[];for(let i=0;i<N;i++){const a=vs[i],b=vs[(i+1)%N];it.push(ln(a,b))}return rev?it.map(([e,s])=>[e,s==='.T.'?'.F.':'.T.']).reverse():it};
+  const plane=(z,sg)=>add(`PLANE('',#${ax([0,0,z],[0,0,sg],[1,0,0])})`);
+  /* bottom end face (normal -z) */
+  {const oc=ce(OP[0][0],0);face([[oc.e,'.F.']],hasG?ringLoop(inner0,false):[[ce(rI,0).e,'.T.']],plane(0,-1),'.T.')}
+  /* outside: planes, cylinders and cones between consecutive outer nodes */
+  for(let i=0;i<OP.length-1;i++){const a=OP[i],b=OP[i+1];
+    if(a[1]===b[1]){const big=Math.max(a[0],b[0]),sm=Math.min(a[0],b[0]),dn=b[0]>a[0],bo=ce(big,a[1]),so=ce(sm,a[1]);face([[bo.e,dn?'.F.':'.T.']],[[so.e,dn?'.T.':'.F.']],plane(a[1],dn?-1:1),'.T.')}
+    else{const c0=ce(a[0],a[1]),c1=ce(b[0],b[1]),up=ln(c0.v,c1.v),dw=ln(c1.v,c0.v),it=[[c0.e,'.T.'],up,[c1.e,'.F.'],dw];let sf;
+      if(a[0]===b[0])sf=add(`CYLINDRICAL_SURFACE('',#${ax([0,0,0],[0,0,1],[1,0,0])},${fm(a[0])})`);
+      else{const al=Math.atan(Math.abs(b[0]-a[0])/(b[1]-a[1])).toFixed(8);sf=b[0]>a[0]?add(`CONICAL_SURFACE('',#${ax([0,0,a[1]],[0,0,1],[1,0,0])},${fm(a[0])},${al})`):add(`CONICAL_SURFACE('',#${ax([0,0,b[1]],[0,0,-1],[1,0,0])},${fm(b[0])},${al})`)}
+      face(it,null,sf,'.T.')}}
+  /* top end face (normal +z) */
+  {const oc=ce(OP[OP.length-1][0],L);face([[oc.e,'.T.']],hasG?ringLoop(inner1,true):[[ce(rI,L).e,'.F.']],plane(L,1),'.T.')}
+  /* bore */
+  if(!hasG){const c0=ce(rI,0),c1=ce(rI,L),up=ln(c0.v,c1.v),dw=ln(c1.v,c0.v);face([[c0.e,'.F.'],up,[c1.e,'.T.'],dw],null,add(`CYLINDRICAL_SURFACE('',#${ax([0,0,0],[0,0,1],[1,0,0])},${fm(rI)})`),'.F.')}
+  else{
+    const poly=vs=>{const N=vs.length;let nx=0,ny=0,nz=0;for(let i=0;i<N;i++){const a=vs[i].p,b=vs[(i+1)%N].p;nx+=(a[1]-b[1])*(a[2]+b[2]);ny+=(a[2]-b[2])*(a[0]+b[0]);nz+=(a[0]-b[0])*(a[1]+b[1])}
+      const m=Math.hypot(nx,ny,nz)||1,nv=[nx/m,ny/m,nz/m],o=vs[0].p,e1=[vs[1].p[0]-o[0],vs[1].p[1]-o[1],vs[1].p[2]-o[2]],dt=e1[0]*nv[0]+e1[1]*nv[1]+e1[2]*nv[2],rf=[e1[0]-dt*nv[0],e1[1]-dt*nv[1],e1[2]-dt*nv[2]];
+      const pl=add(`PLANE('',#${ax(o,nv,rf)})`);face(vs.map((a,i)=>ln(a,vs[(i+1)%N])),null,pl,'.T.')};
+    for(let j=0;j<rows.length-1;j++){const A=rows[j],B=rows[j+1],N=A.vs.length,flat=A.rr.every((r,i)=>Math.abs(r-B.rr[i])<1e-9);
+      for(let i=0;i<N;i++){const i2=(i+1)%N,a=A.vs[i],b=A.vs[i2],cc=B.vs[i2],d=B.vs[i];if(flat)poly([a,d,cc,b]);else{poly([a,d,cc]);poly([a,cc,b])}}}
+  }
   const nm=String(p.name||'BUSH').replace(/[^\x20-\x7E]/g,'').replace(/'/g,"''")||'BUSH';
   const shell=add(`CLOSED_SHELL('',(${faces.map(x=>'#'+x).join(',')}))`),brep=add(`MANIFOLD_SOLID_BREP('${nm}',#${shell})`);
   const len=add("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))"),ang=add("(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.))"),sa=add("(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT())");
   const unc=add(`UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#${len},'distance_accuracy_value','confusion accuracy')`);
   const ctx=add(`(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#${unc}))GLOBAL_UNIT_ASSIGNED_CONTEXT((#${len},#${ang},#${sa}))REPRESENTATION_CONTEXT('Context3d','3D Context with UNIT and UNCERTAINTY'))`);
-  const a0=ax(0,dZ),rep=add(`ADVANCED_BREP_SHAPE_REPRESENTATION('',(#${a0},#${brep}),#${ctx})`);
+  const a0=ax([0,0,0],[0,0,1],[1,0,0]),rep=add(`ADVANCED_BREP_SHAPE_REPRESENTATION('',(#${a0},#${brep}),#${ctx})`);
   const ac=add("APPLICATION_CONTEXT('core data for automotive mechanical design processes')"),pc=add(`PRODUCT_CONTEXT('',#${ac},'mechanical')`),pr=add(`PRODUCT('${nm}','${nm}','',(#${pc}))`);
   const pf=add(`PRODUCT_DEFINITION_FORMATION('','',#${pr})`),pdc=add(`PRODUCT_DEFINITION_CONTEXT('part definition',#${ac},'design')`),pd=add(`PRODUCT_DEFINITION('design','',#${pf},#${pdc})`),pds=add(`PRODUCT_DEFINITION_SHAPE('','',#${pd})`);
   add(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${rep})`);add(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#${ac})`);add(`PRODUCT_RELATED_PRODUCT_CATEGORY('part','',(#${pr}))`);
-  return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence bush body, grooves not modelled'),'2;1');\nFILE_NAME('${nm}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
+  return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence bush, solid B-rep${hasG?', grooves as flat faces':''}'),'2;1');\nFILE_NAME('${nm}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
 }
 const stepDownload=()=>{if(!LAST||!LAST.step)return;deliver(new Blob([stepFile(LAST.step)],{type:'application/octet-stream'}),LAST.drg+'.step');log('Downloaded STEP',LAST.drg)};
 
@@ -608,22 +747,49 @@ function openDrawing(){
     else if(b.dataset.a==='step')stepDownload();
     else if(b.dataset.a==='pdf')pdfStep(b)};
 }
-function design(v){
+/* ---------- Design a bearing: industrial, pump, marine rudder and marine stern calculators ---------- */
+const MODES={ind:'Industrial',pump:'Pump',rud:'Marine rudder',stern:'Marine stern'};
+const GRS=[[79,7,7,4,12],[119,7,9,5,18],[159,7,10,6,24],[199,7,12,7,30],[249,7,12,8,38],[299,7,14,8,45],[349,8,15,8,53],[399,8,15,8,60],[499,9,15,9,75],[599,10,18,9,90],[699,11,18,9,105],[800,12,18,9,120]];  /* stern tube: shaft Ø max, grooves, width, depth, water l/min */
+let DV={};
+/* All sizes from the Vesconite size-calculation equations (metric). Industrial and pump share one set; rudder and stern use the marine set. */
+function bearCalc(mode,i){
+  const{H,D,L,pf,tx,tn,gk}=i,mar=mode==='rud'||mode==='stern',Hn=i.Hmin>0?i.Hmin:H;
+  let std=0.05+0.002*H,add=0;
+  if(mar){if(Number.isFinite(tn)){if(tn<=-10)std=0.05+0.0034*H;else if(tn<-5)std=0.05+(0.002+0.0014*(-5-tn)/5)*H}}
+  else if(Number.isFinite(tn)&&tn<5)add=(5-tn)*0.000054*H;
+  const hot=Number.isFinite(tx)&&tx>70,forced=pf&&hot,press=pf&&!hot?std+add:0,gap=hot?0.1+H*Math.PI*(tx-25)*K:0;
+  const ex=Number.isFinite(tx)&&tx>50?(H*H-D*D)*(tx-50)*K/D:0,clo=press*D/H,OD=H+press;
+  const c=mar?(mode==='rud'?0.2+0.0015*D:0.2+0.002*D):(0.05+0.01*(OD-D-clo-ex))/1.01;
+  const ID=D+clo+c+ex,w=(OD-ID)/2,iMin=press,iMax=pf&&!hot?OD-Hn:0;
+  const E=gk==='h'?2200:2300,mu=gk==='h'?0.10:0.15,ro=OD/2,ri=ID/2,pr=press>0&&w>0?E*(press/2)/(ro*((ro*ro+ri*ri)/(ro*ro-ri*ri)-0.4)):0;
+  return{press,std,add,clo,OD,c,ex,ID,w,gap,iMin,iMax,forced,hot,Hn,force:pr*mu*Math.PI*OD*L/1000,odCold:OD*(1-K*50)};
+}
+function design(v,id){
   if(!S.feat.pv){location.hash='#/tools';return}
+  let mode=MODES[id]?id:'ind';if(!MODES[id]){try{const m=localStorage.getItem('vi4m');if(MODES[m])mode=m}catch{}}
+  try{localStorage.setItem('vi4m',mode)}catch{}
+  const mar=mode==='rud'||mode==='stern',pump=mode==='pump',load=!mar;
   T3=null;T3L=false;LAST=null;
   if(!S.dw.logo)repoLogo().then(r=>{if(r&&!window.__rl){window.__rl=r;if($('#DF'))$('#DF').dispatchEvent(new Event('input'))}});
   const n=(id,l,u,val='',att='')=>`<label>${l} <span class="mut">${u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${att}></label>`;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Industrial bearing</h1><p class="mut">Bearing size, fit, clearance, grooves and PV using the equations in the Vesconite design manual (metric, free-standing bush, sizes at 20 °C). A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
-  <form class="card" id="DF"><div class="g2">${n('d1','Housing diameter','mm')}${n('d2','Shaft diameter','mm')}${n('d3','Bearing length (overall)','mm')}
-  <label>Grade<select id="d18"><option value="v">Vesconite</option><option value="h">Vesconite Hilube</option></select></label>
+  const intro={ind:'Bearing size, fit, clearance, grooves and PV for general industrial applications, using the equations in the Vesconite design manual (metric, free-standing bush, sizes at 20 °C).',
+    pump:'Bearing and wear-ring sizes for pumps. Vesconite does not publish separate pump equations, so this uses the industrial size equations with the pump inputs (rotation only, wear ring option).',
+    rud:'Rudder bearing sizes from the Vesconite marine equations: press fit from the minimum operating temperature, assembly clearance 0.2 mm + 0.0015 × shaft diameter. Rudder bearings generally need no grooves.',
+    stern:'Water-lubricated stern tube and strut bearing sizes from the Vesconite marine equations: assembly clearance 0.2 mm + 0.002 × shaft diameter, with the manual\'s groove table. Do not grease these bearings.'}[mode];
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Design a bearing</h1>
+  <div class="seg" id="MS" style="margin:10px 0">${Object.entries(MODES).map(([k,l])=>`<a href="#/design/${k}" class="${k===mode?'on':''}">${l}</a>`).join('')}</div>
+  <p class="mut">${intro} A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
+  <form class="card" id="DF"><div class="g2">${mar?`${n('d1','Maximum housing size','mm')}${n('d33','Minimum housing size','mm')}`:n('d1','Housing diameter','mm')}${n('d2','Shaft diameter','mm')}${n('d3','Bearing length (overall)','mm')}
+  <label>Grade<select id="d18"><option value="v">Vesconite</option><option value="h" ${mar||pump?'selected':''}>Vesconite Hilube</option></select></label>
   <label>Press fit?<select id="d4"><option value="y">Yes</option><option value="n">No</option></select></label>
-  <label>Operating condition<select id="d5"><option value="wet">Immersed in water</option><option value="dry">Dry, oil or grease</option></select></label>
-  ${n('d6','Max operating temp','°C')}${n('d7','Min operating temp','°C')}${n('d9','Total mass supported','kg')}${n('d10','Bearings sharing the mass','','1')}</div>
-  <label>Motion<select id="d11"><option value="rot">Rotation</option><option value="osc">Oscillation</option><option value="lin">Linear</option></select></label>
-  <div class="g2" data-m="rot">${n('d12','Speed','rpm')}</div>
+  ${pump?`<label>Wear ring?<select id="d34"><option value="n">No</option><option value="y">Yes</option></select></label>`:''}
+  ${mode==='ind'?`<label>Operating condition<select id="d5"><option value="wet">Immersed in water</option><option value="dry">Dry, oil or grease</option></select></label>`:''}
+  ${n('d6','Max operating temp','°C')}${n('d7','Min operating temp','°C')}${load?`${n('d9','Total mass supported','kg')}${n('d10','Bearings sharing the mass','','1')}`:''}</div>
+  ${mode==='ind'?`<label>Motion<select id="d11"><option value="rot">Rotation</option><option value="osc">Oscillation</option><option value="lin">Linear</option></select></label>`:''}
+  ${load?`<div class="g2" data-m="rot">${n('d12',pump?'Rotation':'Speed','rpm')}</div>
   <div class="g2" data-m="osc" hidden>${n('d13','Swing angle','degrees')}${n('d14','Cycles per minute','')}</div>
   <div class="g2" data-m="lin" hidden>${n('d15','Travel per stroke','mm')}${n('d16','Cycles per minute','')}</div>
-  ${n('d17','PV limit for your grade (optional)','MPa·m/min')}
+  ${n('d17','PV limit for your grade (optional)','MPa·m/min')}`:''}
   <h3 style="margin-top:6px">Flange</h3><label>Flanged bearing?<select id="d30"><option value="n">No</option><option value="y">Yes</option></select></label>
   <div class="g2" data-f hidden>${n('d31','Flange diameter','mm')}${n('d32','Flange thickness','mm')}</div>
   <h3 style="margin-top:6px">Grooves</h3><label>Groove type<select id="d20"><option value="none">None</option><option value="spiral">Spiral</option><option value="blind">Blind radial</option><option value="long">Longitudinal</option></select></label>
@@ -633,71 +799,91 @@ function design(v){
   <div class="card" id="MD" hidden><div class="seg"><button type="button" data-t="3d" class="on">3D model</button><button type="button" data-t="dr">Drawing</button></div><div class="m3" id="m3"></div><div id="mdr" class="mdr" hidden></div>
   <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button><button type="button" class="btn" id="mc">Cutaway view</button><button type="button" class="btn" id="mstep">STEP file</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. The drawing is generated from the sizes below.</p><p class="mut" id="stn" style="margin:6px 0 0"></p></div>
   <div id="DO"></div>`;
+  Object.entries(DV).forEach(([k,x])=>{const e=$('#'+k);if(e&&x!==undefined&&k!=='d18')e.value=x});
   $('#DF').onsubmit=e=>e.preventDefault();
   $$('#MD .seg button').forEach(b=>b.onclick=()=>{$$('#MD .seg button').forEach(x=>x.classList.toggle('on',x===b));$('#m3').hidden=b.dataset.t!=='3d';$('#mdr').hidden=b.dataset.t!=='dr'});
   $('#mx').onclick=openDrawing;$('#mstep').onclick=stepDownload;
   $('#mc').onclick=()=>{if(T3){T3.cut=!T3.cut;$('#mc').textContent=T3.cut?'Full view':'Cutaway view';if(T3.last)upd3(T3,T3.last)}};
   let lastGt='none',autoDone=false;
   const cv=()=>{
-    const g=id=>parseFloat($('#'+id).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=$('#d11').value,MD=$('#MD'),fl0=$('#d30').value==='y',gt=$('#d20').value;
+    $$('#DF input,#DF select').forEach(e=>{DV[e.id]=e.value});
+    const g=id=>parseFloat(($('#'+id)||{}).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=mode==='ind'?$('#d11').value:'rot',MD=$('#MD'),fl0=$('#d30').value==='y',gt=$('#d20').value;
     $$('[data-m]').forEach(x=>x.hidden=x.dataset.m!==mo);$$('[data-f]').forEach(x=>x.hidden=!fl0);$$('[data-g]').forEach(x=>x.hidden=gt==='none');$$('[data-gt]').forEach(x=>x.hidden=x.dataset.gt!==gt);
     const bad=m=>{MD.hidden=true;O.innerHTML=m};
-    if(!(H>0&&D>0&&L>0))return bad('<p class="mut">Enter housing diameter, shaft diameter and bearing length.</p>');
+    if(!(H>0&&D>0&&L>0))return bad(`<p class="mut">Enter ${mar?'the maximum housing size, ':'the housing diameter, '}shaft diameter and bearing length.</p>`);
+    const Hmin=mar?g('d33'):NaN;
+    if(mar&&Hmin>0&&Hmin>H)return bad('<p class="note bad">The minimum housing size cannot be larger than the maximum housing size.</p>');
     if(H<=D)return bad('<p class="note bad">The housing diameter must be larger than the shaft diameter.</p>');
-    const gk=$('#d18').value,pf=$('#d4').value==='y',dry=$('#d5').value==='dry',tx=g('d6'),tn=g('d7'),nb=g('d10')>0?g('d10'):1;
-    const press=pf?0.05+0.002*H:0,clo=press*D/H,OD=H+press,c=(0.05+0.01*(OD-D-clo))/1.01,ID=D+clo+c,w=(OD-ID)/2;
+    const gk=$('#d18').value,pf=$('#d4').value==='y',dry=mode==='ind'&&$('#d5').value==='dry',wr=pump&&$('#d34').value==='y',tx=g('d6'),tn=g('d7'),nb=load&&g('d10')>0?g('d10'):1;
+    const R=bearCalc(mode,{H,Hmin,D,L,pf,tx,tn,gk}),{press,clo,OD,c,ex,ID,w,gap}=R;
     if(!(w>0))return bad('<p class="note bad">These sizes leave no bearing wall. Check the diameters.</p>');
     const fl={on:fl0,FD:g('d31'),T:g('d32')};
     if(fl0){if(!(fl.FD>OD&&fl.T>0))return bad('<p class="note bad">Enter a flange diameter larger than the bearing outside diameter ('+fx(OD)+' mm) and a flange thickness.</p>');if(fl.T>=L)return bad('<p class="note bad">The flange thickness must be less than the overall bearing length.</p>')}
-    const G={type:gt,n:g('d21'),d:g('d22'),r:g('d23'),pitch:g('d24'),len:g('d25')},rec=gt!=='none'?recGroove(gt,D,w,L):null;
+    const G={type:gt,n:g('d21'),d:g('d22'),r:g('d23'),pitch:g('d24'),len:g('d25')},rec=gt!=='none'?recGroove(gt,D,w,L,mode):null;
     if(gt!==lastGt){lastGt=gt;autoDone=false}
     if(gt!=='none'&&rec&&!autoDone){autoDone=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){$('#'+id).value=x;ch=true}};set('d21',rec.n);set('d22',rec.d);set('d23',rec.r);if(gt==='spiral')set('d24',rec.pitch);if(gt==='blind')set('d25',rec.len);if(ch)return cv()}
-    const grHtml=gt==='none'?'':rec?`<p class="mut" style="margin:6px 0">Recommended for a ${fx(D,0)} mm shaft: ${gt==='spiral'||gt==='blind'?'width, depth and radius from the manual\'s groove table; count, pitch and length are suggested starting points. ':''}<b>${rec.n} grooves, depth ${rec.d} mm, radius ${rec.r} mm</b> (about ${fx(grooveWidth(rec.d,rec.r),1)} mm wide)${gt==='spiral'?`, pitch ${rec.pitch} mm`:''}${gt==='blind'?`, length ${rec.len} mm`:''}. Water flow about ${rec.q} l/min.${rec.lim?' Depth reduced to keep it under half the wall.':''}</p><button type="button" class="btn" id="ra">Apply recommendation</button>`:'<p class="mut">The manual\'s groove table covers shaft diameters of 20–200 mm. Enter your own values.</p>';
+    const tblTxt=mode==='stern'?'The manual\'s stern tube groove table covers shaft diameters of 60–800 mm.':'The manual\'s groove table covers shaft diameters of 20–200 mm.';
+    const grHtml=gt==='none'?'':rec?`<p class="mut" style="margin:6px 0">Recommended for a ${fx(D,0)} mm shaft: ${gt==='spiral'||gt==='blind'?'width, depth and radius from the manual\'s groove table; count, pitch and length are suggested starting points. ':''}<b>${rec.n} grooves, depth ${rec.d} mm, radius ${rec.r} mm</b> (about ${fx(grooveWidth(rec.d,rec.r),1)} mm wide)${gt==='spiral'?`, pitch ${rec.pitch} mm`:''}${gt==='blind'?`, length ${rec.len} mm`:''}. Water flow about ${rec.q} l/min.${rec.lim?` Depth reduced to keep it under ${mode==='rud'?'a third':'half'} of the wall.`:''}</p><button type="button" class="btn" id="ra">Apply recommendation</button>`:`<p class="mut">${tblTxt} Enter your own values.</p>`;
     if($('#GR').dataset.h!==grHtml){$('#GR').dataset.h=grHtml;$('#GR').innerHTML=grHtml}
     if(rec&&$('#ra'))$('#ra').onclick=()=>{const set=(id,x)=>{$('#'+id).value=x!=null?x:''};set('d21',rec.n);set('d22',rec.d);set('d23',rec.r);if(gt==='spiral')set('d24',rec.pitch);if(gt==='blind')set('d25',rec.len);cv()};
     const gOK=gt==='none'||(G.n>0&&G.d>0&&G.r>0&&(gt!=='spiral'||G.pitch>0)&&(gt!=='blind'||G.len>0));
     const Gu=gOK?G:{type:'none'},gz=grooveFn(Gu,ID/2),gw=gOK&&gt!=='none'?grooveWidth(G.d,G.r):0;
-    const ms=g('d9'),P=ms>0?ms*9.81/nb/(D*L):NaN;
-    const V=mo==='rot'?Math.PI*D*g('d12')/1000:mo==='osc'?Math.PI*D/1000*(2*g('d13')/360)*g('d14'):2*g('d15')/1000*g('d16');
+    const ms=load?g('d9'):NaN,P=ms>0?ms*9.81/nb/(D*L):NaN;
+    const V=!load?NaN:mo==='rot'?Math.PI*D*g('d12')/1000:mo==='osc'?Math.PI*D/1000*(2*g('d13')/360)*g('d14'):2*g('d15')/1000*g('d16');
     let frac=0;if(gOK&&gt!=='none'){const circ=Math.PI*ID;frac=gt==='long'?G.n*gw/circ:gt==='blind'?G.n*gw*Math.min(G.len,L)/(circ*L):gw/((G.pitch/G.n)*circ/Math.hypot(circ,G.pitch))}
-    frac=Math.min(frac,0.9);const Pe=P/(1-frac),PV=Pe*V,lim=g('d17'),wp=w/D*100,ck=[];
-    ck.push(wp>=5&&wp<=20?['ok',`Wall thickness is ${fx(wp,1)}% of the shaft diameter (recommended 5–20%).`]:['warn',`Wall thickness is ${fx(wp,1)}% of the shaft diameter, outside the recommended 5–20%.${wp<5?' Thin walls need care when machining and fitting; consider bonding or mechanical securing.':''}`]);
-    if(L>D)ck.push(['warn','The bearing is longer than its diameter. Long bearings need additional care when machining and fitting.']);
+    frac=Math.min(frac,0.9);const Pe=P/(1-frac),PV=Pe*V,lim=load?g('d17'):NaN,wp=w/D*100,ck=[];
+    ck.push(wp>=5&&wp<=20?['ok',`Wall thickness is ${fx(wp,1)}% of the shaft diameter (recommended 5–20%).`]:['warn',`Wall thickness is ${fx(wp,1)}% of the shaft diameter, outside the recommended 5–20%.${wp<5?' Thin-walled bearing: please contact Vesconite. Thin walls need care when machining and fitting; consider bonding or mechanical securing.':''}`]);
+    if(mode==='stern')ck.push(L/D>=4?['ok',`Length is ${fx(L/D,1)} × the shaft diameter (traditionally 4 ×; shorter bearings are often adequate).`]:['ok',`Length is ${fx(L/D,1)} × the shaft diameter. Stern tube bearings are traditionally 4 × the shaft diameter; shorter bearings are often adequate.`]);
+    else if(L>D)ck.push(['warn','The bearing is longer than its diameter. Long bearings need additional care when machining and fitting.']);
     if(Number.isFinite(Pe))ck.push(Pe<=30?['ok',`Pressure ${fx(Pe)} MPa is under the 30 MPa maximum design load for static, oscillating or occasional movement. Continuous rotation is limited by PV.`]:['bad',`Pressure ${fx(Pe)} MPa is over the 30 MPa maximum design load.`]);
+    if(mar)ck.push(['ok','Maximum static design load is 30 MPa when the bearing is supported in a rigid housing. Water-lubricated PV limit is 200 MPa·m/min.']);
     const tl=dry?GRADES[gk][2]:GRADES[gk][1];
     if(Number.isFinite(tx))ck.push(tx<=tl?['ok',`Max temperature ${tx} °C is within the typical ${tl} °C limit for ${GRADES[gk][0].toLowerCase()} ${dry?'dry or lubricated':'immersed'} use.`]:['bad',`Max temperature ${tx} °C is above the typical ${tl} °C limit for ${dry?'dry or lubricated':'immersed'} use. Contact Vesconite about a higher-temperature grade.`]);
-    if(pf&&tx>70)ck.push(['warn','Above 70 °C a press fit may loosen. Secure the bearing mechanically or bond it.']);
+    if(mode==='stern'&&tx>55)ck.push(['warn','Engine cooling water supplied to stern tube bearings should not exceed 55 °C, to avoid long-term hydrolytic degradation.']);
+    if(R.forced)ck.push(['warn',`Above 70 °C no interference fit is used. Secure the bearing mechanically or bond it, and leave an expansion gap of ${fx(gap,2)} mm (measured round the circumference, for example at the joint of a split bearing).`]);
     if(!pf)ck.push(['warn','No press fit: the bearing must be secured another way (bonding, keeper plate, screws). Outside diameter is taken as the housing diameter.']);
+    if(mar&&pf&&R.iMax>0&&!R.hot)ck.push(['ok',`Housing tolerance: interference runs from ${fx(R.iMin,3)} mm (largest housing) to ${fx(R.iMax,3)} mm (smallest housing). Size is based on the maximum housing size.`]);
+    if(!mar&&pf&&R.add>0)ck.push(['ok',`Minimum temperature below 5 °C: an extra ${fx(R.add,3)} mm press fit is added.`]);
+    if(mar&&pf&&Number.isFinite(tn)&&tn<-5)ck.push(['ok',`Minimum temperature ${tn} °C: press fit uses the cold-service coefficient${tn<=-10?' (0.0034 × housing)':' (interpolated between −5 °C and −10 °C)'}.`]);
+    if(ex>0)ck.push(['ok',`Above 50 °C extra clearance of ${fx(ex,3)} mm is added to the inside diameter.`]);
+    if(wr)ck.push(['warn','Wear ring: the assembled clearance shown follows the bearing equation. Pump makers usually specify their own running clearance for wear rings, so check it against the pump drawing.']);
     if(lim>0&&Number.isFinite(PV))ck.push(PV<=lim?['ok',`PV ${fx(PV,1)} is ${Math.round(PV/lim*100)}% of the limit you entered.`]:['bad',`PV ${fx(PV,1)} exceeds the limit you entered (${lim}).`]);
     if(gt!=='none'&&!gOK)ck.push(['warn','Enter the groove number, depth and radius (and pitch or length) to include grooves.']);
+    const gf=mode==='rud'?3:2;
     if(gOK&&gt!=='none'){
-      ck.push(G.d<w/2?['ok',`Groove depth ${fx(G.d)} mm is under half the wall thickness (${fx(w/2)} mm).`]:['bad',`Groove depth ${fx(G.d)} mm is half the wall thickness or more. Keep it under ${fx(w/2)} mm and add extra grooves instead.`]);
+      ck.push(G.d<w/gf?['ok',`Groove depth ${fx(G.d)} mm is under ${mode==='rud'?'a third':'half'} of the wall thickness (${fx(w/gf)} mm).`]:['bad',`Groove depth ${fx(G.d)} mm is ${mode==='rud'?'a third':'half'} of the wall thickness or more. Keep it under ${fx(w/gf)} mm and add extra grooves instead.`]);
       if(G.d<2.5)ck.push(['warn','The manual prefers grooves deeper than 2.5 mm to avoid blockage by sand or coarse debris.']);
       if(G.r<G.d/2)ck.push(['warn','Groove radius is small for this depth, giving a narrow slot. A radius of at least half the depth is usual.']);
-      ck.push(['ok',`Grooves remove about ${fx(frac*100,0)}% of the bore surface${frac>0?`, so contact pressure on the remaining surface is about ${fx(Pe)} MPa.`:'.'}`]);
+      ck.push(['ok',`Grooves remove about ${fx(frac*100,0)}% of the bore surface${frac>0&&Number.isFinite(Pe)?`, so contact pressure on the remaining surface is about ${fx(Pe)} MPa.`:'.'}`]);
       if(gt==='long'&&G.n*gw>Math.PI*ID*0.5)ck.push(['warn','Grooves take up more than half the bore circumference.']);
+      if(mode==='stern')ck.push(['ok','Stern tube grooves: use round-based grooves with chamfered edges, and keep one clear of the 6 o\'clock position. Do not grease water-lubricated bearings.']);
     }
+    if(mode==='rud'&&gt==='none')ck.push(['ok','Rudder bearings generally do not need grooves. Occasional greasing is beneficial; grooves for grease may be added to a depth of up to a third of the wall.']);
     if(fl0)ck.push(['ok','Flange: overall length includes the flange thickness. Flange sizes are as entered; the manual gives no flange sizing rule.']);
-    const chn=OD<10?0:OD<=20?0.5:OD<=50?1:OD<=100?1.5:OD<=250?2:3,t20=(x,t)=>x*(1+K*(t-20)),gr=D>=20&&D<=200?GRV.find(x=>D<=x[0]):null;
+    const chn=OD<10?0:OD<=20?0.5:OD<=50?1:OD<=100?1.5:OD<=250?2:3,t20=(x,t)=>x*(1+K*(t-20)),gr=mode==='stern'?(D>=60&&D<=800?GRS.find(x=>D<=x[0]):null):(D>=20&&D<=200?GRV.find(x=>D<=x[0]):null);
     const rows=[['5–10',7.5],['10–15',12.5],['15–20',17.5],['20–30',25],['30–35',32.5],['35–40',37.5]].map(([b,t])=>`<tr><td>${b} °C</td><td>${fx(t20(OD,t),2)}</td><td>${fx(t20(ID,t),2)}</td><td>${fx((t20(OD,t)-t20(ID,t))/2,2)}</td></tr>`).join('');
     const tOD=tol(OD,.1,.025),tID=tol(ID,.1,.025),tW=tol(w,.5,.025),tL=tol(L,.5,.3),dt=new Date(),drg=`${S.dw.prefix||'VI'}-${dt.toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`;
-    const logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
-    LAST={drg,step:{name:'BEARING-BUSH',OD,ID,L,ch:chn||0.5,fl,G:Gu,gz},svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
+    const logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null,tt={ind:'',pump:wr?'PUMP WEAR RING':'PUMP BEARING',rud:'RUDDER BEARING',stern:'STERN TUBE BEARING'}[mode];
+    LAST={drg,step:{name:'BEARING-BUSH',OD,ID,L,ch:chn||0.5,fl,G:Gu,gz},svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,ex,gap,Hmin:mar&&Hmin>0?Hmin:0,tt,g:gk,tOD,tID,tW,tL,pf:pf&&!R.hot,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
     $('#mdr').innerHTML=LAST.svg;MD.hidden=false;$('#stn').textContent='STEP file contains: the bush body'+(fl0?', flange':'')+(chn?', chamfer':'')+(gOK&&gt!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');
     PEND3={OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu};if(T3)upd3(T3,PEND3);else if(!T3L){T3L=true;lib('three').then(()=>{T3=init3($('#m3'));if(T3&&PEND3)upd3(T3,PEND3)}).catch(()=>{$('#m3').innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>'})}
-    O.innerHTML=`<div class="card"><h2>Bearing dimensions at 20 °C</h2><dl class="spec" style="margin:0">
+    const ifit=!pf||R.hot?'0.000 mm (no press fit)':mar&&R.iMax>R.iMin+1e-9?`${fx(R.iMin,3)} – ${fx(R.iMax,3)} mm`:`${fx(press,3)} mm`;
+    O.innerHTML=`<div class="card"><h2>Your results</h2><p class="mut" style="margin:0 0 6px">Bearing at 20 °C, free-standing.${Number.isFinite(tx)||Number.isFinite(tn)?` Sized for ${Number.isFinite(tn)?tn:'–'} to ${Number.isFinite(tx)?tx:'–'} °C.`:''}</p><dl class="spec" style="margin:0">
     <dt>Outside diameter</dt><dd>${fx(OD)} mm ± ${fx(tOD,3)}</dd><dt>Inside diameter</dt><dd>${fx(ID)} mm ± ${fx(tID,3)}</dd>
     <dt>Wall thickness</dt><dd>${fx(w)} mm +0 / −${fx(tW,3)}</dd><dt>Length</dt><dd>${fx(L)} mm +0 / −${fx(tL,2)}</dd>
     ${fl0?`<dt>Flange</dt><dd>Ø${fx(fl.FD)} × ${fx(fl.T)} mm thick</dd>`:''}
-    <dt>Press fit (interference)</dt><dd>${fx(press,3)} mm</dd><dt>Bore closure</dt><dd>${fx(clo,3)} mm</dd><dt>Assembly clearance</dt><dd>${fx(c,3)} mm</dd><dt>Fitted inside diameter</dt><dd>${fx(D+c,3)} mm</dd>
+    ${load?`<dt>Loading pressure P</dt><dd>${Number.isFinite(Pe)?fx(Pe)+' MPa':'–'}</dd><dt>Shaft surface speed V</dt><dd>${Number.isFinite(V)?fx(V,1)+' m/min':'–'}</dd><dt>PV</dt><dd>${Number.isFinite(PV)?fx(PV,1)+' MPa·m/min':'–'}</dd>`:''}
+    <dt>Expansion gap</dt><dd>${gap>0?fx(gap,2)+' mm':'–'}</dd><dt>Interference fit</dt><dd>${ifit}</dd><dt>Bore closure</dt><dd>${fx(clo,3)} mm</dd>
+    <dt>Additional clearance</dt><dd>${fx(ex,3)} mm</dd><dt>Assembled clearance</dt><dd>${fx(c,3)} mm</dd><dt>Fitted inside diameter</dt><dd>${fx(D+c+ex,3)} mm</dd>
+    <dt>Press fit force (estimate)</dt><dd>${R.force>0?fx(R.force,1)+' kN':'–'}</dd><dt>Outside diameter after cooling with dry ice</dt><dd>${fx(R.odCold,2)} mm</dd>
     <dt>Lead-in chamfer</dt><dd>${chn||'–'} mm × 30°</dd>${gOK&&gt!=='none'?`<dt>Grooves</dt><dd>${GTYPES[gt].toLowerCase()}, ${G.n} × ${fx(gw,1)} mm wide × ${fx(G.d)} deep (R${fx(G.r)})${gt==='spiral'?`, pitch ${fx(G.pitch,0)} mm`:''}${gt==='blind'?`, ${fx(G.len,0)} mm long`:''}</dd>`:gr?`<dt>Typical grooves (manual)</dt><dd>${gr[1]} × ${gr[2]} wide × ${gr[3]} deep mm, about ${gr[4]} l/min</dd>`:''}
     ${Number.isFinite(tx)?`<dt>Free-standing ID at ${tx} °C</dt><dd>${fx(t20(ID,tx),2)} mm</dd>`:''}${Number.isFinite(tn)?`<dt>Free-standing ID at ${tn} °C</dt><dd>${fx(t20(ID,tn),2)} mm</dd>`:''}</dl></div>
-    <div class="card"><h2>Loading</h2><div class="res"><div><b>${fx(Pe)}</b><span>MPa pressure</span></div><div><b>${fx(V,1)}</b><span>m/min speed</span></div><div><b>${fx(PV,1)}</b><span>MPa·m/min PV</span></div></div>${Number.isFinite(P)?'':'<p class="mut" style="margin-top:8px">Enter the supported mass to calculate pressure and PV.</p>'}</div>
+    ${load?`<div class="card"><h2>Loading</h2><div class="res"><div><b>${fx(Pe)}</b><span>MPa pressure</span></div><div><b>${fx(V,1)}</b><span>m/min speed</span></div><div><b>${fx(PV,1)}</b><span>MPa·m/min PV</span></div></div>${Number.isFinite(P)?'':'<p class="mut" style="margin-top:8px">Enter the supported mass to calculate pressure and PV.</p>'}</div>`:''}
     <div class="card"><h2>Checks</h2>${ck.map(([k,t])=>`<p class="note ${k}">${k==='ok'?'✓':'⚠'} ${esc(t)}</p>`).join('')}</div>
-    <div class="card"><h2>Size to cut at machining temperature</h2><p class="mut">Dimensions above are for a bearing at 20 °C. If you machine it warmer or cooler, cut to these sizes (mm).</p><div style="overflow-x:auto"><table class="tbl"><tr><th>Bearing temp</th><th>OD</th><th>ID</th><th>Wall</th></tr>${rows}</table></div></div>
-    <div class="card"><h2>How this is calculated</h2><p class="mut">Press fit = 0.05 + 0.002 × housing Ø. Bore closure = press fit × shaft Ø ÷ housing Ø. Assembly clearance = 0.05 + 0.02 × wall. OD = housing Ø + press fit. ID = shaft Ø + bore closure + assembly clearance. Wall = ½ (OD − ID), solved together with the clearance. Pressure = mass × 9.81 ÷ bearings ÷ (shaft Ø × length), divided by the share of bore left after grooving. Rotation speed = π × shaft Ø × rpm ÷ 1000; oscillation and linear speeds count each stroke out and back (an assumption). PV = pressure × speed. Thermal change uses 6 × 10⁻⁵ per °C. Tolerances are the standard machining tolerances. Groove width and depth come from the manual's groove table; groove radius is the round bottom of the groove; the groove area share is an estimate. Blind radial grooves are modelled as closed-ended slots cut into the bore. Source: Vesconite Pump Bearing Design Manual. Press-fit force and expansion gap are not included.</p></div>
+    <div class="card"><h2>Size to cut at machining temperature</h2><p class="mut">Dimensions above are for a bearing at 20 °C. If you machine it warmer or cooler, cut to these sizes (mm). When machining, control the wall thickness and outside diameter.</p><div style="overflow-x:auto"><table class="tbl"><tr><th>Bearing temp</th><th>OD</th><th>ID</th><th>Wall</th></tr>${rows}</table></div></div>
+    <div class="card"><h2>How this is calculated</h2><p class="mut">${mar?`Press fit = 0.05 + 0.002 × housing Ø (minimum temperature above −5 °C) or 0.05 + 0.0034 × housing Ø (below −10 °C, interpolated between), using the maximum housing size. Bore closure = press fit × housing Ø ÷ shaft Ø. Assembly clearance = ${mode==='rud'?'0.2 + 0.0015':'0.2 + 0.002'} × shaft Ø. OD = housing Ø + press fit. ID = shaft Ø + bore closure + assembly clearance + additional clearance.`:`Press fit = 0.05 + 0.002 × housing Ø, plus (5 − min temperature) × 0.000054 × housing Ø below 5 °C. Bore closure = press fit × housing Ø ÷ shaft Ø. Assembly clearance = 0.05 + 0.02 × wall, solved together with the wall. OD = housing Ø + press fit. ID = shaft Ø + bore closure + assembly clearance + additional clearance.`} Additional clearance above 50 °C = (housing Ø² − shaft Ø²) × (max temp − 50) × 0.00006 ÷ shaft Ø. Above 70 °C there is no press fit and the expansion gap = 0.1 + housing Ø × π × (max temp − 25) × 0.00006. Wall = ½ (OD − ID). ${load?'Pressure = mass × 9.81 ÷ bearings ÷ (shaft Ø × length), divided by the share of bore left after grooving. Rotation speed = π × shaft Ø × rpm ÷ 1000; oscillation and linear speeds count each stroke out and back (an assumption). PV = pressure × speed. ':''}Thermal change uses 6 × 10⁻⁵ per °C. Tolerances are the standard machining tolerances. Press fit force is an estimate of mine, not a Vesconite figure: contact pressure from a thick-walled ring in a rigid housing (modulus ${gk==='h'?'2.2':'2.3'} GPa, Poisson 0.4) times a friction coefficient of ${gk==='h'?'0.10':'0.15'} on the contact area. Dry-ice size assumes a 50 °C drop in bearing temperature (the manual quotes 40–60 °C). Groove sizes come from the manual's ${mode==='stern'?'stern tube':'general'} groove table; the groove area share is an estimate.${mode==='pump'?' Pump: Vesconite publishes no separate pump equations, so the industrial equations are used.':''} Sources: Vesconite size-calculation pages${mar?' and the Vesconite Rudder and Stern Tube Bearing Design Manual':''}.</p></div>
     <button class="btn wide" id="dc" type="button">Copy results</button>`;
-    $('#dc').onclick=()=>navigator.clipboard.writeText([`Industrial bearing (${GRADES[gk][0]})`,`Housing ${H} mm, shaft ${D} mm, length ${L} mm, ${pf?'press fit':'no press fit'}${fl0?`, flange Ø${fl.FD} x ${fl.T}`:''}`,`OD ${fx(OD)} mm, ID ${fx(ID)} mm, wall ${fx(w)} mm`,`Press fit ${fx(press,3)} mm, bore closure ${fx(clo,3)} mm, assembly clearance ${fx(c,3)} mm`,gOK&&gt!=='none'?`Grooves: ${GTYPES[gt]}, ${G.n} x depth ${G.d}, radius ${G.r}`:'No grooves',`P ${fx(Pe)} MPa, V ${fx(V,1)} m/min, PV ${fx(PV,1)} MPa·m/min`,...ck.map(([k,t])=>(k==='ok'?'OK: ':'CHECK: ')+t)].join('\n')).then(()=>alert('Results copied.'));
+    $('#dc').onclick=()=>navigator.clipboard.writeText([`${MODES[mode]} bearing (${GRADES[gk][0]})`,`${mar?`Housing ${H} max${Hmin>0?` / ${Hmin} min`:''}`:`Housing ${H}`} mm, shaft ${D} mm, length ${L} mm, ${pf?'press fit':'no press fit'}${fl0?`, flange Ø${fl.FD} x ${fl.T}`:''}`,`OD ${fx(OD)} mm, ID ${fx(ID)} mm, wall ${fx(w)} mm`,`Interference ${ifit}, bore closure ${fx(clo,3)} mm, additional clearance ${fx(ex,3)} mm, assembled clearance ${fx(c,3)} mm, fitted ID ${fx(D+c+ex,3)} mm`,gap>0?`Expansion gap ${fx(gap,2)} mm`:'',gOK&&gt!=='none'?`Grooves: ${GTYPES[gt]}, ${G.n} x depth ${G.d}, radius ${G.r}`:'No grooves',load?`P ${fx(Pe)} MPa, V ${fx(V,1)} m/min, PV ${fx(PV,1)} MPa·m/min`:'',...ck.map(([k,t])=>(k==='ok'?'OK: ':'CHECK: ')+t)].filter(Boolean).join('\n')).then(()=>alert('Results copied.'));
   };
   $$('#DF input').forEach(i=>i.addEventListener('input',cv));$$('#DF select').forEach(i=>{i.addEventListener('input',cv);i.addEventListener('change',cv)});cv();
 }
@@ -880,43 +1066,19 @@ else{
   getDoc(dc('settings','app')).then(s=>{if(s.exists()){S=mergeS(s.data());try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}if(!t0&&S.mode!=='auto')setT(S.mode);apply(S);if(ready)soft()}}).catch(()=>{});
   onAuthStateChanged(au,u=>boot(u).catch(e=>{ready=true;$('#v').innerHTML=`<h1>Can't load data</h1><p class="mut">${esc(e.message)}</p><p class="mut">Check that the Firestore rules in firestore.rules are published.</p>`}));
 }
-/* ---------- Easter egg: a container ship sails up the page, propeller turning ---------- */
-const SHIP_SVG=(()=>{
-  const cols=['#c0392b','#2e86c1','#e0a21b','#27ae60','#8e44ad','#d35400','#16a085','#7f8c8d','#2c3e50','#e67e22'];let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
-  let cn='';for(let r=0;r<8;r++)for(let c=0;c<4;c++){const x=20.5+c*10,y=118+r*12.4,f=cols[Math.floor(rnd()*cols.length)];cn+=`<rect x="${x}" y="${y}" width="9" height="11.4" fill="${f}" stroke="rgba(0,0,0,.35)" stroke-width=".4"/><line x1="${x+4.5}" y1="${y+1}" x2="${x+4.5}" y2="${y+10.4}" stroke="rgba(0,0,0,.22)" stroke-width=".4"/>`}
-  for(let r=0;r<3;r++)for(let c=0;c<3;c++){const x=25.5+c*10,y=70+r*14,f=cols[Math.floor(rnd()*cols.length)];if(r===0&&c!==1)continue;cn+=`<rect x="${x}" y="${y}" width="9" height="13" fill="${f}" stroke="rgba(0,0,0,.35)" stroke-width=".4"/>`}
-  const bl=[0,90,180,270].map(a=>`<ellipse cx="0" cy="-6.2" rx="3.1" ry="6.3" fill="#d4a24c" stroke="#7a5a1c" stroke-width=".5" transform="rotate(${a})"/>`).join('');
-  return `<svg viewBox="0 0 80 340" xmlns="http://www.w3.org/2000/svg"><path class="wk" d="M30 284 C26 310 18 326 6 340 L74 340 C62 326 54 310 50 284Z" fill="rgba(255,255,255,.28)"/><path class="wk" d="M36 288 C34 312 30 326 24 340 L56 340 C50 326 46 312 44 288Z" fill="rgba(255,255,255,.35)"/>
-<path d="M40 4C58 40 66 80 66 130V270Q66 282 58 284H22Q14 282 14 270V130C14 80 22 40 40 4Z" fill="#1f3a5f" stroke="#0e2036" stroke-width="1"/><path d="M40 13C54 46 60 84 60 134V268Q60 276 54 278H26Q20 276 20 268V134C20 84 26 46 40 13Z" fill="#9aa5b1"/>${cn}
-<rect x="21" y="222" width="38" height="52" rx="2" fill="#eef1f4" stroke="#5b6672" stroke-width=".6"/><rect x="18" y="226" width="44" height="9" rx="1.5" fill="#fafbfc" stroke="#5b6672" stroke-width=".6"/><rect x="22" y="228" width="36" height="3.4" fill="#3b6ea5"/><ellipse cx="49" cy="258" rx="6" ry="7" fill="#c0392b" stroke="#6b1d14" stroke-width=".6"/><ellipse cx="49" cy="258" rx="3.6" ry="4.4" fill="#2a2a2a"/><rect x="25" y="246" width="12" height="22" fill="#cfd5db" stroke="#8a949e" stroke-width=".4"/>
-<rect x="38" y="283" width="4" height="14" rx="1" fill="#14253a"/><g transform="translate(40 298)"><circle r="12" fill="rgba(255,255,255,.18)"/><g class="prop">${bl}<circle r="2.2" fill="#8a6a2a" stroke="#4a3810" stroke-width=".5"/></g></g></svg>`;
-})();
-function showShip(){
-  if(document.getElementById('ship')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
-  const d=document.createElement('div');d.id='ship';d.setAttribute('aria-hidden','true');
-  d.innerHTML=`<div class="sea"></div><div class="waves"></div><div class="vessel"><div class="sway">${SHIP_SVG}</div></div>`;
-  document.body.appendChild(d);requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('on')));
-  setTimeout(()=>d.classList.remove('on'),8000);setTimeout(()=>d.remove(),8700);
-}
-/* Pull down to refresh: a small Hilube bush (50 x 40 x 60 mm, longitudinal grooves) that hops. A very long pull (or a long scroll-up on a computer) sends a container ship up the page. */
+/* Pull down to refresh: a small Hilube bush (50 x 40 x 60 mm, longitudinal grooves) that hops */
 (function(){
-  const REF=90,SHP=230;
   const el=document.createElement('div');el.id='ptr';el.setAttribute('aria-hidden','true');
   const notch=Array.from({length:6},(_,k)=>{const t=(90+k*60)*Math.PI/180;return `<circle cx="${(30+16*Math.cos(t)).toFixed(2)}" cy="${(20+5.1*Math.sin(t)).toFixed(2)}" r="1.9" fill="#2a2e33"/>`}).join('');
   const lines=[210,250,290,330].map(a=>{const t=a*Math.PI/180,x=(30+16*Math.cos(t)).toFixed(2),y=(20+5.1*Math.sin(t)).toFixed(2);return `<line x1="${x}" y1="${y}" x2="${x}" y2="${(+y+11).toFixed(2)}" stroke="#555b63" stroke-width="1.6"/>`}).join('');
-  el.innerHTML=`<div class="pb"><svg viewBox="0 0 60 84" width="50" height="70"><defs><linearGradient id="pbg" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="pbl" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="pbc"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#pbg)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#pbl)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#pbc)">${lines}</g>${notch}</svg></div><div class="pshp">${SHIP_SVG}</div><i class="ps"></i>`;
+  el.innerHTML=`<div class="pb"><svg viewBox="0 0 60 84" width="50" height="70"><defs><linearGradient id="pbg" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="pbl" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="pbc"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#pbg)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#pbl)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#pbc)">${lines}</g>${notch}</svg></div><i class="ps"></i>`;
   document.body.appendChild(el);
   const pb=el.querySelector('.pb');let y0=0,dy=0,on=false;
-  const pull=d=>{const q=Math.min(d,130);el.style.transform=`translate(-50%,${q*.78-84}px)`;pb.style.transform=`rotate(${Math.sin(q/15)*12}deg) scale(${.72+Math.min(q,90)/320})`;el.classList.toggle('ready',d>REF&&d<SHP);el.classList.toggle('sh',d>=SHP)};
-  const rest=()=>{el.style.transform='';pb.style.transform='';el.classList.remove('ready','sh')};
-  addEventListener('touchstart',e=>{on=scrollY<=0&&e.touches.length===1&&!e.target.closest('.ov,.m3,textarea,input,select');if(on){y0=e.touches[0].clientY;dy=0}},{passive:true});
+  const pull=d=>{const q=Math.min(d,130);el.style.transform=`translate(-50%,${q*.78-84}px)`;pb.style.transform=`rotate(${Math.sin(q/15)*12}deg) scale(${.72+Math.min(q,90)/320})`;el.classList.toggle('ready',d>90)};
+  const rest=()=>{el.style.transform='';pb.style.transform='';el.classList.remove('ready')};
+  addEventListener('touchstart',e=>{on=scrollY<=0&&e.touches.length===1&&!e.target.closest('.ov,#bgame,.m3,textarea,input,select');if(on){y0=e.touches[0].clientY;dy=0}},{passive:true});
   addEventListener('touchmove',e=>{if(!on)return;dy=e.touches[0].clientY-y0;if(dy>0)pull(dy);else{on=false;rest()}},{passive:true});
-  addEventListener('touchend',()=>{
-    if(on&&dy>=SHP){rest();showShip()}
-    else if(on&&dy>REF){el.classList.remove('ready');el.classList.add('go');el.style.transform='translate(-50%,26px)';pb.style.transform='';setTimeout(()=>location.reload(),1200)}
-    else rest();
-    on=false},{passive:true});
-  let wa=0,wt=0;addEventListener('wheel',e=>{if(scrollY<=0&&e.deltaY<0){const t=Date.now();if(t-wt>700)wa=0;wt=t;wa-=e.deltaY;if(wa>2400){wa=0;showShip()}}else wa=0},{passive:true});
+  addEventListener('touchend',()=>{if(on&&dy>90){el.classList.remove('ready');el.classList.add('go');el.style.transform='translate(-50%,26px)';pb.style.transform='';setTimeout(()=>location.reload(),1200)}else rest();on=false},{passive:true});
 })();
 
 setInterval(()=>{if(!document.hidden)notifCheck()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)notifCheck()});

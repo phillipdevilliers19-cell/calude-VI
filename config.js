@@ -1,3 +1,4 @@
+/* Firebase settings for the vesco-intelligence project (public by design; the security rules protect the data). */
 window.VI_CONFIG={
   firebase:{
     apiKey:'AIzaSyDQHQ0ThoRVhgIeCBMtVwAycHnOaHwiq7U',

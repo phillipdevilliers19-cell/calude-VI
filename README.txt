@@ -19,8 +19,9 @@ STEPS
 KEEP IN THE REPO (not in this zip): vesco-intelligence-logo-header.png, icon-192.png, icon-512.png
 
 THIS UPDATE
-  - Grooves now appear in drawings (section, end view, DETAIL B with depth, radius, width, pitch/length) and in STEP files.
-    Choosing a groove type fills in recommended values automatically; edit them if you want.
-  - 3D model uses plain colours only: Vesconite grey, Hilube whitish. textures.js is no longer used (delete it from the repo).
-  - Easter egg: pull the page down a very long way (or keep scrolling up at the top on a computer) for a container ship.
-Upload app.js and style.css. Firestore rules are unchanged.
+  - Tools > Design a bearing now has four calculators in one place: Industrial, Pump, Marine rudder, Marine stern.
+    Results list matches Vesconite's own calculator (expansion gap, interference fit, bore closure, additional and assembled clearance,
+    fitted ID, press fit force estimate, OD after dry-ice cooling).
+  - STEP files rebuilt as proper solid B-reps (planes, cylinders, cones with seam edges; grooves as flat faces).
+  - Vesconite 3D colour darkened. Container ship easter egg removed.
+Upload app.js and style.css. Firestore rules are unchanged. Delete textures.js from the repo if it is still there.
