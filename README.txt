@@ -1,3 +1,10 @@
+LATEST CHANGES
+- Drawings: OD and ID now say "OD" / "ID", the wall dimension says "WALL", and the data table lists OD, ID and wall thickness with tolerances. The centre line no longer runs through the OD text.
+- Each Design a bearing calculator now remembers its own units (metric or imperial) separately.
+- Game: 10 coins for a shield.
+- New icons, favicon and splash from your logo. Upload ALL PNG files (icon-192, icon-512, icon-maskable-512, apple-touch-icon, favicon-32, logo-full).
+- New tool: Freezer shrink time (Tools > Design).
+
 THIS UPDATE
 - Backup reminders: Admin > Backups lets you choose how often (never, daily, weekly, 2 weeks, monthly). When a backup is due, admins see a banner on Home with "Back up now" and "Remind me tomorrow". The last-backup date is saved in the settings document, so no rules change is needed.
 - App icons and splash screen: new icon PNGs (192, 512, maskable, Apple touch 180, favicon) plus a splash screen that fades out when the app is ready. Upload ALL the PNG files in this folder.

@@ -181,7 +181,7 @@ function playBush(){
           const top=p.cy-gap/2,bot=p.cy+gap/2,hit=(rx,ry,rw,rh)=>hx<rx+rw&&hx+hw>rx&&hy<ry+rh&&hy+hh>ry;
           if(hit(p.x,0,PW,top-22)||hit(p.x-8,top-22,PW+16,22)||hit(p.x-8,bot,PW+16,22)||hit(p.x,bot+22,PW,640)){die();break}}
         if(st!=='dead')for(const c of coins){const cx=c.p.x+PW/2,cy=c.p.cy;if(!c.got&&Math.hypot(B.x-cx,B.y-cy)<30){c.got=true;cn++;combo++;beep(1046,.07,'square',.05);beep(1568,.12,'square',.05,undefined,.07);puff(cx,cy,12,['#35b34a','#b6f0bf','#fff'],170,.55,3);pop(combo>1?`+1 x${combo}`:'+1',cx,cy-20,'#8ff0a4');
-          if(cn%5===0){shield=true;shT=5;pop('SHIELD! 5 seconds',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
+          if(cn%10===0){shield=true;shT=5;pop('SHIELD! 5 seconds',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
       }
     }
     for(const p of parts){p.l-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.l>0);
@@ -226,9 +226,9 @@ function playBush(){
     x.restore();
     /* HUD */
     if(st!=='idle'){text(String(score),W/2,92,64,'#fff','center',8);
-      x.font='700 15px system-ui,sans-serif';x.textAlign='left';text(`Coins ${cn%5}/5`,14,625-FL,13,'#8ff0a4','left',3);if(shield)text(`SHIELD ${Math.ceil(shT)}s`,W-14,625-FL,13,shT<2?'#ffb86b':'#7fd0ff','right',3);
+      x.font='700 15px system-ui,sans-serif';x.textAlign='left';text(`Coins ${cn%10}/10`,14,625-FL,13,'#8ff0a4','left',3);if(shield)text(`SHIELD ${Math.ceil(shT)}s`,W-14,625-FL,13,shT<2?'#ffb86b':'#7fd0ff','right',3);
       text(`Best ${best}`,W/2,122,14,'#fff','center',3)}
-    if(st==='idle'){text('BUSH HOP',W/2,150,50,'#ffd23f','center',8);text('Tap to hop. Dodge the shafts.',W/2,190,17,'#fff','center',4);text('Green coins: 5 = 5s shield.',W/2,214,15,'#cfeeff','center',4);text(best?`Best ${best}`:'',W/2,246,18,'#fff','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('TAP TO START',W/2,420,24,'#fff','center',5);x.globalAlpha=1}
+    if(st==='idle'){text('BUSH HOP',W/2,150,50,'#ffd23f','center',8);text('Tap to hop. Dodge the shafts.',W/2,190,17,'#fff','center',4);text('Green coins: 10 = 5s shield.',W/2,214,15,'#cfeeff','center',4);text(best?`Best ${best}`:'',W/2,246,18,'#fff','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('TAP TO START',W/2,420,24,'#fff','center',5);x.globalAlpha=1}
     if(st==='dead'&&t-deadT>.5){const k=clamp((t-deadT-.5)*4,0,1);x.globalAlpha=k;x.fillStyle='rgba(8,20,32,.72)';roundRect(W/2-150,170,300,250,18);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=3;x.stroke();
       text(deadMsg,W/2,214,28,'#ffd23f','center',5);text(String(score),W/2,292,66,'#fff','center',8);text(newBest?'NEW BEST!':`Best ${best}`+(myRank?`  ·  Rank #${myRank}`:''),W/2,324,18,newBest?'#8ff0a4':'#cfeeff','center',4);
       const m=medal(score);if(m)text(m[0],W/2,358,20,m[1],'center',4);else text('Reach 10 for bronze',W/2,358,15,'#aab8c4','center',3);
@@ -425,7 +425,7 @@ function portfolio(v){
 function tools(v){
   P=P.filter(id=>A.some(a=>a.id===id));
   v.innerHTML=`<h1>Tools</h1>
-  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a></section>':''}
+  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a><a class="row" href="#/freezer" style="margin-top:8px"><div class="th">❄</div><div><strong>Freezer shrink time</strong><small>How long to cool a bush so it slides into the housing</small></div><span class="chip ok">Open</span></a></section>':''}
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><button class="btn" id="so">Sign out</button></section>`;
@@ -562,20 +562,20 @@ function upd3(st,o){
 /* Engineering drawing (SVG in mm, A3 layout): end view, half section A-A, dimensions with tolerances, data table, notes, title block */
 function drawSVG(p){
   const{OD,ID,L,ch,w,H,D,press,clo,c,g,tOD,tID,tW,tL,pf,drg,G,fl,dw,logo,gz}=p,q=p.q,e=esc,Dm=fl.on?fl.FD:OD,imp=!!p.imp,fL=(x,d=2)=>imp?fx(x/25.4,d+1):fx(x,d);
-  const sa=[5,2,1,.5,.2,.1,.05,.02,.01],extra=fl.on?20:24+String(q?q.lab.W:`${fL(w)} +0/−${fL(tW,3)}`).length*1.6,fitS=x=>x*Dm<=118&&x*L<=125&&80+x*(Dm/2+L)+(fl.on?52:46)+extra<=334,s=q&&q.scale>0?q.scale:(sa.find(fitS)||.01),scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
+  const sa=[5,2,1,.5,.2,.1,.05,.02,.01],extra=fl.on?20:24+String(q?q.lab.W:`WALL ${fL(w)} +0/−${fL(tW,3)}`).length*1.6,fitS=x=>x*Dm<=118&&x*L<=125&&80+x*(Dm/2+L)+(fl.on?52:46)+extra<=334,s=q&&q.scale>0?q.scale:(sa.find(fitS)||.01),scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
   const cy=118,cx1=80,rO=OD*s/2,rI=ID*s/2,rF=fl.on?fl.FD*s/2:rO,cs=ch>0?Math.min(Math.max(ch*s,.8),(rO-rI)*.8):0,cx2=cx1+rF+(fl.on?52:46)+L*s/2,x0=cx2-L*s/2,x1=cx2+L*s/2,xF=x1-(fl.on?fl.T*s:0);
   const yTO=cy-rO,yTI=cy-rI,yBI=cy+rI,yBO=cy+rO,yTF=cy-rF,yBF=cy+rF,hh=L/2,n=v=>+v.toFixed(2),pts=a=>a.map(q=>n(q[0])+','+n(q[1])).join(' ');
   const dh=(a,b,yr,y,t)=>{const k=y>yr?1:-1;return `<line class="k2" x1="${n(a)}" y1="${n(yr+k)}" x2="${n(a)}" y2="${n(y+k*2)}"/><line class="k2" x1="${n(b)}" y1="${n(yr+k)}" x2="${n(b)}" y2="${n(y+k*2)}"/><line class="k4" x1="${n(a)}" y1="${n(y)}" x2="${n(b)}" y2="${n(y)}"/><text x="${n((a+b)/2)}" y="${n(y-1.2)}" text-anchor="middle">${e(t)}</text>`};
-  const dv=(a,b,xr,x,t)=>{const k=x>xr?1:-1;return `<line class="k2" x1="${n(xr+k)}" y1="${n(a)}" x2="${n(x+k*2)}" y2="${n(a)}"/><line class="k2" x1="${n(xr+k)}" y1="${n(b)}" x2="${n(x+k*2)}" y2="${n(b)}"/><line class="k4" x1="${n(x)}" y1="${n(a)}" x2="${n(x)}" y2="${n(b)}"/><text transform="translate(${n(x-1.2)} ${n((a+b)/2)}) rotate(-90)" text-anchor="middle">${e(t)}</text>`};
+  const dv=(a,b,xr,x,t)=>{const k=x>xr?1:-1;return `<line class="k2" x1="${n(xr+k)}" y1="${n(a)}" x2="${n(x+k*2)}" y2="${n(a)}"/><line class="k2" x1="${n(xr+k)}" y1="${n(b)}" x2="${n(x+k*2)}" y2="${n(b)}"/><line class="k4" x1="${n(x)}" y1="${n(a)}" x2="${n(x)}" y2="${n(b)}"/><text transform="translate(${n(x-2.6)} ${n((a+b)/2)}) rotate(-90)" text-anchor="middle">${e(t)}</text>`};
   const cell=(x,y,wd,h,l,t,sz=3.6)=>`<rect class="k1" x="${x}" y="${y}" width="${wd}" height="${h}"/><text class="lb" x="${x+1}" y="${y+2.6}">${l}</text><text x="${x+1.5}" y="${y+h-1.7}" style="font-size:${Math.min(sz,(wd-3)/Math.max(1,String(t).replace(/&[#a-z0-9]+;/g,"x").length*.5)).toFixed(2)}px">${t}</text>`;
   const inner=(th,sgn)=>{const a=[];for(let k=0;k<=160;k++)a.push([x0+(x1-x0)*k/160,(sgn<0?yTI:yBI)+(sgn<0?-1:1)*gz(th,-hh+L*k/160)*s]);return a};
   const topOut=fl.on?[[x0,yTO+cs],[x0+cs,yTO],[xF,yTO],[xF,yTF],[x1,yTF]]:[[x0,yTO+cs],[x0+cs,yTO],[x1-cs,yTO],[x1,yTO+cs]];
   const botOut=fl.on?[[x0,yBO-cs],[x0+cs,yBO],[xF,yBO],[xF,yBF],[x1,yBF]]:[[x0,yBO-cs],[x0+cs,yBO],[x1-cs,yBO],[x1,yBO-cs]];
   const ti=inner(Math.PI/2,-1),bi=inner(3*Math.PI/2,1),topP=[...topOut,...ti.slice().reverse()],botP=[...botOut,...bi.slice().reverse()];
   const idEnd=G.type==='none'?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>`:`<path class="k1" d="M${Array.from({length:720},(_,k)=>{const t=2*Math.PI*k/720,r=rI+gz(t,hh)*s;return n(cx1+r*Math.cos(t))+','+n(cy-r*Math.sin(t))}).join('L')}Z"/>`;
-  const lab=q?q.lab:{OD:`Ø${fL(OD)} ±${fL(tOD,3)}`,ID:`Ø${fL(ID)} ±${fL(tID,3)}`,L:`${fL(L)} +0/−${fL(tL)}`,W:`${fL(w)} +0/−${fL(tW,3)}`,FD:`Ø${fL(fl.FD)}`,T:`${fL(fl.T)}`};
+  const lab=q?q.lab:{OD:`OD Ø${fL(OD)} ±${fL(tOD,3)}`,ID:`ID Ø${fL(ID)} ±${fL(tID,3)}`,L:`${fL(L)} +0/−${fL(tL)}`,W:`WALL ${fL(w)} +0/−${fL(tW,3)}`,FD:`Ø${fL(fl.FD)}`,T:`${fL(fl.T)}`};
   const gw=G.type==='none'?0:grooveWidth(G.d,G.r);
-  const ex=p.ex||0,fit=[[p.Hmin>0?'HOUSING Ø MAX':'HOUSING Ø',fL(H)]];if(p.Hmin>0)fit.push(['HOUSING Ø MIN',fL(p.Hmin)]);fit.push(['SHAFT Ø',fL(D)],['PRESS FIT',pf&&!(p.gap>0)?fL(press,3):'NONE'],['BORE CLOSURE',fL(clo,3)],['ASSEMBLY CLEARANCE',fL(c,3)]);if(ex>0)fit.push(['ADDITIONAL CLEARANCE',fL(ex,3)]);if(p.gap>0)fit.push(['EXPANSION GAP',fL(p.gap,2)]);fit.push(['FITTED INSIDE Ø',fL(D+c+ex,3)],['WALL',fL(w)]);
+  const ex=p.ex||0,fit=[[p.Hmin>0?'HOUSING Ø MAX':'HOUSING Ø',fL(H)]];if(p.Hmin>0)fit.push(['HOUSING Ø MIN',fL(p.Hmin)]);fit.push(['SHAFT Ø',fL(D)],['PRESS FIT',pf&&!(p.gap>0)?fL(press,3):'NONE'],['BORE CLOSURE',fL(clo,3)],['ASSEMBLY CLEARANCE',fL(c,3)]);if(ex>0)fit.push(['ADDITIONAL CLEARANCE',fL(ex,3)]);if(p.gap>0)fit.push(['EXPANSION GAP',fL(p.gap,2)]);fit.push(['FITTED INSIDE Ø',fL(D+c+ex,3)]);if(!q)fit.push(['BEARING OUTSIDE Ø (OD)',`${fL(OD)} ±${fL(tOD,3)}`],['BEARING INSIDE Ø (ID)',`${fL(ID)} ±${fL(tID,3)}`],['WALL THICKNESS',`${fL(w)} +0/−${fL(tW,3)}`]);else fit.push(['WALL',fL(w)]);
   if(fl.on)fit.push(['FLANGE Ø',fL(fl.FD)],['FLANGE THICKNESS',fL(fl.T)]);
   if(G.type!=='none'){fit.push(['GROOVE TYPE',GTYPES[G.type]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fL(G.d)],['GROOVE RADIUS',fL(G.r)],['GROOVE WIDTH',fL(gw)]);if(G.type==='spiral')fit.push(['SPIRAL PITCH',fL(G.pitch)]);if(G.type==='blind')fit.push(['GROOVE LENGTH',fL(G.len)])}
   const fitSentence=pf?'INTERFERENCE FIT INTO HOUSING. FREEZE-FIT OR PRESS WITH A MANDREL.':'NO PRESS FIT: SECURE THE BEARING MECHANICALLY OR BY BONDING.';
@@ -623,7 +623,7 @@ ${fl.on?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rF)}"/><circle class="
 <text x="${cx1}" y="${n(cy+rF+27)}" text-anchor="middle" class="tt">END VIEW${fl.on?' (FLANGE END)':''}</text>
 <polygon class="k1" style="fill:url(#vh)" points="${pts(topP)}"/><polygon class="k1" style="fill:url(#vh)" points="${pts(botP)}"/>
 <line class="k1" x1="${n(x0)}" y1="${n(ti[0][1])}" x2="${n(x0)}" y2="${n(bi[0][1])}"/><line class="k1" x1="${n(x1)}" y1="${n(ti[160][1])}" x2="${n(x1)}" y2="${n(bi[160][1])}"/>
-<line class="k3" x1="${n(x0-9)}" y1="${cy}" x2="${n(x1+9)}" y2="${cy}"/>
+<line class="k3" x1="${n(x0-9)}" y1="${cy}" x2="${n(x1+4)}" y2="${cy}"/>
 <text x="${n(cx2)}" y="${n(yBF+27)}" text-anchor="middle" class="tt">SECTION A–A</text>
 ${dh(x0,x1,yBF,yBF+11,lab.L)}
 ${dv(yTI,yBI,x0,x0-13,lab.ID)}
@@ -793,7 +793,7 @@ function design(v,id){
   let mode=MODES[id]?id:'ind';if(!MODES[id]){try{const m=localStorage.getItem('vi4m');if(MODES[m])mode=m}catch{}}
   try{localStorage.setItem('vi4m',mode)}catch{}
   const mar=mode==='rud'||mode==='stern',pump=mode==='pump',load=!mar;
-  let im=false;try{im=localStorage.getItem('vi4u')==='i'}catch{}
+  let im=false;try{im=localStorage.getItem('vi4u_'+mode)==='i'}catch{}
   const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>{const x=im?c*9/5+32:c;return `${Math.abs(x-Math.round(x))<.05?Math.round(x):x.toFixed(1)} ${im?'°F':'°C'}`};
@@ -834,7 +834,7 @@ function design(v,id){
   $$('#MD .seg button').forEach(b=>b.onclick=()=>{$$('#MD .seg button').forEach(x=>x.classList.toggle('on',x===b));$('#m3').hidden=b.dataset.t!=='3d';$('#mdr').hidden=b.dataset.t!=='dr'});
   $('#mx').onclick=openDrawing;$('#mstep').onclick=stepDownload;
   $('#mc').onclick=()=>{if(T3){T3.cut=!T3.cut;$('#mc').textContent=T3.cut?'Full view':'Cutaway view';if(T3.last)upd3(T3,T3.last)}};
-  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#DF input[data-q]').map(e=>[e.id,e.value===''?null:g(e.id)]);im=ni;try{localStorage.setItem('vi4u',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#DF [data-u]').forEach(s=>{s.textContent=im?UC[s.dataset.u].i:UC[s.dataset.u].u});$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));$('#GR').dataset.h='';cv()};
+  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#DF input[data-q]').map(e=>[e.id,e.value===''?null:g(e.id)]);im=ni;try{localStorage.setItem('vi4u_'+mode,u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#DF [data-u]').forEach(s=>{s.textContent=im?UC[s.dataset.u].i:UC[s.dataset.u].u});$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));$('#GR').dataset.h='';cv()};
   $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
   let lastGt='none',autoDone=false;
   const cv=()=>{
@@ -918,6 +918,94 @@ function design(v,id){
     $('#dc').onclick=()=>navigator.clipboard.writeText([`${MODES[mode]} bearing (${GRADES[gk][0]})`,`${mar?`Housing ${dL(H)} max${Hmin>0?` / ${dL(Hmin)} min`:''}`:`Housing ${dL(H)}`} ${uL()}, shaft ${dL(D)} ${uL()}, length ${dL(L)} ${uL()}, ${pf?'press fit':'no press fit'}${fl0?`, flange Ø${dL(fl.FD)} x ${dL(fl.T)} ${uL()}`:''}`,`OD ${dL(OD)} ${uL()}, ID ${dL(ID)} ${uL()}, wall ${dL(w)} ${uL()}`,`Interference ${ifit}, bore closure ${dL(clo,3)} ${uL()}, additional clearance ${dL(ex,3)} ${uL()}, assembled clearance ${dL(c,3)} ${uL()}, fitted ID ${dL(D+c+ex,3)} ${uL()}`,gap>0?`Expansion gap ${dL(gap,2)} ${uL()}`:'',gOK&&gt!=='none'?`Grooves: ${GTYPES[gt]}, ${G.n} x depth ${dL(G.d)}, radius ${dL(G.r)} ${uL()}`:'No grooves',load?`P ${pM(Pe)}, V ${vS(V)}, PV ${pvS(PV)}`:'',...ck.map(([k,t])=>(k==='ok'?'OK: ':'CHECK: ')+t)].filter(Boolean).join('\n')).then(()=>alert('Results copied.'));
   };
   $$('#DF input').forEach(i=>i.addEventListener('input',cv));$$('#DF select').forEach(i=>{i.addEventListener('input',cv);i.addEventListener('change',cv)});cv();
+}
+
+/* ---------- Freezer shrink: how long to cool a bush so it slides into the housing ---------- */
+const FZP={fr:['Home freezer, still air',-18,8],fan:['Fan-cooled freezer',-25,20],deep:['Deep freezer, still air',-40,8],dry:['Dry ice in a cooler',-78,12]};
+const FZV={};   /* remembered inputs, kept in millimetres and °C */
+function fzMk(w,T0){   /* 1-D wall with both faces exposed (implicit finite volume); returns a stepper */
+  const k=.3,rho=1380,cp=1300,N=30,dx=w/2000/N,Cc=rho*cp*dx,G=k/dx,T=new Array(N).fill(T0),b=new Array(N),cc=new Array(N),dd=new Array(N);
+  return{mean:()=>T.reduce((s,x)=>s+x,0)/N,step(dt,Ta,h){const Gs=1/(dx/(2*k)+1/h),q=Cc/dt;
+    for(let i=0;i<N;i++){b[i]=q+(i?G:0)+(i<N-1?G:Gs);dd[i]=q*T[i]+(i===N-1?Gs*Ta:0)}
+    cc[0]=-G/b[0];dd[0]=dd[0]/b[0];for(let i=1;i<N;i++){const m=b[i]+G*cc[i-1];cc[i]=i<N-1?-G/m:0;dd[i]=(dd[i]+G*dd[i-1])/m}
+    T[N-1]=dd[N-1];for(let i=N-2;i>=0;i--)T[i]=dd[i]-cc[i]*T[i+1]}};
+}
+function fzSim(w,h,T0,Ta,tMax){   /* volume-average bush temperature against time in the cold */
+  const m=fzMk(w,T0),out={t:[0],m:[T0]};let t=0,dt=.5;
+  while(t<tMax){m.step(dt,Ta,h);t+=dt;out.t.push(t);out.m.push(m.mean());dt=Math.min(dt*1.03,30);if(t>60&&Math.abs(out.m[out.m.length-1]-Ta)<.01*Math.abs(T0-Ta))break}
+  return out;
+}
+const fzAt=(o,t)=>{const a=o.t;if(t<=0)return o.m[0];if(t>=a[a.length-1])return o.m[o.m.length-1];let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;a[m]<=t?lo=m:hi=m}const f=(t-a[lo])/(a[hi]-a[lo]);return o.m[lo]+(o.m[hi]-o.m[lo])*f};
+const fzTime=s=>s<90?`${Math.round(s)} s`:s<5400?`${Math.round(s/60)} min`:`${Math.floor(s/3600)} h ${String(Math.round(s%3600/60)).padStart(2,'0')} min`;
+function freezer(v){
+  if(!S.feat.pv){location.hash='#/tools';return}
+  let im=false;try{im=localStorage.getItem('vi4u_frz')==='i'}catch{}
+  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
+  const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
+  const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>`${fx(im?c*9/5+32:c,0)} ${im?'°F':'°C'}`;
+  const n=(id,l,u,val='')=>{const q=UQ[u];return `<label>${l} <span class="mut" data-u="${q}">${im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" data-q="${q}"></label>`};
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Freezer shrink time</h1>
+  <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
+  <p class="mut">Works out how long to leave a Vesconite or Vesconite Hilube bush in a freezer so that it shrinks enough to slide into its housing, and how long you have to fit it once it is out. Based on the published expansion of 6 × 10⁻⁵ per °C. The cooling time is an estimate: always measure the cooled bush before fitting.</p>
+  <form class="card" id="FF"><div class="g2">${n('f1','Bearing outside diameter at 20 °C','mm')}${n('f2','Housing bore diameter','mm')}${n('f3','Bearing wall thickness','mm')}${n('f4','Clearance you want when sliding in','mm','0.10')}${n('f5','Starting (room) temperature','°C','20')}</div>
+  <label>Cooling method<select id="f6">${Object.entries(FZP).map(([k,x])=>`<option value="${k}">${x[0]}</option>`).join('')}</select></label>
+  <div class="g2">${n('f7','Cold temperature','°C','-18')}</div>
+  <p class="mut" style="margin:0">Assumes the bush stands free with cold air all round it, inside and out. A bush in a bag, a box or stacked takes longer.</p></form>
+  <div id="FO"></div>`;
+  Object.entries(FZV).forEach(([k,x])=>{const e=$('#'+k);if(!e)return;if(e.dataset.q&&x!=='')put(k,+x);else e.value=x});
+  $('#FF').onsubmit=e=>e.preventDefault();
+  const cv=()=>{
+    $$('#FF input,#FF select').forEach(e=>{FZV[e.id]=e.dataset.q&&e.value!==''?String(+g(e.id).toFixed(6)):e.value});
+    const O=$('#FO'),OD=g('f1'),H=g('f2'),w=g('f3'),c=g('f4')||0,T0=g('f5'),Tc=g('f7'),hc=FZP[$('#f6').value][2],bad=m=>{O.innerHTML=m};
+    if(!(OD>0&&H>0&&w>0&&Number.isFinite(T0)&&Number.isFinite(Tc)))return bad('<p class="mut">Enter the bearing outside diameter, housing bore, wall thickness and temperatures.</p>');
+    if(w*2>=OD)return bad('<p class="note bad">The wall thickness must be less than half the outside diameter.</p>');
+    if(Tc>=T0)return bad('<p class="note bad">The cold temperature must be below the starting temperature.</p>');
+    const AL=6e-5,shr=m=>OD*AL*(20-m),itf=OD-H,need=itf+c,maxS=shr(Tc),ck=[];
+    const sim=fzSim(w,hc,T0,Tc,172800),tEnd=sim.t[sim.t.length-1],startS=shr(T0);
+    if(itf<=0)ck.push(['ok',`The bush at ${tF(20)} is already ${dL(-itf,3)} ${uL()} smaller than the bore, so it needs no cooling.`]);
+    if(need<=startS&&itf>0)ck.push(['ok','It already slides in at the starting temperature with the clearance you asked for.']);
+    const reach=need<=maxS*.985;
+    let tReq=null;if(need>startS&&reach){for(let i=0;i<sim.t.length;i++){if(shr(sim.m[i])>=need){tReq=sim.t[i];break}}}
+    const tRec=tReq!=null?Math.max(tReq*1.2,tReq+300):null,Tneed=20-need/(OD*AL);
+    let win=null;
+    if(tRec!=null){const m=fzMk(w,T0);let t=0,dt=.5;while(t<tRec){const d=Math.min(dt,tRec-t);m.step(d,Tc,hc);t+=d;dt=Math.min(dt*1.03,30)}
+      t=0;dt=.5;win=1800;while(t<1800){m.step(dt,T0,10);t+=dt;dt=Math.min(dt*1.03,10);if(shr(m.mean())<itf){win=t;break}}}
+    if(tReq==null&&need>startS){ck.push(reach?['warn','This takes longer than 48 hours. Use a colder method.']:['bad',`${tF(Tc)} is not cold enough. At full soak the bush shrinks only ${dL(maxS,3)} ${uL()}, and you need ${dL(need,3)} ${uL()}. Use a colder method (for example dry ice), reduce the interference, or warm the housing as well.`])}
+    if(Tneed<-80&&tReq!=null)ck.push(['warn','The temperature needed is below dry ice (−78 °C). Check the sizes.']);
+    if(tReq!=null&&Tneed<-18&&Tc>-30)ck.push(['warn','Average bush temperature needed is quite cold for this method.']);
+    if(win!=null)ck.push(['ok',`Fit window: about ${fzTime(win)} after taking it out of the cold before the bush has warmed back up to the bore size (still air at ${tF(T0)}, bush soaked for the recommended time). Have the housing, tools and an assistant ready, and fit it in one go.`]);
+    ck.push(['ok','Measure the cooled bush with a micrometer before fitting. A bush that is not fully soaked is colder outside than inside, so the true diameter is the one to trust.']);
+    ck.push(['ok','Hilube and standard Vesconite share the same expansion value here. Condensation or frost forms on cold parts: wipe the bush dry before pressing, and never use dry ice or liquid nitrogen without protective gloves and eye protection.']);
+    /* table */
+    const tmax=tReq!=null?Math.min(tEnd,Math.max(tRec*1.4,tReq+1800)):Math.min(tEnd,7200),base=[2,5,10,15,20,30,45,60,90,120,180,240,360,480,720,1080,1440].map(x=>x*60).filter(x=>x<=tmax);
+    const tl=[...new Set([...base,...(tRec!=null?[Math.round(tRec)]:[])])].sort((x,y)=>x-y);
+    const rows=tl.map(t=>{const m=fzAt(sim,t),s=shr(m),cl=H-(OD-s),ok=cl>=c-1e-9,rec=tRec!=null&&Math.abs(t-Math.round(tRec))<1;return `<tr ${rec?'style="font-weight:700"':''}><td>${fzTime(t)}${rec?' ◀ recommended':''}</td><td>${tF(m)}</td><td>${dL(s,3)}</td><td>${dL(cl,3)}</td><td>${ok?'✓':''}</td></tr>`}).join('');
+    /* chart */
+    const W=330,Hh=190,pl=44,pr=10,pt=10,pb=30,xm=Math.max(tmax,60),ym=Math.max(maxS,need,.001)*1.05,X=t=>pl+(W-pl-pr)*t/xm,Y=s=>pt+(Hh-pt-pb)*(1-s/ym);
+    const pts=[];for(let i=0;i<=120;i++){const t=xm*i/120;pts.push(`${X(t).toFixed(1)},${Y(Math.max(0,shr(fzAt(sim,t)))).toFixed(1)}`)}
+    const xu=xm>=7200?3600:600,xl=xm>=7200?'h':'min',tk=[];for(let t=0;t<=xm;t+=xu)tk.push(t);
+    const yt=[0,1,2,3,4].map(i=>ym*i/4);
+    const chart=`<svg viewBox="0 0 ${W} ${Hh}" style="width:100%;max-width:520px;font:10px system-ui,sans-serif" role="img" aria-label="Bush shrink against time in the cold">
+      ${yt.map(y=>`<line x1="${pl}" x2="${W-pr}" y1="${Y(y).toFixed(1)}" y2="${Y(y).toFixed(1)}" stroke="currentColor" opacity=".12"/><text x="${pl-4}" y="${(Y(y)+3).toFixed(1)}" text-anchor="end" fill="currentColor" opacity=".7">${dL(y,2)}</text>`).join('')}
+      ${tk.map(t=>`<text x="${X(t).toFixed(1)}" y="${Hh-14}" text-anchor="middle" fill="currentColor" opacity=".7">${xl==='h'?t/3600:t/60}</text>`).join('')}
+      <text x="${(pl+W-pr)/2}" y="${Hh-2}" text-anchor="middle" fill="currentColor" opacity=".7">time in the cold (${xl})</text>
+      <text x="10" y="${(pt+Hh-pb)/2}" transform="rotate(-90 10 ${(pt+Hh-pb)/2})" text-anchor="middle" fill="currentColor" opacity=".7">OD shrink (${uL()})</text>
+      ${need>0?`<line x1="${pl}" x2="${W-pr}" y1="${Y(need).toFixed(1)}" y2="${Y(need).toFixed(1)}" stroke="#c9861a" stroke-width="1.5" stroke-dasharray="5 3"/><text x="${W-pr}" y="${(Y(need)-4).toFixed(1)}" text-anchor="end" fill="#c9861a" font-weight="700">shrink needed ${dL(need,3)}</text>`:''}
+      ${tRec!=null&&tRec<=xm?`<line x1="${X(tRec).toFixed(1)}" x2="${X(tRec).toFixed(1)}" y1="${pt}" y2="${Hh-pb}" stroke="#1e78e6" stroke-dasharray="3 3"/>`:''}
+      <polyline points="${pts.join(' ')}" fill="none" stroke="#1e78e6" stroke-width="2.2"/></svg>`;
+    O.innerHTML=`<div class="card"><h2>Your result</h2>
+      <div class="res">${tReq!=null?`<div><b>${fzTime(tRec)}</b><span>recommended time in the cold</span></div><div><b>${fzTime(tReq)}</b><span>minimum to just slide in</span></div><div><b>${win!=null?fzTime(win):'–'}</b><span>time to fit after removal</span></div>`:need<=startS?`<div><b>0</b><span>no cooling needed</span></div>`:`<div><b>–</b><span>not reachable</span></div>`}</div>
+      <dl class="spec" style="margin:10px 0 0"><dt>Interference at ${tF(20)}</dt><dd>${dL(itf,3)} ${uL()}</dd><dt>Clearance wanted</dt><dd>${dL(c,3)} ${uL()}</dd><dt>Shrink needed</dt><dd>${dL(need,3)} ${uL()}</dd><dt>Average bush temperature needed</dt><dd>${tF(Tneed)}</dd><dt>Most it can shrink at ${tF(Tc)}</dt><dd>${dL(maxS,3)} ${uL()}</dd><dt>Fully soaked (99%) after</dt><dd>${tEnd>=172800?'over 48 h':fzTime(tEnd)}</dd></dl></div>
+      <div class="card"><h2>Shrink over time</h2>${chart}<div style="overflow-x:auto"><table class="tbl"><tr><th>Time in cold</th><th>Bush avg temp</th><th>OD shrink (${uL()})</th><th>Clearance (${uL()})</th><th>Slides in</th></tr>${rows}</table></div></div>
+      <div class="card"><h2>Notes</h2>${ck.map(([k,t])=>`<p class="note ${k}">${k==='ok'?'✓':'⚠'} ${esc(t)}</p>`).join('')}</div>
+      <div class="card"><h2>How this is calculated</h2><p class="mut">Shrink = OD × 6 × 10⁻⁵ × (20 °C − bush temperature). Interference = bush OD − housing bore, so the bush must shrink by the interference plus the clearance you want. The cooling time comes from a heat-flow model of the bush wall (thermal conductivity 0.3 W/m·K, density 1.38 g/cm³ from the data sheet, specific heat assumed 1,300 J/kg·K) with air-film coefficients of 8 W/m²K for still air, 20 for fan-cooled air and 12 for a dry ice cooler. The recommended time is the time to reach the needed shrink plus 20% (at least 5 more minutes). The fit window uses 10 W/m²K for room air. These coefficients are estimates and real freezers vary, so treat the times as a guide and confirm by measurement.</p></div>`;
+  };
+  const preset=()=>{const p=FZP[$('#f6').value];put('f7',p[1])};
+  $('#f6').onchange=()=>{preset();cv()};
+  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#FF input[data-q]').map(e=>[e.id,e.value===''?null:g(e.id)]);im=ni;try{localStorage.setItem('vi4u_frz',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#FF [data-u]').forEach(s=>{s.textContent=im?UC[s.dataset.u].i:UC[s.dataset.u].u});$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));cv()};
+  $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
+  $$('#FF input,#FF select').forEach(e=>{e.addEventListener('input',cv)});
+  cv();
 }
 
 /* ---------- QuickDraw: type the sizes, get a full drawing and PDF. Every field is editable. ---------- */
@@ -1072,7 +1160,7 @@ function render(){
   if(p==='share')return share(v,id);
   if(!ME)return login(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
-  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,admin};
+  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,admin};
   (m[p]||home)(v,id);
   $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p)));
   $('.tabs .add').hidden=!ed;scrollTo(0,0);

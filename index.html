@@ -22,10 +22,10 @@
 <link rel="stylesheet" href="style.css">
 <script src="config.js" defer></script>
 <script type="module" src="app.js"></script>
-<style>#spl{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#0f3f4a;color:#efe6cf;font:600 20px/1 'Barlow Condensed',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;transition:opacity .45s}#spl.off{opacity:0;pointer-events:none}#spl img{width:112px;height:112px;border-radius:26px;animation:splp 1.6s ease-in-out infinite}#spl i{width:120px;height:3px;border-radius:2px;background:rgba(239,230,207,.2);overflow:hidden;position:relative}#spl i:after{content:"";position:absolute;inset:0;width:40%;background:#c9861a;animation:spls 1.2s ease-in-out infinite}@keyframes splp{50%{transform:scale(1.06)}}@keyframes spls{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}@media(prefers-reduced-motion:reduce){#spl img,#spl i:after{animation:none}}</style>
+<style>#spl{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:#fff;transition:opacity .45s}#spl.off{opacity:0;pointer-events:none}#spl img{width:min(72vw,340px);height:auto;animation:splp 1.8s ease-in-out infinite}#spl i{width:120px;height:3px;border-radius:2px;background:rgba(30,120,230,.15);overflow:hidden;position:relative}#spl i:after{content:"";position:absolute;inset:0;width:40%;background:#1e78e6;animation:spls 1.2s ease-in-out infinite}@keyframes splp{50%{transform:scale(1.04)}}@keyframes spls{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}@media(prefers-reduced-motion:reduce){#spl img,#spl i:after{animation:none}}</style>
 </head>
 <body>
-<div id="spl" aria-hidden="true"><img src="icon-192.png" alt=""><span>Vesco Intelligence</span><i></i></div>
+<div id="spl" aria-hidden="true"><img src="logo-full.png" alt=""><i></i></div>
 <header class="top"><a href="#/" class="brand"><img src="vesco-intelligence-logo-header.png" alt="Vesconite" onerror="this.parentNode.innerHTML='&lt;b&gt;VI&lt;/b&gt;Vesco Intelligence'"></a><div class="hb"><button id="ad" hidden>Admin</button><button id="th" aria-label="Switch light and dark theme">◐</button></div></header>
 <main id="v"><p class="empty">Loading…</p></main>
 <nav class="tabs" aria-label="Main"><a href="#/">Home</a><a href="#/library">Library</a><a href="#/new" class="add"><i>+</i>Capture</a><a href="#/oem" id="t-oem">OEM</a><a href="#/tools">Tools</a></nav>
