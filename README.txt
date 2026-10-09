@@ -1,3 +1,8 @@
+THIS UPDATE
+- Backup reminders: Admin > Backups lets you choose how often (never, daily, weekly, 2 weeks, monthly). When a backup is due, admins see a banner on Home with "Back up now" and "Remind me tomorrow". The last-backup date is saved in the settings document, so no rules change is needed.
+- App icons and splash screen: new icon PNGs (192, 512, maskable, Apple touch 180, favicon) plus a splash screen that fades out when the app is ready. Upload ALL the PNG files in this folder.
+- Design a bearing: Metric / Imperial toggle at the top of every calculator (inches, °F, lb, psi, ft/min). Your choice is remembered. Inputs convert when you toggle, results, checks, machining table, copied text and the drawing follow the unit. The STEP file is always in millimetres.
+
 VESCO INTELLIGENCE - deploy notes
 
 UPLOAD TO THE REPO ROOT (Add file > Upload files > drag the files in, not a folder, not the zip > Commit changes)
