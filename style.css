@@ -61,7 +61,6 @@ details.card summary{list-style:none;cursor:pointer}details.card summary::-webki
 .tbl{width:100%;border-collapse:collapse}.tbl th,.tbl td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}.tbl th:first-child,.tbl td:first-child{text-align:left}.tbl th{color:var(--mut);font-weight:600;font-size:14px}
 .note{margin:0 0 8px;font-weight:500}.note.warn{color:var(--warn);font-weight:600}
 html,body{overscroll-behavior-y:none}
-#ptr{position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:50%;margin-left:-70px;width:140px;padding:8px 0;text-align:center;font:600 13px var(--f2);background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;z-index:30;transform:translateY(-70px);transition:transform .15s;pointer-events:none}
 .seg{display:flex;gap:6px;margin-bottom:12px}.seg button{flex:1;min-height:42px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font:600 15px var(--f2)}.seg button.on{background:var(--pri);border-color:var(--pri);color:var(--on)}
 .m3{height:300px;border-radius:var(--rd,12px);background:radial-gradient(circle at 50% 40%,var(--card),var(--bg));border:1px solid var(--line);touch-action:none;overflow:hidden;cursor:grab}.m3 canvas{display:block}
 .mdr{border:1px solid var(--line);border-radius:var(--rd,12px);overflow:hidden;background:#fff}.mdr svg{display:block;width:100%;height:auto}
@@ -79,3 +78,18 @@ html,body{overscroll-behavior-y:none}
 .dnt{font:700 8px var(--f1);fill:var(--ink)}.pbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}.pbar i{display:block;height:100%}
 #tm .ck{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 #tm .em{grid-column:1/-1;font-weight:600;word-break:break-all}#tm .ck select{margin:0;width:100%}#tm .ck button{margin:0!important}#tm .ck select:only-of-type:last-child{grid-column:1/-1}
+.row.pick{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}.row.pick .tick{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);font-weight:700;color:var(--mut)}
+.row.pick.on{border-color:var(--amb);background:color-mix(in srgb,var(--amb) 10%,var(--card))}.row.pick.on .tick{background:var(--amb);border-color:var(--amb);color:#10181c}
+.row.dtab{border-radius:var(--rd,11px)}.dshead{padding:18px 18px 8px;border-radius:var(--rd,12px);margin-bottom:12px;border:1px solid var(--line)}.dshead h1{margin:0 0 6px}.dshead p{margin:0 0 8px;color:var(--mut)}
+.dsr{padding:12px 0;border-bottom:1px solid var(--line)}.dsn{padding:10px 12px;border-radius:9px;font-weight:700;border:1px solid var(--line);background:var(--card)}.dsf{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+input[type=range]{padding:0;height:34px}
+/* pull to refresh: a hopping Hilube bush */
+#ptr{position:fixed;top:calc(env(safe-area-inset-top) + 6px);left:50%;width:56px;height:86px;z-index:30;pointer-events:none;transform:translate(-50%,-120px);transition:transform .18s ease-out}
+#ptr .pb{transform-origin:50% 85%;transition:transform .1s}#ptr .pb svg{display:block;margin:0 auto}
+#ptr .ps{position:absolute;left:50%;bottom:0;width:36px;height:8px;margin-left:-18px;border-radius:50%;background:rgba(0,0,0,.22)}
+#ptr.ready .pb{animation:ptrWob .3s ease-in-out infinite alternate}
+#ptr.go .pb{animation:ptrHop .64s cubic-bezier(.3,.7,.4,1) infinite}#ptr.go .ps{animation:ptrShad .64s ease-in-out infinite}
+@keyframes ptrHop{0%{transform:translateY(0) scale(1.14,.84)}28%{transform:translateY(-30px) scale(.93,1.1) rotate(-9deg)}55%{transform:translateY(-30px) scale(.95,1.08) rotate(9deg)}84%{transform:translateY(0) scale(1.14,.84)}100%{transform:translateY(0) scale(1,1)}}
+@keyframes ptrWob{from{transform:rotate(-8deg) scale(1)}to{transform:rotate(8deg) scale(1.07)}}
+@keyframes ptrShad{0%,84%,100%{transform:scale(1.1);opacity:.28}40%{transform:scale(.55);opacity:.1}}
+@media(prefers-reduced-motion:reduce){#ptr.go .pb,#ptr.ready .pb{animation:none}}

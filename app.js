@@ -8,13 +8,15 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const IND='Agriculture,Construction,Forestry,Hydraulics,Industrial,Marine,Mining,Pumps,Renewable Energy,Transport,Water & Wastewater,Valves'.split(',').join('\n');
 const SECS=['Overview','Problem','Solution','Result'];
 const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},ind:IND,dw:{logo:'',logoR:1,showLogo:true,company:'VESCONITE',title:'INDUSTRIAL BEARING BUSH',prefix:'VI',rev:'A',paper:'a3',who:'auto',whoText:'',fit:true,notes:true,noteText:'1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.\n2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);\n    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.\n3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.\n4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.\n5. {FIT}'}};
+DS.dsc={v:{c:'#8a8d91',a:.3},h:{c:'#efe6cf',a:.6},h10:{c:'#e6dcc0',a:.55},h20:{c:'#ddd0ab',a:.55},s:{c:'#7fa3b8',a:.35},t150:{c:'#d9822b',a:.3},t160:{c:'#c9472b',a:.3},t230:{c:'#8f2d2d',a:.3},f:{c:'#3d3d42',a:.3},n:{c:'#d8d2c4',a:.55},pc:{c:'#c5ccd2',a:.55}};
 let S={...DS},ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
+try{P=JSON.parse(localStorage.getItem('vi4p')||'[]')}catch{}
 const can=k=>k==='edit'?['admin','editor'].includes(ROLE):ROLE==='admin';
 const dc=(n,i)=>doc(db,n,i),col=n=>collection(db,n);
 const byDate=(x,y)=>(y.date||'').localeCompare(x.date||'');
 const T=(p,ms=40000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('Timed out. Check your connection and try again. If it keeps happening, check that the Firestore database exists and the rules are published.')),ms))]);
 const clean=o=>JSON.parse(JSON.stringify(o));
-const LIBS={three:['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],qr:['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js']},LP={};
+const LIBS={three:['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],tex:['textures.js'],qr:['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js']},LP={};
 const lib=k=>LP[k]||(LP[k]=(async()=>{for(const u of LIBS[k]){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});return}catch{}}delete LP[k];throw new Error('Could not load the '+k+' library. Check your connection.')})());
 const OKR=['admin','editor','viewer'];
 const cacheSave=()=>{try{localStorage.setItem('vi4d',JSON.stringify({uid:ME&&ME.uid,role:ROLE,A,O}))}catch{}};
@@ -30,7 +32,7 @@ async function notifCheck(){   /* admin badge: people waiting for access + chang
     const b=$('#ad');b.textContent=NB?`Admin · ${NB}`:'Admin';b.classList.toggle('alert',NB>0);
   }catch{}
 }
-const mergeS=d=>({...DS,...d,feat:{...DS.feat,...(d.feat||{})},dw:{...DS.dw,...(d.dw||{})}});
+const mergeS=d=>({...DS,...d,feat:{...DS.feat,...(d.feat||{})},dw:{...DS.dw,...(d.dw||{})},dsc:{...DS.dsc,...(d.dsc||{})}});
 const indChoices=cur=>{const l=[...new Set([...S.ind.split('\n').map(x=>x.trim()).filter(Boolean),...A.map(a=>a.industry).filter(Boolean),...O.map(o=>o.industry).filter(Boolean)])].sort((x,y)=>x.localeCompare(y));if(cur&&!l.includes(cur))l.push(cur);return l};
 const indSelect=(cur,sid,oid,wid)=>`<label>Industry<select name="industry" id="${sid}" required><option value="">Select industry…</option>${indChoices(cur).map(i=>`<option ${i===cur?'selected':''}>${esc(i)}</option>`).join('')}<option value="__other">Other (type a new one)…</option></select></label><label id="${wid}" hidden>New industry name<input id="${oid}" autocomplete="off"></label>`;
 const indBind=(sid,wid)=>{const s=$('#'+sid);if(s)s.onchange=()=>{$('#'+wid).hidden=s.value!=='__other'}};
@@ -103,8 +105,9 @@ function detail(v,id){
   ${spec.length?`<dl class="spec">${spec.map(([k,x])=>`<dt>${k}</dt><dd>${esc(x)}</dd>`).join('')}</dl>`:''}
   ${[['Problem',a.problem],['Solution',a.solution],['Result',a.proof]].map(([k,x])=>`<section class="story"><h3>${k}</h3><p>${x?esc(x):'<span class="mut">Not recorded yet.</span>'}</p></section>`).join('')}
   <div class="card" id="qr" hidden></div>
-  <div class="acts">${can('edit')?`<a class="btn pri" href="#/edit/${a.id}">Edit</a>${S.feat.qr?'<button class="btn" id="sh">Share / QR</button>':''}`:''}${can('edit')?'<button class="btn bad" id="dl">Delete</button>':''}</div>`;
+  <div class="acts"><button class="btn" id="spf">${P.includes(a.id)?`Open customer portfolio (${P.length})`:P.length?`Add to customer portfolio (${P.length})`:'Start customer portfolio'}</button>${P.length&&!P.includes(a.id)?'<button class="btn" id="npf">Start a new portfolio</button>':''}${can('edit')?`<a class="btn pri" href="#/edit/${a.id}">Edit</a>${S.feat.qr?'<button class="btn" id="sh">Share / QR</button>':''}`:''}${can('edit')?'<button class="btn bad" id="dl">Delete</button>':''}</div>`;
   if(a.photos.length)lazyImgs($('#st'),a.photos);
+  $('#spf').onclick=()=>{if(!P.includes(a.id))P.push(a.id);savePf();location.hash='#/portfolio'};if($('#npf'))$('#npf').onclick=()=>{P=[a.id];savePf();location.hash='#/portfolio'};
   const link=`${location.origin}${location.pathname}#/share/${a.id}`,show=()=>{const q=$('#qr');q.hidden=false;q.innerHTML=`<h2>Customer-safe link</h2><div id="qc"></div><p class="mut" style="word-break:break-all">${esc(link)}</p><p class="mut">Shows only the overview, problem, solution, result and photos.</p><div class="acts"><button class="btn" id="cp">Copy link</button><button class="btn bad" id="us">Stop sharing</button></div>`;lib('qr').then(()=>new QRCode($('#qc'),{text:link,width:200,height:200})).catch(()=>{});$('#cp').onclick=()=>navigator.clipboard.writeText(link).then(()=>alert('Link copied.'));$('#us').onclick=async()=>{try{a.shared=false;await save(a);await deleteDoc(dc('shared',a.id));log('Stopped sharing',a.name);q.hidden=true}catch(x){alert(x.message)}}};
   if(a.shared)show();
   if($('#sh'))$('#sh').onclick=async()=>{try{a.shared=true;await save(a);log('Shared application',a.name);show()}catch(x){a.shared=false;alert(x.message)}};
@@ -161,93 +164,134 @@ function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)
 const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
 const logoData=async()=>S.logo?(S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:repoLogo()):null;
+/* ---------- Customer portfolio: searchable picker and a designed PDF proposal ---------- */
+const savePf=()=>{try{localStorage.setItem('vi4p',JSON.stringify(P))}catch{}};
+const svgClip=(u,x,y,w,h,r,id)=>`<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/></clipPath><image x="${x}" y="${y}" width="${w}" height="${h}" href="${u}" xlink:href="${u}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>`;
+const tw=(t,fs,b)=>{_mc.font=`${b?'bold ':''}100px Arial`;return _mc.measureText(String(t)).width*fs/100};
 async function pdf(ids,o){
-  const acc=S.pdfAcc||'#c9861a',logo=await logoData(),pages=[];let cur,y;
-  const np=()=>{cur=[];y=24;pages.push(cur);if(logo)cur.push(svgImg(logo.u,190-10*logo.r,10,10*logo.r,10))};
-  const txt=(lines,x,fs,fill,bold,lh)=>{for(const t of lines){if(y+lh>274)np();cur.push(`<text x="${x}" y="${y}" font-size="${fs}" fill="${fill}"${bold?' font-weight="bold"':''}>${esc(t)}</text>`);y+=lh}};
-  const bg=S.cover==='light'?'#ffffff':S.cover==='accent'?acc:'#0e1a20',tc=S.cover==='light'?'#0e1a20':'#ffffff',sc=S.cover==='accent'?'#ffffff':acc;
-  const t1=wrapLines(`${S.company} application portfolio`,165,11,true),cov=[`<rect width="210" height="297" fill="${bg}"/>`];
-  if(logo)cov.push(svgImg(logo.u,20,22,16*logo.r,16));
-  t1.forEach((t,i)=>cov.push(`<text x="20" y="${104+i*13}" font-size="11" font-weight="bold" fill="${tc}">${esc(t)}</text>`));
-  const cy=104+t1.length*13+4;
-  cov.push(`<text x="20" y="${cy+6}" font-size="5.5" fill="${sc}">${esc(o.cust||'Selected applications')}</text>`,`<text x="20" y="${cy+14}" font-size="3.6" fill="${tc}">${esc(new Date().toLocaleDateString())}</text>`);
-  if(o.intro)wrapLines(o.intro,150,3.8).slice(0,12).forEach((t,i)=>cov.push(`<text x="20" y="${cy+28+i*5}" font-size="3.8" fill="${tc}">${esc(t)}</text>`));
+  const acc=S.pdfAcc||'#c9861a',ink='#0e1a20',logo=await logoData(),apps=ids.map(id=>A.find(x=>x.id===id)).filter(Boolean),pages=[],N=apps.length;
+  const photo=async r=>{try{const u=await getFile(r),im=await img(u);return{u,w:im.width,h:im.height}}catch{return null}};
+  const lg=(max)=>{if(!logo)return null;const h=Math.min(max,max*1.9/logo.r),w=h*logo.r;return{w,h}};
+  let cur,y,label='';
+  const np=l=>{label=l||label;cur=[`<rect width="210" height="19" fill="${ink}"/><rect y="19" width="210" height="1.6" fill="${acc}"/>`,`<text x="14" y="11.8" font-size="3.3" font-weight="bold" letter-spacing=".6" fill="#fff">${esc(label)}</text>`];
+    const s=lg(9);if(s)cur.push(`<rect x="${196-s.w-4}" y="4.2" width="${s.w+8}" height="${s.h+2}" rx="1.5" fill="#fff"/>`,svgImg(logo.u,196-s.w,5.2,s.w,s.h));pages.push(cur);y=32};
+  const room=h=>{if(y+h>276)np(label)};
+  const para=(t,x,w,fs,fill,bold,lh)=>{for(const l of wrapLines(t,w,fs,bold)){room(lh);cur.push(`<text x="${x}" y="${y}" font-size="${fs}" fill="${fill}"${bold?' font-weight="bold"':''}>${esc(l)}</text>`);y+=lh}};
+  const callout=(lab,text,res)=>{const lines=wrapLines(text,160,3.7).slice(0,34),h=11+lines.length*5.3;room(h+4);
+    cur.push(`<rect x="14" y="${y}" width="182" height="${h}" rx="2.5" fill="${res?acc:'#eef2f4'}" fill-opacity="${res?.15:1}"/><rect x="14" y="${y}" width="2.4" height="${h}" fill="${acc}"/><text x="21" y="${y+6.6}" font-size="3" font-weight="bold" letter-spacing=".7" fill="${res?acc:'#566870'}">${lab.toUpperCase()}</text>`);
+    lines.forEach((l,i)=>cur.push(`<text x="21" y="${y+12.4+i*5.3}" font-size="3.7" fill="${ink}"${res?' font-weight="bold"':''}>${esc(l)}</text>`));y+=h+5};
+  /* ---- cover */
+  const hero=apps.length&&apps[0].photos[0]?await photo(apps[0].photos[0]):null;
+  const dark=S.cover!=='light',bg=S.cover==='light'?'#f4f6f7':S.cover==='accent'?acc:ink,tc=dark?'#ffffff':ink,sc=S.cover==='accent'?'#ffffff':acc;
+  const cov=[`<rect width="210" height="297" fill="${bg}"/>`];
+  if(hero)cov.push(svgClip(hero.u,0,0,210,172,0,'hc'));else cov.push(`<rect width="210" height="172" fill="${acc}" fill-opacity=".3"/><circle cx="170" cy="60" r="70" fill="${acc}" fill-opacity=".25"/><circle cx="40" cy="140" r="50" fill="#fff" fill-opacity=".08"/>`);
+  cov.push(`<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset=".4" stop-color="#0e1a20" stop-opacity="0"/><stop offset="1" stop-color="#0e1a20" stop-opacity=".8"/></linearGradient></defs><rect width="210" height="172" fill="url(#hg)"/>`,`<polygon points="0,158 210,134 210,147 0,172" fill="${acc}"/><polygon points="0,172 210,147 210,153 0,178" fill="${acc}" fill-opacity=".4"/>`);
+  const cl=lg(14);if(cl)cov.push(`<rect x="14" y="14" width="${cl.w+10}" height="${cl.h+9}" rx="3" fill="#fff"/>`,svgImg(logo.u,19,18.5,cl.w,cl.h));
+  const t1=wrapLines(`${S.company} application portfolio`,172,13,true);
+  cov.push(`<text x="20" y="197" font-size="3.4" font-weight="bold" letter-spacing=".9" fill="${sc}">CUSTOMER PROPOSAL</text>`);
+  t1.forEach((t,i)=>cov.push(`<text x="20" y="${209+i*14}" font-size="13" font-weight="bold" fill="${tc}">${esc(t)}</text>`));
+  let cy=209+t1.length*14;
+  cov.push(`<rect x="20" y="${cy-5}" width="26" height="1.4" fill="${sc}"/>`,`<text x="20" y="${cy+6}" font-size="6.4" fill="${tc}">Prepared for ${esc(o.cust||'you')}</text>`,`<text x="20" y="${cy+14}" font-size="3.6" fill="${tc}" fill-opacity=".75">${esc(new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}))}</text>`);
+  if(o.intro)wrapLines(o.intro,168,3.9).slice(0,5).forEach((t,i)=>cov.push(`<text x="20" y="${cy+26+i*5.4}" font-size="3.9" fill="${tc}" fill-opacity=".9">${esc(t)}</text>`));
   pages.push(cov);
-  for(const id of ids){const a=A.find(x=>x.id===id);if(!a)continue;np();
-    txt(wrapLines(a.name,150,6.5,true),20,6.5,'#0e1a20',true,8);
-    txt([[a.industry,a.product].filter(Boolean).join('  |  ')],20,3.6,'#5a6b73',false,7);
-    for(const r of a.photos.slice(0,S.pp)){try{const u=await getFile(r),im=await img(u),mh=S.pp>1?55:80,h=Math.min(mh,170*im.height/im.width),w=h*im.width/im.height;if(y+h>274)np();cur.push(svgImg(u,20,y,w,h));y+=h+6}catch{}}
-    const secs={Overview:a.summary||a.desc,Problem:a.problem,Solution:a.solution,Result:a.proof};
-    for(const k of SECS){if(!S.secs.includes(k)||!secs[k])continue;if(y+14>274)np();txt([k],20,4,acc,true,5.5);txt(wrapLines(secs[k],170,3.5),20,3.5,'#0e1a20',false,4.6);y+=3}}
-  pages.forEach((p,i)=>{if(i)p.push(`<text x="20" y="288" font-size="2.8" fill="#788">${esc((S.footer||S.company)+(o.cust?'  |  '+o.cust:'')+'  |  '+i)}</text>`)});
+  /* ---- at a glance */
+  np('AT A GLANCE');
+  cur.push(`<text x="14" y="${y+4}" font-size="9" font-weight="bold" fill="${ink}">Proven in the field</text>`);y+=11;
+  para(`${N} real application${N===1?'':'s'}, each with the problem, the solution and the measured result.`,14,180,3.9,'#566870',false,5.4);y+=3;
+  const inds=new Set(apps.map(a=>a.industry).filter(Boolean)).size,prods=new Set(apps.map(a=>a.product).filter(Boolean)).size;
+  [[N,'applications'],[inds,inds===1?'industry':'industries'],[prods||1,prods===1?'material':'materials']].forEach(([n,l],i)=>cur.push(`<rect x="${14+i*62}" y="${y}" width="56" height="26" rx="3" fill="#eef2f4"/><rect x="${14+i*62}" y="${y}" width="56" height="2" fill="${acc}"/><text x="${20+i*62}" y="${y+16}" font-size="12" font-weight="bold" fill="${acc}">${n}</text><text x="${20+i*62}" y="${y+22}" font-size="3.2" fill="#566870">${l}</text>`));
+  y+=36;
+  apps.forEach((a,i)=>{const res=wrapLines(a.proof||a.summary||a.desc||'',150,3.4).slice(0,2),h=14+res.length*4.6+4;room(h+3);
+    cur.push(`<circle cx="21" cy="${y+6}" r="5.6" fill="${acc}"/><text x="21" y="${y+7.6}" font-size="4.2" font-weight="bold" fill="#fff" text-anchor="middle">${i+1}</text><text x="31" y="${y+5.2}" font-size="4.4" font-weight="bold" fill="${ink}">${esc(wrapLines(a.name,160,4.4,true)[0])}</text><text x="31" y="${y+10.4}" font-size="3.2" fill="#566870">${esc([a.industry,a.product].filter(Boolean).join('  ·  '))}</text>`);
+    res.forEach((l,k)=>cur.push(`<text x="31" y="${y+16+k*4.6}" font-size="3.4" fill="${ink}">${esc(l)}</text>`));
+    cur.push(`<rect x="14" y="${y+h-1}" width="182" height=".3" fill="#d5dde1"/>`);y+=h+2});
+  /* ---- one section per application */
+  for(let n=0;n<N;n++){const a=apps[n];np(`APPLICATION ${n+1} OF ${N}  |  ${(a.industry||'').toUpperCase()}`);
+    cur.push(`<text x="196" y="${y+10}" font-size="24" font-weight="bold" fill="${acc}" fill-opacity=".3" text-anchor="end">${String(n+1).padStart(2,'0')}</text>`);y+=3;
+    wrapLines(a.name,148,7.4,true).slice(0,3).forEach(l=>{cur.push(`<text x="14" y="${y}" font-size="7.4" font-weight="bold" fill="${ink}">${esc(l)}</text>`);y+=9});
+    let cx=14;for(const [k,vv] of [['Industry',a.industry],['Material',a.product],['Replaced',a.orig]]){if(!vv)continue;const t=`${k}: ${vv}`.slice(0,46),w=tw(t,3.1,true)+8;if(cx+w>196){cx=14;y+=8}cur.push(`<rect x="${cx}" y="${y-4.6}" width="${w}" height="6.6" rx="3.3" fill="${acc}" fill-opacity=".16"/><text x="${cx+4}" y="${y}" font-size="3.1" font-weight="bold" fill="${ink}">${esc(t)}</text>`);cx+=w+3}
+    y+=8;
+    const ph=[];for(const r of a.photos.slice(0,Math.max(S.pp,0)))ph.push(await photo(r));
+    if(ph[0]){room(86);cur.push(svgClip(ph[0].u,14,y,182,82,3,`p${n}a`));y+=87;
+      const rest=ph.slice(1).filter(Boolean);if(rest.length){room(40);const w=(182-4*(rest.length-1))/rest.length;rest.forEach((p,k)=>cur.push(svgClip(p.u,14+k*(w+4),y,w,36,3,`p${n}${k}`)));y+=41}}
+    const ov=a.summary||a.desc;if(S.secs.includes('Overview')&&ov){para(ov,14,182,4,'#2c3b44',false,5.6);y+=3}
+    if(S.secs.includes('Problem')&&a.problem)callout('The problem',a.problem,false);
+    if(S.secs.includes('Solution')&&a.solution)callout('The solution',a.solution,false);
+    if(S.secs.includes('Result')&&a.proof)callout('The result',a.proof,true)}
+  /* ---- closing page */
+  const end=[`<rect width="210" height="297" fill="${ink}"/><polygon points="0,200 210,170 210,182 0,212" fill="${acc}"/><circle cx="175" cy="48" r="60" fill="${acc}" fill-opacity=".12"/>`];
+  const el=lg(16);if(el)end.push(`<rect x="20" y="24" width="${el.w+10}" height="${el.h+10}" rx="3" fill="#fff"/>`,svgImg(logo.u,25,29,el.w,el.h));
+  end.push(`<text x="20" y="120" font-size="14" font-weight="bold" fill="#fff">Let’s talk about</text><text x="20" y="136" font-size="14" font-weight="bold" fill="${acc}">your application.</text>`);
+  wrapLines(`Every application above started with a problem like yours. Tell us about your bearings, shafts, loads and conditions and we will recommend the right material and design.`,150,4.2).forEach((t,i)=>end.push(`<text x="20" y="${152+i*6}" font-size="4.2" fill="#fff" fill-opacity=".85">${esc(t)}</text>`));
+  end.push(`<text x="20" y="236" font-size="6" font-weight="bold" fill="#fff">${esc(S.company)}</text>`);if(S.footer)wrapLines(S.footer,170,3.8).slice(0,3).forEach((t,i)=>end.push(`<text x="20" y="${244+i*5.4}" font-size="3.8" fill="#fff" fill-opacity=".8">${esc(t)}</text>`));
+  if(o.cust)end.push(`<text x="20" y="276" font-size="3.4" fill="#fff" fill-opacity=".6">Prepared for ${esc(o.cust)}</text>`);
+  pages.push(end);
+  pages.forEach((p,i)=>{if(i>0&&i<pages.length-1)p.push(`<rect x="14" y="283.2" width="182" height=".3" fill="#cfd7db"/><text x="14" y="288.4" font-size="2.9" fill="#788">${esc((S.footer||S.company).slice(0,80)+(o.cust?'  |  '+o.cust:''))}</text><text x="196" y="288.4" font-size="2.9" fill="#788" text-anchor="end">${i}</text>`)});
   const out=[];for(const p of pages)out.push(await svgToJpeg(pageSvg(p.join('')),1240,1754));
   return{blob:buildPdf(out,210,297),name:`${S.company}-portfolio.pdf`};
+}
+function portfolio(v){
+  P=P.filter(id=>A.some(a=>a.id===id));savePf();
+  const inds=[...new Set(A.map(a=>a.industry).filter(Boolean))].sort(),st={q:'',i:''};
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Customer portfolio</h1><p class="mut">Choose the applications to feature and make a designed PDF proposal. Customer names, operating notes and recorded-by never appear in it.</p>
+  <div class="card"><label>Prepared for<input id="pc1" placeholder="Customer or company"></label><label style="margin:0">Introduction on the cover (optional)<textarea id="pi" rows="3" placeholder="A short personal note"></textarea></label></div>
+  <h2>1. Choose applications <small class="mut" id="pcn"></small></h2>
+  <div class="filters"><input id="pq" type="search" placeholder="Search by name, product or industry"><select id="pin"><option value="">All industries</option>${inds.map(i=>`<option>${esc(i)}</option>`).join('')}</select><select id="pst"><option value="">All records</option><option value="sel">Selected only</option></select></div>
+  <div class="acts" style="margin-top:0"><button type="button" class="btn" id="psa">Select all shown</button><button type="button" class="btn" id="pcl">Clear selection</button></div>
+  <div class="list" id="PL"></div>
+  <h2>2. Order in the proposal</h2><div class="card" id="po"></div>
+  <button type="button" class="btn pri wide" id="pdf">Make PDF</button><p class="mut" id="pdh">Tap once to build the PDF, then tap Open PDF to save or share it.</p>`;
+  const pb=$('#pdf'),reset=()=>{pb._b=null;pb.textContent='Make PDF'};
+  const shown=()=>{const q=st.q.toLowerCase();return A.filter(a=>(!st.i||a.industry===st.i)&&(st.s!=='sel'||P.includes(a.id))&&[a.name,a.industry,a.product,a.desc].join(' ').toLowerCase().includes(q))};
+  const drawOrder=()=>{$('#pcn').textContent=P.length?`(${P.length} selected)`:'';$('#po').innerHTML=P.length?P.map((id,i)=>`<div class="ord"><span>${i+1}. ${esc(A.find(a=>a.id===id).name)}</span><button type="button" data-m="${i}:-1" aria-label="Move up">▲</button><button type="button" data-m="${i}:1" aria-label="Move down">▼</button><button type="button" data-m="${i}:x" aria-label="Remove">×</button></div>`).join(''):'<p class="mut" style="margin:0">Nothing selected yet. Tap applications above.</p>';
+    $$('#po button').forEach(b=>b.onclick=()=>{const[i,m]=b.dataset.m.split(':'),k=+i;if(m==='x')P.splice(k,1);else{const j=k+ +m;if(j<0||j>=P.length)return;[P[k],P[j]]=[P[j],P[k]]}savePf();reset();draw()})};
+  const draw=()=>{const l=shown();$('#PL').innerHTML=l.length?l.map(a=>`<button type="button" class="row pick${P.includes(a.id)?' on':''}" data-id="${a.id}"><div class="th">${a.thumb?`<img src="${a.thumb}" alt="">`:'▣'}</div><div><strong>${esc(a.name)}</strong><small>${esc([a.industry,a.product].filter(Boolean).join(' · '))}</small></div><span class="tick">${P.includes(a.id)?'✓':'+'}</span></button>`).join(''):'<p class="empty">No applications match.</p>';
+    $$('#PL .row').forEach(b=>b.onclick=()=>{const id=b.dataset.id,k=P.indexOf(id);if(k>=0)P.splice(k,1);else P.push(id);savePf();reset();b.classList.toggle('on',P.includes(id));b.querySelector('.tick').textContent=P.includes(id)?'✓':'+';drawOrder();if(st.s==='sel')draw()});drawOrder()};
+  $('#pq').oninput=e=>{st.q=e.target.value;draw()};$('#pin').onchange=e=>{st.i=e.target.value;draw()};$('#pst').onchange=e=>{st.s=e.target.value;draw()};
+  $('#psa').onclick=()=>{shown().forEach(a=>{if(!P.includes(a.id))P.push(a.id)});savePf();reset();draw()};
+  $('#pcl').onclick=()=>{P=[];savePf();reset();draw()};
+  $('#pc1').oninput=reset;$('#pi').oninput=reset;
+  pb.onclick=async()=>{if(pb._b){await deliver(pb._b,pb._n);return}if(!P.length)return alert('Choose at least one application first.');pb.disabled=true;pb.textContent='Building…';
+    try{const r=await pdf(P,{cust:$('#pc1').value.trim(),intro:$('#pi').value.trim()});pb._b=r.blob;pb._n=r.name;pb.textContent='Open PDF';log('Built portfolio PDF',$('#pc1').value.trim())}catch(x){alert('Could not build the PDF: '+(x.message||x));pb.textContent='Make PDF'}pb.disabled=false};
+  draw();
 }
 function tools(v){
   P=P.filter(id=>A.some(a=>a.id===id));
   v.innerHTML=`<h1>Tools</h1>
   ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Industrial bearing</strong><small>Size, fit, clearance, PV and tolerances</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a></section>':''}
-  <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>Vesconite, Hilube, Superlube, Hitemp, Vescoflex. Share as PDF.</small></div><span class="chip ok">Open</span></a></section>
-  <section class="card"><h2>Customer portfolio</h2>${A.length?`<p class="mut">Customer names, operating notes and recorded-by are never included.</p><label>Prepared for<input id="pc1" placeholder="Customer or company"></label><label>Introduction (optional)<textarea id="pi" rows="2"></textarea></label><div class="g2"><label style="margin:0"><select id="pa"></select></label><button class="btn" id="pad" type="button">Add to portfolio</button></div><div id="po"></div><button class="btn pri wide" id="pdf" style="margin-top:14px">Generate PDF</button>`:'<p class="empty">Capture applications first.</p>'}</section>
+  <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
+  <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><button class="btn" id="so">Sign out</button></section>`;
   $('#so').onclick=()=>signOut(au);
-  if(!$('#pdf'))return;
-  const pf=()=>{const pb=$('#pdf');pb._b=null;pb.textContent='Generate PDF';const free=A.filter(a=>!P.includes(a.id));$('#po').innerHTML=P.map((id,i)=>`<div class="ord"><span>${i+1}. ${esc(A.find(a=>a.id===id).name)}</span><button type="button" data-m="${i}:-1" aria-label="Move up">▲</button><button type="button" data-m="${i}:1" aria-label="Move down">▼</button><button type="button" data-m="${i}:x" aria-label="Remove">×</button></div>`).join('')||'<p class="mut">No applications selected yet.</p>';$('#pa').innerHTML=free.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');$('#pad').disabled=!free.length;
-    $$('#po button').forEach(b=>b.onclick=()=>{const[i,m]=b.dataset.m.split(':'),k=+i;if(m==='x')P.splice(k,1);else{const j=k+ +m;if(j<0||j>=P.length)return;[P[k],P[j]]=[P[j],P[k]]}pf()})};pf();
-  $('#pad').onclick=()=>{if($('#pa').value){P.push($('#pa').value);pf()}};
-  $('#pdf').onclick=async e=>{const b=e.currentTarget;if(b._b){await deliver(b._b,b._n);return}if(!P.length)return alert('Add at least one application.');b.disabled=true;b.textContent='Building…';try{const r=await pdf(P,{cust:$('#pc1').value.trim(),intro:$('#pi').value.trim()});b._b=r.blob;b._n=r.name;b.textContent='Open PDF';log('Built portfolio PDF',$('#pc1').value.trim())}catch(x){alert('Could not build the PDF: '+x.message);b.textContent='Generate PDF'}b.disabled=false};
 }
 
-/* ---------- Data sheets: typical properties copied from Vesconite's published spec sheets (indicative values) ---------- */
-const SRC='https://www.vesconite.com/wp-content/uploads/';
+/* ---------- Data sheets: typical properties from the Vesconite spec sheets. The PDFs themselves are stored in Firebase. ---------- */
 const DSH=[
- {id:'v',name:'Vesconite',year:'2021',url:SRC+'2021/11/vesconite-properties-2021.pdf',tag:'Standard internally lubricated bearing material. Ideal for water-lubricated bearings.',rows:[
-  ['Density (specific gravity)','1.38'],['Melting point','260 °C (500 °F)'],['Hardness, Shore D','83'],['Compressive strength at yield','93 MPa (13,489 psi)'],['Modulus of elasticity, compression','2.3 GPa'],['Tensile strength at yield','66 MPa (9,573 psi)'],['Tensile strength at break','63 MPa (9,137 psi)'],['Tangent modulus (ASTM D790)','3,726 MPa'],['Shear strength','49.1 MPa'],['Flexural yield strength','120 MPa (17,400 psi)'],['Deflection temperature at 1.85 MPa','93 °C (200 °F)'],['Water swell, 24 h / 28 days','0.11% / 0.12%'],['Oil swell, 24 h / 28 days','0.08% / 0.09%'],['Notched impact, Charpy','245 kJ/m²'],['Notched impact, Izod','30 J/m'],['Heat conductivity','0.3 W/m·K'],['Linear thermal expansion','6 × 10⁻⁵ mm/mm/°C'],['Dynamic friction on polished steel, unlubricated','0.13 – 0.18 (2019 sheet)'],['Dielectric strength','14 kV/mm'],['Gamma ray resistance (50% loss)','100 Mrad'],['Maximum design load (design manual)','30 MPa (4,250 psi)'],['Temperature limit (design manual)','65 °C immersed, 100 °C dry or lubricated']]},
- {id:'h',name:'Vesconite Hilube',year:'2021',url:SRC+'2021/03/VESCONITE-HILUBE-PROPERTIES-2021.pdf',tag:'Lowest friction and longest wear life of the Vesconite range, with an extra internal lubricant.',rows:[
-  ['Density (specific gravity)','1.38'],['Melting point','260 °C (500 °F)'],['Hardness, Shore D','83'],['Compressive strength at yield','98 MPa (14,214 psi)'],['Modulus of elasticity, compression','2.2 GPa'],['Tensile strength at yield','67 MPa (9,718 psi)'],['Tensile strength at break','65 MPa (9,427 psi)'],['Tangent modulus (ASTM D790)','3,726 MPa'],['Shear strength','49.6 MPa'],['Flexural yield strength','113 MPa (16,400 psi)'],['Deflection temperature at 1.85 MPa','117 °C (243 °F)'],['Water swell, 24 h / 28 days','0.11% / 0.13%'],['Oil swell, 24 h / 28 days','0.05% / 0.06%'],['Notched impact, Charpy','245 kJ/m²'],['Notched impact, Izod','30 J/m'],['Heat conductivity','0.3 W/m·K'],['Linear thermal expansion','6 × 10⁻⁵ mm/mm/°C'],['Dynamic friction on polished steel, unlubricated','0.08 – 0.12 (2019 sheet)'],['Dielectric strength','14 kV/mm'],['Gamma ray resistance (50% loss)','100 Mrad'],['Maximum design load (design manual)','30 MPa (4,250 psi)'],['Temperature limit (design manual)','65 °C immersed, 100 °C dry or lubricated']]},
- {id:'s',name:'Vesconite Superlube',year:'2021',url:SRC+'2021/03/VESCONITE-SUPERLUBE-PROPERTIES-2021.pdf',tag:'Ultra-low-friction grade for light loads and small precision parts.',rows:[
-  ['Density (specific gravity)','1.68'],['Hardness, Shore D','77'],['Compressive strength at yield','54 MPa (7,832 psi)'],['Ultimate compressive strength','82 MPa (11,893 psi)'],['Modulus of elasticity, compression','0.41 GPa'],['Tensile strength at yield','34 MPa (4,931 psi)'],['Tensile strength at break','33 MPa (4,786 psi)'],['Modulus of elasticity, tension','0.38 GPa'],['Shear strength','27.2 MPa (3,945 psi)'],['Water swell, 24 h / 28 days','0.09% / 0.10%'],['Oil swell, 24 h / 28 days','0.09% / 0.11%'],['Impact resistance','15 kJ/m²'],['Softening temperature','163 °C (325 °F)'],['Dynamic friction on steel, unlubricated','0.05 – 0.08']]},
- {id:'t150',name:'Hitemp 150',year:'2020',url:SRC+'2023/06/HITEMP150-PROPERTIES-2020.pdf',tag:'Abrasion-resistant grade for temperatures up to 150 °C. Suited to pumps with dirty media.',rows:[
-  ['Density','1.47'],['Melting point','265 °C (509 °F)'],['Short-term temperature limit','170 °C (340 °F)'],['Temperature rating','150 °C (300 °F)'],['Hot water and steam resistance','Up to 120 °C (250 °F)'],['PV limit','30 MPa·m/min'],['Coefficient of thermal expansion','4 × 10⁻⁵ mm/mm/°C'],['Water absorption, saturated','3 – 4%'],['Chemical resistance','Resistant to alkalis, not suited for acids']]},
- {id:'t160',name:'Hitemp 160',year:'2022',url:SRC+'2023/06/HITEMP160-PROPERTIES-2022.pdf',tag:'Operates up to 160 °C immersed (and higher in some applications). Good chemical and steam resistance.',rows:[
-  ['Density (specific gravity)','1.24'],['Melting point','280 °C (536 °F)'],['Hardness, Shore D','79'],['Ultimate compressive strength','73 MPa (10,600 psi)'],['Compressive strength at yield','42 MPa (6,100 psi)'],['Modulus of elasticity','1.4 GPa'],['Design loading','15 MPa (2,200 psi)'],['Water absorption, 24 h','0.09%'],['Poisson’s ratio','0.38'],['Thermal conductivity','0.3 W/m·K'],['Linear thermal expansion','1.0 × 10⁻⁴ mm/mm/°C'],['Dynamic friction on polished steel, unlubricated','0.12'],['Chemical resistance','Excellent: acids, alkalis, hot water and steam']]},
- {id:'t230',name:'Hitemp 230',year:'2020',url:SRC+'2023/06/HITEMP230-PROPERTIES-2020.pdf',tag:'High-load, high-temperature bearing grade for dry running up to 230 °C.',rows:[
-  ['Density','1.89'],['Tensile strength (dry)','110 MPa (16,000 psi)'],['Tensile modulus','15,000 MPa'],['Tensile elongation at break','1%'],['Flexural modulus (dry)','15 GPa'],['Water absorption at 65% RH','0.03%'],['Coefficient of thermal expansion','2.7 × 10⁻⁵ mm/mm/°C'],['Melting point','282 °C (540 °F)'],['Heat distortion temperature (1.8 MPa)','278 °C (530 °F)'],['Continuous temperature rating','200 °C (390 °F)'],['Short-term temperature rating','240 °C (460 °F)'],['Design loading','80 MPa (11,600 psi)'],['PV limit','70 MPa·m/min'],['Dynamic friction, ambient','0.17 – 0.24'],['Gamma radiation resistance','1,000 Mrad'],['Chemical resistance','Generally high'],['Impact strength, Izod (unnotched)','20 kJ/m²']]},
- {id:'f',name:'Vescoflex',year:'2020',url:SRC+'2023/06/VESCOFLEX-PROPERTIES-2020-REWORK.pdf',tag:'Tough, flexible elastomer for bushes that must flex under load, for example suspension and vibration parts.',rows:[
-  ['Specific gravity','1.17 – 1.25'],['Melting point','112 °C (234 °F)'],['Hardness, Shore D','40'],['Ultimate tensile strength','41 MPa (5,947 psi)'],['Tensile modulus','54 MPa'],['Flexural modulus','49 MPa'],['Compression modulus','51 MPa'],['Elongation at break','800%'],['Deformation at 6.8 MPa','12%'],['Deformation at 10 MPa','20%'],['Compression set at 9 MPa, 23 °C','11%'],['Tensile set at 100% strain','18%'],['Stress at 10% strain','4.6 MPa'],['Resilience (Bashore)','62%'],['Water absorption','0.6%']]}
+ {id:'v',name:'Vesconite',tag:'Standard Vesconite bearing material.',rows:[['Density (specific gravity)','1.38'],['Melting point','260 °C (500 °F)'],['Hardness, Shore D','83'],['Compressive strength at yield','93 MPa (13,489 psi)'],['Modulus of elasticity, compression','2.3 GPa (333,590 psi)'],['Tensile strength at yield','66 MPa (9,573 psi)'],['Tensile strength at break','63 MPa (9,137 psi)'],['Tangent modulus of elasticity','3,726 MPa (540,410 psi)'],['Water swell, 24 h / 28 days','0.11% / 0.12%'],['Oil swell, 24 h / 28 days','0.08% / 0.09%'],['Shear strength','49.1 MPa (7,121 psi)'],['Flexural yield strength','120 MPa (17,400 psi)'],['Deflection temperature at 1.85 MPa','93 °C (200 °F)'],['Notched impact, Charpy','245 kJ/m² (117 ft-lb/in²)'],['Notched impact, Izod','30 J/m (0.56 ft-lb/in)'],['Heat conductivity','0.3 W/m·K'],['Linear thermal expansion','6 × 10⁻⁵ mm/mm·°C'],['Dynamic friction on polished steel, no lubrication','0.13 – 0.18'],['Dielectric strength','14 kV/mm (360 kV/in)'],['Gamma ray resistance, 50% loss of properties','100 Mrads']]},
+ {id:'h',name:'Vesconite Hilube',tag:'Lower friction than standard Vesconite (0.08 – 0.12 on polished steel, unlubricated).',rows:[['Density (specific gravity)','1.38'],['Melting point','260 °C (500 °F)'],['Hardness, Shore D','83'],['Compressive strength at yield','98 MPa (14,214 psi)'],['Modulus of elasticity, compression','2.2 GPa (319,084 psi)'],['Tensile strength at yield','67 MPa (9,718 psi)'],['Tensile strength at break','65 MPa (9,427 psi)'],['Tangent modulus of elasticity','3,726 MPa (540,410 psi)'],['Water swell, 24 h / 28 days','0.11% / 0.13%'],['Oil swell, 24 h / 28 days','0.05% / 0.06%'],['Shear strength','49.6 MPa (7,194 psi)'],['Flexural yield strength','113 MPa (16,400 psi)'],['Deflection temperature at 1.85 MPa','117 °C (243 °F)'],['Notched impact, Charpy','245 kJ/m² (117 ft-lb/in²)'],['Notched impact, Izod','30 J/m (0.56 ft-lb/in)'],['Heat conductivity','0.3 W/m·K'],['Linear thermal expansion','6 × 10⁻⁵ mm/mm·°C'],['Dynamic friction on polished steel, no lubrication','0.08 – 0.12'],['Dielectric strength','14 kV/mm (360 kV/in)'],['Gamma ray resistance, 50% loss of properties','100 Mrads']]},
+ {id:'h10',name:'Hilube 10',tag:'Operating range −50 °C to 100 °C, maximum design load 20 MPa.',rows:[['Dynamic friction on polished steel, no lubrication','0.20 – 0.27'],['Maximum design load','20 MPa (2,900 psi)'],['Operating temperature range','−50 °C to 100 °C (−58 °F to 212 °F)'],['Deflection temperature at 1.8 MPa','57 °C (135 °F)'],['Flexural modulus (dry)','2,500 MPa (363,000 psi)'],['Coefficient of thermal expansion','10 × 10⁻⁵ mm/mm·°C'],['Specific gravity','1.25']]},
+ {id:'h20',name:'Hilube 20',tag:'Operating range −50 °C to 100 °C, maximum design load 20 MPa.',rows:[['Friction at 9.5 MPa (1,380 psi)','0.15 – 0.19'],['Maximum design load','20 MPa (2,900 psi)'],['Operating temperature range','−50 °C to 100 °C (−58 °F to 212 °F)'],['Deflection temperature at 1.8 MPa','57 °C (135 °F)'],['Flexural modulus (dry)','2,500 MPa (363,000 psi)'],['Coefficient of thermal expansion','10 × 10⁻⁵ mm/mm·°C'],['Specific gravity','1.25']]},
+ {id:'s',name:'Vesconite Superlube',tag:'Dynamic friction on steel, unlubricated: 0.05 – 0.08.',rows:[['Density (specific gravity)','1.68'],['Hardness, Shore D','77'],['Compressive strength at yield','54 MPa (7,832 psi)'],['Ultimate compression strength','82 MPa (11,893 psi)'],['Modulus of elasticity, compression','0.41 GPa (59,465 psi)'],['Tensile strength at yield','34 MPa (4,931 psi)'],['Tensile strength at break','33 MPa (4,786 psi)'],['Modulus of elasticity in tension','0.38 GPa (55,114 psi)'],['Shear strength','27.2 MPa (3,945 psi)'],['Water swell, 24 h / 28 days','0.09% / 0.10%'],['Oil swell, 24 h / 28 days','0.09% / 0.11%'],['Impact resistance','15 kJ/m²'],['Softening temperature','163 °C (325 °F)'],['Dynamic friction on steel, unlubricated','0.05 – 0.08']]},
+ {id:'t150',name:'Hitemp 150',tag:'Bearing grade for high temperatures up to 150 °C, with high PV limits.',rows:[['Melting point','265 °C (509 °F)'],['Short-term temperature limit','170 °C (340 °F)'],['Temperature rating','150 °C (300 °F)'],['Resistance to hot water and steam','Up to 120 °C (250 °F)'],['Density','1.47'],['PV limit','30 MPa·m/min (14,350 psi·ft/min)'],['Coefficient of thermal expansion','4 × 10⁻⁵ mm/mm·°C'],['Water absorption, ambient (saturated)','3 – 4%'],['Chemical resistance','Resistant to alkalis, not suited for acids'],['Features','High chemical and radiation resistance; steam and boiling water resistance']]},
+ {id:'t160',name:'Hitemp 160',tag:'Excellent chemical resistance including acids, alkalis, hot water and steam.',rows:[['Density (specific gravity)','1.24'],['Melting point','280 °C (536 °F)'],['Hardness, Shore D','79'],['Ultimate compressive strength','73 MPa (10,600 psi)'],['Compressive strength at yield','42 MPa (6,100 psi)'],['Modulus of elasticity','1.4 GPa (203,000 psi)'],['Design loading','15 MPa (2,200 psi)'],['Water absorption, 24 h','0.09%'],['Poisson’s ratio','0.38'],['Thermal conductivity','0.3 W/m·K'],['Linear thermal expansion','1.0 × 10⁻⁴ mm/mm·°C'],['Dynamic friction on polished steel, no lubrication','0.12']]},
+ {id:'t230',name:'Hitemp 230',tag:'Bearing grade for high temperatures up to 230 °C, with high PV limits.',rows:[['Density','1.89'],['Tensile strength (dry)','110 MPa (16,000 psi)'],['Tensile modulus','15,000 MPa (2,176,000 psi)'],['Tensile elongation at break','1%'],['Flexural modulus (dry)','15 GPa (2,176,000 psi)'],['Water absorption at 65% RH','0.03%'],['Coefficient of thermal expansion','2.7 × 10⁻⁵ mm/mm·°C'],['Melting point','282 °C (540 °F)'],['Heat distortion temperature (1.8 MPa)','278 °C (530 °F)'],['Continuous temperature rating','200 °C (390 °F)'],['Short-term temperature rating','240 °C (460 °F)'],['Design loading','80 MPa (11,600 psi)'],['PV limit','70 MPa·m/min (400,000 psi·in/min)'],['Dynamic friction, ambient','0.17 – 0.24'],['Gamma radiation resistance','1,000 Megarads'],['Chemical resistance','Generally high'],['Impact strength, Izod (unnotched)','20 kJ/m² (9.5 ft-lb/in²)']]},
+ {id:'f',name:'Vescoflex',tag:'Flexible: 800% elongation at break, Shore D 40.',rows:[['Specific gravity','1.17 – 1.25'],['Melting point','112 °C (234 °F)'],['Hardness, Shore D','40'],['Ultimate tensile strength','41 MPa (5,947 psi)'],['Tensile modulus','54 MPa (7,832 psi)'],['Flexural modulus','49 MPa (7,107 psi)'],['Compression modulus','51 MPa (7,397 psi)'],['Elongation at break','800%'],['Deformation at 6.8 MPa (986 psi)','12%'],['Deformation at 10 MPa (1,450 psi)','20%'],['Compression set at 9 MPa, 23 °C','11%'],['Compression set at 70 °C, 25% deflection','60%'],['Tensile set at 100% strain','18%'],['Stress at 10% strain','4.6 MPa (667 psi)'],['Tear strength, split / Die B / Die C','3 / 11 / 12 MPa'],['Brittle point','−70 °C (−94 °F)'],['Resilience, Bashore','62%'],['Water absorption','0.6%'],['Heat resistance, 2 weeks in air','121 °C (250 °F), modulus change +6%'],['Abrasion resistance, Taber H-18 wheel, 1,000 g load','100 mg/1,000 cycles (800% of standard)'],['Solvent resistance, 7 days at 100 °C, ASTM oil no. 3','Modulus change 0%, volume change +23%']]},
+ {id:'n',name:'VescoNylon',tag:'Polyamide (Nylon 6) with exceptional strength and wear resistance.',rows:[['Tensile strength (dry)','75 MPa (10,900 psi)'],['Tensile strength (wet, 9%)','20 MPa (2,900 psi)'],['Flexural modulus (dry)','2.5 GPa (363,000 psi)'],['Flexural modulus (wet, 9%)','0.5 GPa (73,000 psi)'],['Max water absorption at 65% RH','9%'],['Coefficient of thermal expansion','9 × 10⁻⁵ mm/mm·°C'],['Intermittent temperature rating','100 °C (210 °F)'],['Design loading (dry)','30 MPa (4,400 psi)'],['Design loading (wet, 9%)','10 MPa (1,500 psi)'],['PV limit','3 MPa·m/min (17,000 psi·in/min)'],['Moisture absorption','Gradually absorbs water from the air or when immersed, swelling up to 3%'],['Clearances','2% to 5% of the wall thickness, minimum 0.2 mm'],['Press fit','0.1 mm plus 0.1% of the bush diameter'],['Machining tolerance','0.3% of all dimensions'],['Expansion with moisture','1% for every 3% increase in moisture']]},
+ {id:'pc',name:'VescoPolycap',tag:'Polyamide with exceptional strength and wear resistance.',rows:[['Tensile strength (dry)','75 MPa (10,900 psi)'],['Tensile strength (wet, 9%)','20 MPa (2,900 psi)'],['Flexural modulus (dry)','2.5 GPa (363,000 psi)'],['Flexural modulus (wet, 9%)','0.5 GPa (73,000 psi)'],['Max water absorption','9%'],['Coefficient of thermal expansion','9 × 10⁻⁵ mm/mm·°C'],['Intermittent temperature rating','100 °C (210 °F)'],['Design loading (dry applications)','20 MPa (2,900 psi)'],['Design loading (wet and humid applications)','10 MPa (1,500 psi)'],['PV limit','3 MPa·m/min (17,000 psi·in/min)'],['Moisture absorption','Gradually absorbs water from the air or when immersed, swelling up to 3%'],['Clearances','2% to 5% of the wall thickness, minimum 0.2 mm'],['Press fit','0.1 mm plus 0.1% of the bush diameter'],['Machining tolerance','0.3% of all dimensions'],['Expansion with moisture','1% for every 3% mass increase in moisture absorption']]}
 ];
-async function datasheetPdf(d){
-  const logo=await logoData(),acc=S.pdfAcc||'#c9861a',per=30,pages=[];
-  for(let p=0;p===0||p*per<d.rows.length;p++){
-    const el=[`<rect width="210" height="38" fill="#0e1a20"/><rect y="38" width="210" height="1.6" fill="${acc}"/>`];
-    if(logo)el.push(`<rect x="${190-14*logo.r-3}" y="9" width="${14*logo.r+6}" height="20" rx="2" fill="#fff"/>`,svgImg(logo.u,190-14*logo.r,12,14*logo.r,14));
-    el.push(`<text x="14" y="21" font-size="9" font-weight="bold" fill="#fff">${esc(d.name)}</text><text x="14" y="30" font-size="3.6" fill="${acc}">TYPICAL PROPERTIES${per<d.rows.length?` (PAGE ${p+1})`:''}</text>`);
-    let y=50;if(p===0)wrapLines(d.tag,180,3.8).forEach(t=>{el.push(`<text x="14" y="${y}" font-size="3.8" fill="#0e1a20">${esc(t)}</text>`);y+=5});
-    y+=4;d.rows.slice(p*per,p*per+per).forEach(([k,v],i)=>{if(i%2===0)el.push(`<rect x="12" y="${y-5}" width="186" height="7.2" fill="#f2f5f6"/>`);el.push(`<text x="14" y="${y}" font-size="3.3" fill="#566870">${esc(k)}</text><text x="196" y="${y}" font-size="3.4" font-weight="bold" fill="#0e1a20" text-anchor="end">${esc(v)}</text>`);y+=7.2});
-    const foot=wrapLines(`Typical properties, indicative only. Source: Vesconite spec sheet (${d.year}): ${d.url}. Prepared with Vesco Intelligence on ${new Date().toLocaleDateString()}.`,182,2.7);
-    foot.forEach((t,i)=>el.push(`<text x="14" y="${278+i*3.6}" font-size="2.7" fill="#788">${esc(t)}</text>`));
-    pages.push(await svgToJpeg(pageSvg(el.join('')),1240,1754));
-  }
-  return buildPdf(pages,210,297);
-}
+const hexRgb=h=>{h=String(h||'#888888').replace('#','');return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)||0)};
+const tabStyle=id=>{const d=(S.dsc&&S.dsc[id])||{c:'#8a8d91',a:.3},[r,g,b]=hexRgb(d.c),lum=(r*299+g*587+b*114)/1000,a=Math.max(0,Math.min(1,+d.a)),txt=a>=.55?(lum<140?'#ffffff':'#0e1a20'):'';return `background:rgba(${r},${g},${b},${a});border-left:7px solid rgb(${r},${g},${b});${txt?`color:${txt};--mut:${txt};`:''}`};
 function datasheets(v){
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Data sheets</h1><p class="mut">Typical properties from Vesconite's published spec sheets. Values are indicative.</p><div class="list">${DSH.map(d=>`<a class="row" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip ok">Open</span></a>`).join('')}</div>`;
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Data sheets</h1><p class="mut">Typical properties from the Vesconite spec sheets. Tap a material to see its properties and open the PDF.</p><div class="list">${DSH.map(d=>`<a class="row dtab" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto;${tabStyle(d.id)}"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip">PDF ›</span></a>`).join('')}</div>`;
 }
 function datasheet(v,id){
   const d=DSH.find(x=>x.id===id);
   if(!d){v.innerHTML='<a class="back" href="#/datasheets">← Data sheets</a><p class="empty">Data sheet not found.</p>';return}
-  v.innerHTML=`<a class="back" href="#/datasheets">← Data sheets</a><h1>${esc(d.name)}</h1><p class="lead">${esc(d.tag)}</p><dl class="spec">${d.rows.map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl><p class="mut">Typical properties, indicative only. Source: Vesconite spec sheet (${esc(d.year)}).</p><div class="acts"><button type="button" class="btn pri" id="dsp">Share PDF</button><a class="btn" href="${esc(d.url)}" target="_blank" rel="noopener">Official PDF</a><button type="button" class="btn" id="dsl">Share link</button></div><p class="mut" style="margin:0">Share PDF uses the official PDF if you saved it as datasheets/${esc(d.id)}.pdf in your repo; otherwise it makes a clean copy of the table above. Tap once to prepare it, then tap Open PDF.</p>`;
+  v.innerHTML=`<a class="back" href="#/datasheets">← Data sheets</a><div class="dshead" style="${tabStyle(id)}"><h1>${esc(d.name)}</h1><p>${esc(d.tag)}</p></div><dl class="spec">${d.rows.map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl><p class="mut">Typical properties, indicative only. Physical properties may be altered to some extent by processing conditions.</p><div class="acts"><button type="button" class="btn pri" id="dsp">PDF</button></div>`;
   const pb=$('#dsp');
-  pb.onclick=async()=>{
-    if(pb._b){await deliver(pb._b,pb._n);return}
-    pb.disabled=true;pb.textContent='Preparing…';
-    try{let blob=null;
-      for(const u of [`datasheets/${d.id}.pdf`,d.url]){try{const r=await fetch(u);if(r.ok&&/pdf/i.test(r.headers.get('content-type')||'')){blob=new Blob([await r.blob()],{type:'application/pdf'});break}}catch{}}
-      if(!blob)blob=await datasheetPdf(d);
-      pb._b=blob;pb._n=`${d.name.replace(/\s+/g,'-')}-data-sheet.pdf`;pb.textContent='Open PDF';log('Prepared data sheet',d.name);
-    }catch(x){alert('Could not prepare the PDF: '+(x.message||x));pb.textContent='Share PDF'}
-    pb.disabled=false};
-  $('#dsl').onclick=async()=>{try{if(navigator.share)await navigator.share({title:d.name+' data sheet',url:d.url});else{await navigator.clipboard.writeText(d.url);alert('Link copied.')}}catch{}};
+  const ready=(async()=>{try{const s=await getDoc(dc('datasheets',id));if(!s.exists())return null;const u=await getFile(s.data().file);return new Blob([await (await fetch(u)).blob()],{type:'application/pdf'})}catch{return null}})();
+  const nm=`${d.name.replace(/\s+/g,'-')}-data-sheet.pdf`;
+  pb.onclick=async()=>{const t=pb.textContent;pb.textContent='…';const b=await ready;pb.textContent=t;if(b){log('Opened data sheet',d.name);await deliver(b,nm)}else alert('This PDF has not been stored yet. An admin can add it in Admin > Data sheets.')};
 }
 
 /* ---------- Home charts ---------- */
@@ -314,19 +358,18 @@ function init3(box){
     requestAnimationFrame(loop)};
   loop();return st;
 }
-const MATS={v:{c:0x9a9ea3,rough:.82},h:{c:0xfff4dc,rough:.72}};   /* Vesconite: grey. Hilube: cream-white. (Illustrative colours.) */
-let NTEX=null;
-function noiseTex(){   /* fine machined-polymer grain with faint turning marks */
-  if(NTEX)return NTEX;const cv=document.createElement('canvas');cv.width=cv.height=256;const x=cv.getContext('2d'),d=x.createImageData(256,256);
-  for(let i=0;i<d.data.length;i+=4){const v=222+Math.random()*33|0;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}
-  x.putImageData(d,0,0);x.globalAlpha=.07;x.fillStyle='#000';for(let y=0;y<256;y+=3)x.fillRect(0,y,256,1);
-  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,2);return NTEX=t;
+let TEXC={};
+function matTex(g){   /* colour and surface texture come from the Vesconite and Hilube product photos (textures.js) */
+  const T=window.VI_TEX&&window.VI_TEX[g],base={c:g==='h'?0xf1ebdd:0x6b6f73,t:null,rough:g==='h'?.7:.82};
+  if(!T)return base;
+  if(!TEXC[g]){const im=new Image(),tx=new THREE.Texture(im);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(3,3);TEXC[g]={t:tx,c:parseInt(T.c.slice(1),16),rough:base.rough};im.onload=()=>{tx.needsUpdate=true;if(T3&&T3.last)upd3(T3,T3.last)};im.src=T.m}
+  return TEXC[g];
 }
 function upd3(st,o){
   st.last=o;const g=st.grp;[...g.children].forEach(m=>{m.geometry.dispose();g.remove(m)});
   const{OD,ID,L,ch,fl,gz,G}=o,rO=OD/2,rI=ID/2,h=L/2,c=Math.min(ch,(rO-rI)*.8,h*.5),rF=fl.on?fl.FD/2:rO,yF=h-(fl.on?fl.T:0);
-  const open=!!st.cut,sw=open?Math.PI*1.5:Math.PI*2,th0=open?Math.PI*.75:0,tex=noiseTex(),M=MATS[o.g]||MATS.v;
-  const mat=new THREE.MeshStandardMaterial({color:M.c,roughness:M.rough,metalness:0,map:tex,bumpMap:tex,bumpScale:.5,side:THREE.DoubleSide});
+  const open=!!st.cut,sw=open?Math.PI:Math.PI*2,th0=open?Math.PI:0,M=matTex(o.g);
+  const mat=new THREE.MeshStandardMaterial({color:M.c,roughness:M.rough,metalness:0,map:M.t,bumpMap:M.t,bumpScale:.4,side:THREE.DoubleSide});
   const cutMat=new THREE.MeshStandardMaterial({color:new THREE.Color(M.c).multiplyScalar(.78),roughness:1,metalness:0,side:THREE.DoubleSide});
   const lm=new THREE.LineBasicMaterial({color:0x151515}),add=(geo,m)=>g.add(new THREE.Mesh(geo,m||mat)),V2=(a,b)=>new THREE.Vector2(a,b);
   const out=fl.on?[[rO-c,-h],[rO,-h+c],[rO,yF],[rF,yF],[rF,h]]:[[rO-c,-h],[rO,-h+c],[rO,h-c],[rO-c,h]];
@@ -365,7 +408,7 @@ function drawSVG(p){
   const inner=(th,sgn)=>{const a=[];for(let k=0;k<=160;k++)a.push([x0+(x1-x0)*k/160,(sgn<0?yTI:yBI)+(sgn<0?-1:1)*gz(th,-hh+L*k/160)*s]);return a};
   const topOut=fl.on?[[x0,yTO+cs],[x0+cs,yTO],[xF,yTO],[xF,yTF],[x1,yTF]]:[[x0,yTO+cs],[x0+cs,yTO],[x1-cs,yTO],[x1,yTO+cs]];
   const botOut=fl.on?[[x0,yBO-cs],[x0+cs,yBO],[xF,yBO],[xF,yBF],[x1,yBF]]:[[x0,yBO-cs],[x0+cs,yBO],[x1-cs,yBO],[x1,yBO-cs]];
-  const topP=[...topOut,...inner(Math.PI/2,-1).reverse()],botP=[...botOut,...inner(3*Math.PI/2,1).reverse()];
+  const ti=inner(Math.PI/2,-1),bi=inner(3*Math.PI/2,1),topP=[...topOut,...ti.slice().reverse()],botP=[...botOut,...bi.slice().reverse()];
   const idEnd=G.type==='none'?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>`:`<path class="k1" d="M${Array.from({length:720},(_,k)=>{const t=2*Math.PI*k/720,r=rI+gz(t,hh)*s;return n(cx1+r*Math.cos(t))+','+n(cy-r*Math.sin(t))}).join('L')}Z"/>`;
   const lab=q?q.lab:{OD:`Ø${fx(OD)} ±${fx(tOD,3)}`,ID:`Ø${fx(ID)} ±${fx(tID,3)}`,L:`${fx(L)} +0/−${fx(tL)}`,W:`${fx(w)} +0/−${fx(tW,3)}`,FD:`Ø${fx(fl.FD)}`,T:`${fx(fl.T)}`};
   const gw=G.type==='none'?0:grooveWidth(G.d,G.r);
@@ -390,6 +433,7 @@ ${fl.on?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rF)}"/><circle class="
 <text x="${cx1-4.5}" y="${n(cy-rF-12)}" class="tt">A</text><text x="${cx1-4.5}" y="${n(cy+rF+15)}" class="tt">A</text>
 <text x="${cx1}" y="${n(cy+rF+27)}" text-anchor="middle" class="tt">END VIEW${fl.on?' (FLANGE END)':''}</text>
 <polygon class="k1" style="fill:url(#vh)" points="${pts(topP)}"/><polygon class="k1" style="fill:url(#vh)" points="${pts(botP)}"/>
+<line class="k1" x1="${n(x0)}" y1="${n(ti[0][1])}" x2="${n(x0)}" y2="${n(bi[0][1])}"/><line class="k1" x1="${n(x1)}" y1="${n(ti[160][1])}" x2="${n(x1)}" y2="${n(bi[160][1])}"/>
 <line class="k3" x1="${n(x0-9)}" y1="${cy}" x2="${n(x1+9)}" y2="${cy}"/>
 <text x="${n(cx2)}" y="${n(yBF+27)}" text-anchor="middle" class="tt">SECTION A–A</text>
 ${dh(x0,x1,yBF,yBF+11,lab.L)}
@@ -434,6 +478,46 @@ function wrapLines(t,maxMm,fs,bold){_mc.font=`${bold?'bold ':''}100px Arial`;con
 
 /* ---------- STEP (ISO 10303-21, AP214) export of the bush body: plain faces of revolution (cylinders, cones, planes). Grooves are not modelled. ---------- */
 function stepFile(p){
+  if(p.G&&p.G.type!=='none'&&p.gz)return stepFaceted(p);
+  return stepPlain(p);
+}
+/* Faceted STEP (FACETED_BREP) used when grooves are present: the whole bush, grooves included, as small flat faces. */
+function stepFaceted(p){
+  const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0,G=p.G,gz=p.gz,hh=L/2;
+  const c=Math.max(0,Math.min(p.ch||0,(rO-rI)*.8,(L-T)*.4));
+  const P=[[rI,0]];if(c>0)P.push([rO-c,0],[rO,c]);else P.push([rO,0]);
+  if(fl)P.push([rO,L-T],[rF,L-T],[rF,L]);else if(c>0)P.push([rO,L-c],[rO-c,L]);else P.push([rO,L]);
+  P.push([rI,L]);
+  const gw=grooveWidth(G.d,G.r),Nt=Math.min(360,Math.max(180,Math.ceil(2*Math.PI*rI/(gw/9))));
+  let ys;
+  if(G.type==='long')ys=[hh,-hh];
+  else if(G.type==='blind'){const s=new Set([hh,-hh,0]),hl=G.len/2;for(let k=0;k<=14;k++){const d=hl+G.r*k/14;[d,-d].forEach(v=>{if(Math.abs(v)<hh)s.add(+v.toFixed(4))})}[hl,-hl].forEach(v=>{if(Math.abs(v)<hh)s.add(v)});ys=[...s].sort((a,b)=>b-a)}
+  else{const n=Math.min(110,Math.max(40,Math.ceil(L/(gw/6))));ys=Array.from({length:n+1},(_,j)=>hh-L*j/n)}
+  const fm=x=>{x=Math.abs(x)<1e-9?0:x;return x.toFixed(5).replace(/0+$/,'')};
+  const E=[];let n=0;const add=s=>{E.push(`#${++n}=${s};`);return n};
+  const ring=(z,rf)=>{const ids=[];for(let i=0;i<Nt;i++){const t=2*Math.PI*i/Nt,r=rf(t);ids.push(add(`CARTESIAN_POINT('',(${fm(r*Math.cos(t))},${fm(r*Math.sin(t))},${fm(z)}))`))}return ids};
+  const rows=[{z:0,g:1,ids:ring(0,t=>rI+gz(t,-hh))}];
+  for(const[r,z]of P.slice(1,-1))rows.push({z,g:0,ids:ring(z,()=>r)});
+  rows.push({z:L,g:1,ids:ring(L,t=>rI+gz(t,hh))});
+  for(let j=1;j<ys.length-1;j++){const y=ys[j];rows.push({z:y+hh,g:1,ids:ring(y+hh,t=>rI+gz(t,y))})}
+  rows.push(rows[0]);
+  const faces=[];
+  const mk=ids=>{const lp=add(`POLY_LOOP('',(${ids.map(x=>'#'+x).join(',')}))`),fb=add(`FACE_BOUND('',#${lp},.T.)`);faces.push(add(`FACE('',(#${fb}))`))};
+  for(let k=0;k<rows.length-1;k++){const A=rows[k],B=rows[k+1],flat=A.z===B.z||(!A.g&&!B.g)||(G.type==='long'&&A.g&&B.g);
+    for(let i=0;i<Nt;i++){const j=(i+1)%Nt,a=A.ids[i],b=A.ids[j],c2=B.ids[j],d=B.ids[i];if(flat)mk([a,b,c2,d]);else{mk([a,b,c2]);mk([a,c2,d])}}}
+  const nm=String(p.name||'BUSH').replace(/[^\x20-\x7E]/g,'').replace(/'/g,"''")||'BUSH';
+  const shell=add(`CLOSED_SHELL('',(${faces.map(x=>'#'+x).join(',')}))`),fb=add(`FACETED_BREP('${nm}',#${shell})`);
+  const dZ=add("DIRECTION('',(0.,0.,1.))"),dX=add("DIRECTION('',(1.,0.,0.))"),o0=add("CARTESIAN_POINT('',(0.,0.,0.))"),a0=add(`AXIS2_PLACEMENT_3D('',#${o0},#${dZ},#${dX})`);
+  const len=add("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))"),ang=add("(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.))"),sa=add("(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT())");
+  const unc=add(`UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#${len},'distance_accuracy_value','confusion accuracy')`);
+  const ctx=add(`(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#${unc}))GLOBAL_UNIT_ASSIGNED_CONTEXT((#${len},#${ang},#${sa}))REPRESENTATION_CONTEXT('Context3d','3D Context with UNIT and UNCERTAINTY'))`);
+  const rep=add(`FACETED_BREP_SHAPE_REPRESENTATION('',(#${a0},#${fb}),#${ctx})`);
+  const ac=add("APPLICATION_CONTEXT('core data for automotive mechanical design processes')"),pc=add(`PRODUCT_CONTEXT('',#${ac},'mechanical')`),pr=add(`PRODUCT('${nm}','${nm}','',(#${pc}))`);
+  const pf=add(`PRODUCT_DEFINITION_FORMATION('','',#${pr})`),pdc=add(`PRODUCT_DEFINITION_CONTEXT('part definition',#${ac},'design')`),pd=add(`PRODUCT_DEFINITION('design','',#${pf},#${pdc})`),pds=add(`PRODUCT_DEFINITION_SHAPE('','',#${pd})`);
+  add(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${rep})`);add(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#${ac})`);add(`PRODUCT_RELATED_PRODUCT_CATEGORY('part','',(#${pr}))`);
+  return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence bush with grooves, faceted solid'),'2;1');\nFILE_NAME('${nm}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
+}
+function stepPlain(p){
   const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0;
   const c=Math.max(0,Math.min(p.ch||0,(rO-rI)*.8,(L-T)*.4));
   const P=[[rI,0]];if(c>0)P.push([rO-c,0],[rO,c]);else P.push([rO,0]);
@@ -474,6 +558,7 @@ async function deliver(blob,name){
   const f=new File([blob],name,{type:blob.type});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return}catch(x){if(x.name==='AbortError')return}}
   const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  if(/pdf|svg/.test(blob.type)&&(navigator.standalone||matchMedia('(display-mode: standalone)').matches))window.open(u,'_blank');
   setTimeout(()=>URL.revokeObjectURL(u),60000);
 }
 const svgBlob=()=>new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+LAST.svg],{type:'image/svg+xml'});
@@ -570,9 +655,9 @@ function design(v){
     const rows=[['5–10',7.5],['10–15',12.5],['15–20',17.5],['20–30',25],['30–35',32.5],['35–40',37.5]].map(([b,t])=>`<tr><td>${b} °C</td><td>${fx(t20(OD,t),2)}</td><td>${fx(t20(ID,t),2)}</td><td>${fx((t20(OD,t)-t20(ID,t))/2,2)}</td></tr>`).join('');
     const tOD=tol(OD,.1,.025),tID=tol(ID,.1,.025),tW=tol(w,.5,.025),tL=tol(L,.5,.3),dt=new Date(),drg=`${S.dw.prefix||'VI'}-${dt.toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`;
     const logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
-    LAST={drg,step:{name:'BEARING-BUSH',OD,ID,L,ch:chn||0.5,fl},svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
+    LAST={drg,step:{name:'BEARING-BUSH',OD,ID,L,ch:chn||0.5,fl,G:Gu,gz},svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
     $('#mdr').innerHTML=LAST.svg;MD.hidden=false;
-    PEND3={OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu};if(T3)upd3(T3,PEND3);else if(!T3L){T3L=true;lib('three').then(()=>{T3=init3($('#m3'));if(T3&&PEND3)upd3(T3,PEND3)}).catch(()=>{$('#m3').innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>'})}
+    PEND3={OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu};if(T3)upd3(T3,PEND3);else if(!T3L){T3L=true;Promise.all([lib('three'),lib('tex').catch(()=>0)]).then(()=>{T3=init3($('#m3'));if(T3&&PEND3)upd3(T3,PEND3)}).catch(()=>{$('#m3').innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>'})}
     O.innerHTML=`<div class="card"><h2>Bearing dimensions at 20 °C</h2><dl class="spec" style="margin:0">
     <dt>Outside diameter</dt><dd>${fx(OD)} mm ± ${fx(tOD,3)}</dd><dt>Inside diameter</dt><dd>${fx(ID)} mm ± ${fx(tID,3)}</dd>
     <dt>Wall thickness</dt><dd>${fx(w)} mm +0 / −${fx(tW,3)}</dd><dt>Length</dt><dd>${fx(L)} mm +0 / −${fx(tL,2)}</dd>
@@ -622,7 +707,7 @@ function quickdraw(v){
   <h2>Notes</h2><textarea id="qNotes" rows="5">${esc(QNOTES)}</textarea>
   <div style="margin-top:8px"><label class="ck"><input type="checkbox" id="qLg" ${dw.showLogo?'checked':''}>Show logo</label><label class="ck"><input type="checkbox" id="qSt" checked>Show data table</label><label class="ck"><input type="checkbox" id="qSn" checked>Show notes</label></div>
   </form><div id="QM"></div>
-  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. The STEP file contains the plain bush body; grooves appear on the drawing only.</p></div>`;
+  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. The STEP file includes the flange, chamfer and grooves.</p></div>`;
   const gv=id=>$('#'+id).value,gn=id=>parseFloat(gv(id));
   const gen=()=>{
     const fl0=gv('qFl')==='y',gt=gv('qG');
@@ -650,7 +735,7 @@ function quickdraw(v){
       drg=gv('qDrg').trim()||`QD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`,
       dwq={...S.dw,company:gv('qCo'),rev:gv('qRev'),paper:gv('qPaper'),showLogo:$('#qLg').checked,fit:$('#qSt').checked,notes:$('#qSn').checked,noteText:gv('qNotes')},
       logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
-    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fx(ch,2)} × 45° CHAMFER`:'')}})};
+    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fx(ch,2)} × 45° CHAMFER`:'')}})};
     $('#QV').innerHTML=LAST.svg;P.hidden=false;const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
   };
   if(!S.dw.logo&&!window.__rl)repoLogo().then(r=>{if(r){window.__rl=r;gen()}});
@@ -685,13 +770,16 @@ async function admin(v){
   <label>Custom drawn-by text<input name="dw_whoText" value="${esc(dw.whoText)}"></label></div>
   ${ckb('dw_showLogo',dw.showLogo,'Show logo in the title block')}${ckb('dw_fit',dw.fit,'Show the fit and feature table')}${ckb('dw_notes',dw.notes,'Show notes')}
   <label style="margin-top:10px">Drawing notes, one per line. {FIT} inserts the securing note.<textarea name="dw_noteText" rows="8">${esc(dw.noteText)}</textarea></label></section>
+  <section class="card"><h2>Data sheets</h2><p class="mut">Tab colour and transparency for each material, and the PDF stored in Firebase for it. Colours save with Save settings. PDFs store straight away.</p>
+  ${DSH.map(d=>{const c=(S.dsc&&S.dsc[d.id])||{c:'#8a8d91',a:.3};return `<div class="dsr"><div class="dsn" id="dsn_${d.id}" style="${tabStyle(d.id)}">${esc(d.name)}</div><div class="g2" style="margin-top:8px"><label>Colour<input type="color" name="dsc_${d.id}" value="${c.c}"></label><label>Opacity <span class="mut">${Math.round(c.a*100)}%</span><input type="range" name="dsa_${d.id}" min="0" max="100" value="${Math.round(c.a*100)}"></label></div><div class="dsf"><span class="mut" id="dss_${d.id}">checking…</span><label class="btn">Replace PDF<input type="file" accept="application/pdf" hidden data-dsu="${d.id}"></label></div></div>`}).join('')}
+  <div class="acts"><button type="button" class="btn" id="dsb">Store the included PDFs in Firebase</button></div></section>
   <section class="card"><h2>Features</h2>${ckb('oem',s.feat.oem,'OEM references')}${ckb('ins',s.feat.ins,'Insights page')}${ckb('qr',s.feat.qr,'Share links and QR codes')}${ckb('pv',s.feat.pv,'Design calculators')}</section>
   <section class="card"><h2>Industries</h2><p class="mut">One per line. Used as suggestions when capturing and adding OEM references.</p><textarea name="ind" rows="8">${esc(s.ind)}</textarea></section>
   <button class="btn pri wide">Save settings</button></form>
   <section class="card"><h2>Team</h2><p class="mut">New sign-ups start as Pending and cannot see anything until you set a role. Viewer reads, Editor adds and edits, Admin manages everything.</p><div id="tm"><p class="mut">Loading…</p></div></section>
   <section class="card"><h2>Activity log</h2><p class="mut">Only admins can see this. Newest first.</p><input id="alf" type="search" placeholder="Filter by person or action"><div class="lg" id="ALL"><p class="mut">Loading…</p></div><div class="acts"><button type="button" class="btn" id="alm">Load more</button><button type="button" class="btn bad" id="alc">Clear log</button></div></section>
   <section class="card"><h2>Data</h2><p class="mut">Back up before big changes. Backups from the earlier version import too.</p><div class="acts"><button class="btn" id="ex">Export backup</button><label class="btn">Import backup<input type="file" accept=".json,application/json" hidden id="im"></label><button class="btn bad" id="ca">Delete everything</button></div><h3 style="margin-top:14px">Sample data</h3><p class="mut">Adds 10 example applications with photos and every field filled in, to try the app. They are marked as samples and can be removed in one tap.</p><div class="acts"><button type="button" class="btn" id="sl">Load 10 sample applications</button><button type="button" class="btn bad" id="sr">Remove sample applications</button></div></section>`;
-  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind'),dw:{...S.dw,logo:dwLogo.u||'',logoR:dwLogo.r||1,company:f.get('dw_company').trim(),title:f.get('dw_title').trim(),prefix:f.get('dw_prefix').trim(),rev:f.get('dw_rev').trim(),paper:f.get('dw_paper'),who:f.get('dw_who'),whoText:f.get('dw_whoText').trim(),showLogo:f.has('dw_showLogo'),fit:f.has('dw_fit'),notes:f.has('dw_notes'),noteText:f.get('dw_noteText')}}};
+  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind'),dw:{...S.dw,logo:dwLogo.u||'',logoR:dwLogo.r||1,company:f.get('dw_company').trim(),title:f.get('dw_title').trim(),prefix:f.get('dw_prefix').trim(),rev:f.get('dw_rev').trim(),paper:f.get('dw_paper'),who:f.get('dw_who'),whoText:f.get('dw_whoText').trim(),showLogo:f.has('dw_showLogo'),fit:f.has('dw_fit'),notes:f.has('dw_notes'),noteText:f.get('dw_noteText')},dsc:Object.fromEntries(DSH.map(d=>[d.id,{c:f.get('dsc_'+d.id)||'#888888',a:(+f.get('dsa_'+d.id))/100}]))}};
   const lgShow=()=>{$('#lgp').innerHTML=dwLogo.u?`<img src="${dwLogo.u}" alt="" style="max-height:48px;background:#fff;padding:4px;border-radius:6px;vertical-align:middle"> Uploaded logo is used on drawings and documents.`:'No uploaded logo. The logo file in your repo is used instead.'};lgShow();
   $('#lgf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const u=URL.createObjectURL(f),im=await img(u);URL.revokeObjectURL(u);let m=500,out;do{const k=Math.min(1,m/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);out={u:cv.toDataURL('image/png'),r:cv.width/cv.height};m-=140}while(out.u.length>450000&&m>100);dwLogo=out;lgShow()}catch{alert('That image could not be read.')}e.target.value=''};
   $('#lgx').onclick=()=>{dwLogo={u:'',r:1};lgShow()};
@@ -710,6 +798,12 @@ async function admin(v){
   $('#alf').oninput=drawAct;$('#alm').onclick=()=>{lim+=100;loadAct()};
   $('#alc').onclick=async()=>{if(ACT.length&&confirm(`Delete the ${ACT.length} activity entries shown?`)){try{await Promise.all(ACT.map(x=>deleteDoc(dc('activity',x.id))));await loadAct();drawNotif()}catch(x){alert(x.message)}}};
   loadAct().then(()=>{drawNotif();localStorage.setItem('vi4seen',new Date().toISOString());notifCheck()});
+  $('#AF').addEventListener('input',()=>{const n=read(),sv=S.dsc;S.dsc=n.dsc;DSH.forEach(d=>{const el=$('#dsn_'+d.id);if(el){el.style.cssText=tabStyle(d.id);const l=el.parentNode.querySelector('input[type=range]');if(l)l.previousElementSibling.textContent=Math.round(n.dsc[d.id].a*100)+'%'}});S.dsc=sv});
+  const loadDs=async()=>{let m={};try{const q=await getDocs(col('datasheets'));q.docs.forEach(x=>m[x.id]=x.data());DSH.forEach(d=>{const el=$('#dss_'+d.id);if(el)el.textContent=m[d.id]?`PDF stored (${Math.round((m[d.id].size||0)/1024)} KB)`:'No PDF stored yet'})}catch(x){DSH.forEach(d=>{const el=$('#dss_'+d.id);if(el)el.textContent='Could not read: '+x.message})}return m};
+  const putDs=async(id,dataUrl,size)=>{const old=await getDoc(dc('datasheets',id)),ref=await putFile(dataUrl);await setDoc(dc('datasheets',id),{name:DSH.find(d=>d.id===id).name,file:ref,size,date:new Date().toISOString()});if(old.exists())await delFile(old.data().file)};
+  $$('[data-dsu]').forEach(i=>i.onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>3e6){alert('That PDF is over 3 MB.');return}const id=i.dataset.dsu;try{await putDs(id,await rd(f),f.size);log('Stored data sheet PDF',DSH.find(d=>d.id===id).name);await loadDs()}catch(x){alert('Could not store the PDF: '+x.message)}e.target.value=''});
+  $('#dsb').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{const r=await fetch('datasheets.json');if(!r.ok)throw new Error('datasheets.json was not found. Upload it next to index.html in your repo.');const J=await r.json(),tot=Object.keys(J).length;let n=0;for(const d of DSH){if(!J[d.id])continue;b.textContent=`Storing ${++n} of ${tot}…`;await putDs(d.id,'data:application/pdf;base64,'+J[d.id],Math.round(J[d.id].length*3/4))}log('Stored data sheet PDFs','',`${n} files`);alert(`Stored ${n} data sheet PDFs in Firebase.`);await loadDs()}catch(x){alert(x.message)}b.disabled=false;b.textContent='Store the included PDFs in Firebase'};
+  loadDs();
   $('#ex').onclick=async e=>{e.target.textContent='Preparing…';try{const apps=[];for(const a of A){const{thumb,...r}=a;r.photos=await Promise.all(a.photos.map(getFile));apps.push(r)}const u=URL.createObjectURL(new Blob([JSON.stringify({v:4,apps})],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download=`vi-backup-${new Date().toISOString().slice(0,10)}.json`;l.click();log('Exported backup');setTimeout(()=>URL.revokeObjectURL(u),1000)}catch(x){alert(x.message)}e.target.textContent='Export backup'};
   $('#im').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text()),L=(Array.isArray(j)?j:j.apps).filter(r=>r&&r.name);let n=0;for(const r of L){const x=norm(r),items=x.src.map(src=>({src}));delete x.src;await commit(x,items);n++}log('Imported backup','',`${n} records`);alert(`Imported ${n} records.`);render()}catch(x){alert('That file is not a valid backup.')}};
   $('#sl').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{const r=await fetch('samples.json');if(!r.ok)throw new Error('samples.json was not found. Upload it next to index.html in your repo.');const Ls=await r.json();let n=0;
@@ -728,9 +822,9 @@ function render(){
   if(p==='share')return share(v,id);
   if(!ME)return login(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
-  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,admin};
+  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,admin};
   (m[p]||home)(v,id);
-  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'?'tools':p)));
+  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p)));
   $('.tabs .add').hidden=!ed;scrollTo(0,0);
 }
 const soft=()=>{const p=location.hash.slice(2).split('/')[0];if(['','library','oem','insights'].includes(p))render()};
@@ -756,13 +850,19 @@ else{
   getDoc(dc('settings','app')).then(s=>{if(s.exists()){S=mergeS(s.data());try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}if(!t0&&S.mode!=='auto')setT(S.mode);apply(S);if(ready)soft()}}).catch(()=>{});
   onAuthStateChanged(au,u=>boot(u).catch(e=>{ready=true;$('#v').innerHTML=`<h1>Can't load data</h1><p class="mut">${esc(e.message)}</p><p class="mut">Check that the Firestore rules in firestore.rules are published.</p>`}));
 }
-/* Pull down to refresh (home-screen app has no browser refresh button) */
+/* Pull down to refresh: a small Hilube bush (50 x 40 x 60 mm, longitudinal grooves) that hops */
 (function(){
-  const bar=document.createElement('div');bar.id='ptr';bar.textContent='Pull to refresh';document.body.appendChild(bar);
-  let y0=0,dy=0,on=false;
+  const el=document.createElement('div');el.id='ptr';el.setAttribute('aria-hidden','true');
+  const notch=Array.from({length:6},(_,k)=>{const t=(90+k*60)*Math.PI/180;return `<circle cx="${(30+16*Math.cos(t)).toFixed(2)}" cy="${(20+5.1*Math.sin(t)).toFixed(2)}" r="1.9" fill="#2a2e33"/>`}).join('');
+  const lines=[210,250,290,330].map(a=>{const t=a*Math.PI/180,x=(30+16*Math.cos(t)).toFixed(2),y=(20+5.1*Math.sin(t)).toFixed(2);return `<line x1="${x}" y1="${y}" x2="${x}" y2="${(+y+11).toFixed(2)}" stroke="#555b63" stroke-width="1.6"/>`}).join('');
+  el.innerHTML=`<div class="pb"><svg viewBox="0 0 60 84" width="50" height="70"><defs><linearGradient id="pbg" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="pbl" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="pbc"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#pbg)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#pbl)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#pbc)">${lines}</g>${notch}</svg></div><i class="ps"></i>`;
+  document.body.appendChild(el);
+  const pb=el.querySelector('.pb');let y0=0,dy=0,on=false;
+  const pull=d=>{const q=Math.min(d,130);el.style.transform=`translate(-50%,${q*.78-84}px)`;pb.style.transform=`rotate(${Math.sin(q/15)*12}deg) scale(${.72+Math.min(q,90)/320})`;el.classList.toggle('ready',d>90)};
+  const rest=()=>{el.style.transform='';pb.style.transform='';el.classList.remove('ready')};
   addEventListener('touchstart',e=>{on=scrollY<=0&&e.touches.length===1&&!e.target.closest('.ov,.m3,textarea,input,select');if(on){y0=e.touches[0].clientY;dy=0}},{passive:true});
-  addEventListener('touchmove',e=>{if(!on)return;dy=e.touches[0].clientY-y0;if(dy>0){bar.style.transform=`translateY(${Math.min(dy,120)/2-30}px)`;bar.textContent=dy>90?'Release to refresh':'Pull to refresh'}else{on=false;bar.style.transform=''}},{passive:true});
-  addEventListener('touchend',()=>{if(on&&dy>90){bar.textContent='Refreshing…';bar.style.transform='translateY(30px)';setTimeout(()=>location.reload(),150)}else bar.style.transform='';on=false},{passive:true});
+  addEventListener('touchmove',e=>{if(!on)return;dy=e.touches[0].clientY-y0;if(dy>0)pull(dy);else{on=false;rest()}},{passive:true});
+  addEventListener('touchend',()=>{if(on&&dy>90){el.classList.remove('ready');el.classList.add('go');el.style.transform='translate(-50%,26px)';pb.style.transform='';setTimeout(()=>location.reload(),1200)}else rest();on=false},{passive:true});
 })();
 
 setInterval(()=>{if(!document.hidden)notifCheck()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)notifCheck()});

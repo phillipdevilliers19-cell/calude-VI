@@ -18,6 +18,7 @@ service cloud.firestore {
     match /files/{id} { allow get: if true; allow list: if member(); allow create, delete: if editor(); }
     match /shared/{id} { allow get: if true; allow write: if editor(); }
     match /activity/{id} { allow read, delete: if admin(); allow create: if member() && request.resource.data.uid == request.auth.uid; }
+    match /datasheets/{id} { allow read: if member(); allow write: if admin(); }
     match /settings/{id} { allow read: if true; allow write: if admin(); }
   }
 }
