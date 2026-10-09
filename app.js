@@ -16,7 +16,7 @@ const dc=(n,i)=>doc(db,n,i),col=n=>collection(db,n);
 const byDate=(x,y)=>(y.date||'').localeCompare(x.date||'');
 const T=(p,ms=40000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('Timed out. Check your connection and try again. If it keeps happening, check that the Firestore database exists and the rules are published.')),ms))]);
 const clean=o=>JSON.parse(JSON.stringify(o));
-const LIBS={three:['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],tex:['textures.js'],qr:['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js']},LP={};
+const LIBS={three:['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'],qr:['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js']},LP={};
 const lib=k=>LP[k]||(LP[k]=(async()=>{for(const u of LIBS[k]){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=no;document.head.appendChild(s)});return}catch{}}delete LP[k];throw new Error('Could not load the '+k+' library. Check your connection.')})());
 const OKR=['admin','editor','viewer'];
 const cacheSave=()=>{try{localStorage.setItem('vi4d',JSON.stringify({uid:ME&&ME.uid,role:ROLE,A,O}))}catch{}};
@@ -358,18 +358,14 @@ function init3(box){
     requestAnimationFrame(loop)};
   loop();return st;
 }
-let TEXC={};
-function matTex(g){   /* colour and surface texture come from the Vesconite and Hilube product photos (textures.js) */
-  const T=window.VI_TEX&&window.VI_TEX[g],base={c:g==='h'?0xf1ebdd:0x6b6f73,t:null,rough:g==='h'?.7:.82};
-  if(!T)return base;
-  if(!TEXC[g]){const im=new Image(),tx=new THREE.Texture(im);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(3,3);TEXC[g]={t:tx,c:parseInt(T.c.slice(1),16),rough:base.rough};im.onload=()=>{tx.needsUpdate=true;if(T3&&T3.last)upd3(T3,T3.last)};im.src=T.m}
-  return TEXC[g];
+function matTex(g){   /* plain material colours: Vesconite is grey, Hilube is whitish */
+  return g==='h'?{c:0xf4efe3,t:null,rough:.62}:{c:0x8c9095,t:null,rough:.7};
 }
 function upd3(st,o){
   st.last=o;const g=st.grp;[...g.children].forEach(m=>{m.geometry.dispose();g.remove(m)});
   const{OD,ID,L,ch,fl,gz,G}=o,rO=OD/2,rI=ID/2,h=L/2,c=Math.min(ch,(rO-rI)*.8,h*.5),rF=fl.on?fl.FD/2:rO,yF=h-(fl.on?fl.T:0);
   const open=!!st.cut,sw=open?Math.PI:Math.PI*2,th0=open?Math.PI:0,M=matTex(o.g);
-  const mat=new THREE.MeshStandardMaterial({color:M.c,roughness:M.rough,metalness:0,map:M.t,bumpMap:M.t,bumpScale:.4,side:THREE.DoubleSide});
+  const mat=new THREE.MeshStandardMaterial({color:M.c,roughness:M.rough,metalness:0,side:THREE.DoubleSide});
   const cutMat=new THREE.MeshStandardMaterial({color:new THREE.Color(M.c).multiplyScalar(.78),roughness:1,metalness:0,side:THREE.DoubleSide});
   const lm=new THREE.LineBasicMaterial({color:0x151515}),add=(geo,m)=>g.add(new THREE.Mesh(geo,m||mat)),V2=(a,b)=>new THREE.Vector2(a,b);
   const out=fl.on?[[rO-c,-h],[rO,-h+c],[rO,yF],[rF,yF],[rF,h]]:[[rO-c,-h],[rO,-h+c],[rO,h-c],[rO-c,h]];
@@ -420,6 +416,32 @@ function drawSVG(p){
   const title=q?q.title:(dw.title||'BEARING')+(fl.on?' (FLANGED)':'')+' — '+GRADES[g][0],fitRows=q?q.table:fit;
   const lgBox=logo&&dw.showLogo?(()=>{const wd=Math.min(38,12*logo.r),ht=wd/logo.r;return `<image href="${logo.u}" xlink:href="${logo.u}" x="${n(220+(42-wd)/2)}" y="${n(245+(16-ht)/2)}" width="${n(wd)}" height="${n(ht)}" preserveAspectRatio="xMidYMid meet"/>`})():`<text x="241" y="254.5" text-anchor="middle" style="font-size:3.4px;font-weight:bold">${e(dw.company)}</text>`;
   const rowH=4.8;
+  let gdim='',call='',det='';
+  if(G.type!=='none'&&G.d>0&&G.r>0){
+    const R=G.r,cd=G.d-R,gw2=grooveWidth(G.d,R),lead=G.pitch>0?G.pitch:100,prof=x=>{const q2=R*R-x*x;if(q2<0)return 0;const z=cd+Math.sqrt(q2);return z>0?Math.min(z,G.d):0};
+    const tipY=yTI-G.d*s,fitT=(t,sp)=>t.length*1.8<=Math.min(L*s-4,sp-2),dyl=yTI+rI*.62,roomy=rI>=17;
+    let pxs=[cx2],tgt=cx2,cmx=cx2;
+    if(G.type==='blind')pxs=[cx2-G.len*s/2,cx2+G.len*s/2];
+    if(G.type==='spiral'){const sp=lead/G.n;if(sp<L*.9&&sp*s>=6){pxs=[cx2-sp*s,cx2];cmx=cx2-sp*s/2;tgt=cx2}}
+    if(roomy&&G.type==='blind'&&G.len*s>=8){const t=`${fx(G.len)} LONG`;gdim=dh(pxs[0],pxs[1],yTI,dyl,fitT(t,G.len*s)?t:fx(G.len))}
+    if(roomy&&G.type==='spiral'&&pxs.length===2){const sp=lead/G.n,t=`${fx(sp,1)} SPACING`;gdim=dh(pxs[0],pxs[1],yTI,dyl,fitT(t,sp*s)?t:fx(sp,1))}
+    call=`<line class="k2" marker-start="url(#vA)" x1="${n(tgt)}" y1="${n(tipY)}" x2="${n(cmx)}" y2="${n(yTI+2.4)}"/><circle class="k1" cx="${n(cmx)}" cy="${n(yTI+4.9)}" r="2.6" style="fill:#fff"/><text x="${n(cmx)}" y="${n(yTI+6.1)}" text-anchor="middle" style="font-size:3.2px;font-weight:bold">B</text>`;
+    const py=dw.fit?16+rowH*(fitRows.length+1)+7:16,sd=Math.min(32/gw2,18/G.d),bw=Math.max(30,gw2*sd+12),cxm=372,xl=cxm-bw/2,xr=cxm+bw/2,y0=py+20,dd=G.d*sd,yb=y0+dd+5,hw=gw2/2*sd;
+    const pr=[];for(let i=0;i<=24;i++){const x=-gw2/2+gw2*i/24;pr.push([cxm+x*sd,y0+prof(x)*sd])}
+    const poly=[[xl,y0],[cxm-hw,y0],...pr,[cxm+hw,y0],[xr,y0],[xr,yb],[xl,yb]];
+    const xp=-.45*gw2/2,P=[cxm+xp*sd,y0+prof(xp)*sd];
+    const lines=[`${G.n} × ${GTYPES[G.type]} GROOVE${G.n>1?'S':''}`,`DEPTH ${fx(G.d)}   RADIUS R${fx(R)}`,`WIDTH AT SURFACE ${fx(gw2)}`];
+    if(G.type==='spiral')lines.push(`PITCH (LEAD) ${fx(lead)}`,`${G.n} START${G.n>1?'S':''}, AXIAL SPACING ${fx(lead/G.n,1)}`);
+    else if(G.type==='blind')lines.push(`LENGTH ${fx(G.len)} (BETWEEN END`,`RADIUS CENTRES), CLOSED ENDS`);
+    else lines.push('FULL LENGTH, OPEN BOTH ENDS');
+    const ty=yb+8,ph=ty+lines.length*3.6+1-py;
+    det=`<g><rect class="k1" x="338" y="${n(py)}" width="68" height="${n(ph)}"/><text x="340" y="${n(py+4)}" class="sm" style="font-weight:bold;font-size:3px">DETAIL B — GROOVE SECTION</text><text x="340" y="${n(py+8)}" class="sm" style="font-size:2.4px">SCALE ${sd>=1?fx(sd,1)+':1':'1:'+fx(1/sd,1)}  (NOT TO DRAWING SCALE)</text>
+<polygon class="k1" style="fill:url(#vh)" points="${pts(poly)}"/>
+${dh(cxm-hw,cxm+hw,y0,y0-6,fx(gw2))}
+<line class="k6" x1="${n(cxm)}" y1="${n(y0+dd)}" x2="${n(xr)}" y2="${n(y0+dd)}"/>${dv(y0,y0+dd,xr,xr+8,fx(G.d))}
+<polyline class="k2" marker-start="url(#vA)" points="${n(P[0])},${n(P[1])} ${n(xl-2)},${n(P[1]+4)}"/><text x="${n(xl-3)}" y="${n(P[1]+5.2)}" text-anchor="end" style="font-size:3px">R${fx(R)}</text>
+${lines.map((t,i)=>`<text class="sm" x="340" y="${n(ty+i*3.6)}">${e(t)}</text>`).join('')}</g>`;
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="vd" width="420mm" height="297mm" viewBox="0 0 420 297" font-family="Arial Narrow,Arial,Helvetica,sans-serif">
 <defs><style>svg.vd .k1{stroke:#000;stroke-width:.5;fill:none}svg.vd .k2{stroke:#000;stroke-width:.25;fill:none}svg.vd .k3{stroke:#000;stroke-width:.25;stroke-dasharray:8 1.5 1.5 1.5;fill:none}svg.vd .k4{stroke:#000;stroke-width:.25;marker-start:url(#vA);marker-end:url(#vA)}svg.vd .k5{stroke:#000;stroke-width:.7;stroke-dasharray:8 2 1.5 2;fill:none}svg.vd .k6{stroke:#000;stroke-width:.25;stroke-dasharray:3 1.5;fill:none}svg.vd text{font-size:3.5px;fill:#000}svg.vd .lb{font-size:2px;fill:#444}svg.vd .tt{font-size:5px;font-weight:bold}svg.vd .sm{font-size:2.7px}</style>
 <marker id="vA" viewBox="0 0 10 4" refX="10" refY="2" markerWidth="3.2" markerHeight="1.28" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0L10,2L0,4z" fill="#000"/></marker>
@@ -441,8 +463,10 @@ ${dv(yTI,yBI,x0,x0-13,lab.ID)}
 ${fl.on?dv(yTO,yBO,x0,x0-27,lab.OD)+dv(yTF,yBF,x1,x1+13,lab.FD)+dh(xF,x1,yTF,yTF-11,lab.T):dv(yTO,yBO,x1,x1+11,lab.OD)+(()=>{const x=x1+20;return `<line class="k2" x1="${n(x1+1)}" y1="${n(yTO)}" x2="${n(x+2)}" y2="${n(yTO)}"/><line class="k2" x1="${n(x1+1)}" y1="${n(yTI)}" x2="${n(x+2)}" y2="${n(yTI)}"/><line class="k4" x1="${n(x)}" y1="${n(yTO)}" x2="${n(x)}" y2="${n(yTI)}"/><text x="${n(x+3)}" y="${n((yTO+yTI)/2+1.2)}" style="font-size:3px">${e(lab.W)}</text>`})()}
 ${cs>0?`<polyline class="k2" marker-start="url(#vA)" points="${n(x0+cs*.4)},${n(yTO+cs*.4)} ${n(x0-6)},${n(fl.on?yTF-21:yTO-12)} ${n(x0)},${n(fl.on?yTF-21:yTO-12)}"/>
 <text x="${n(x0+1)}" y="${n(fl.on?yTF-22:yTO-13)}">${e(q&&q.chText?q.chText:`${fx(ch,1)} × 30° CHAMFER, OD LEAD-IN`)}</text>`:''}
+${gdim}${call}
 </g>
 ${dw.fit?`<g><rect class="k1" x="338" y="16" width="68" height="${n(rowH*(fitRows.length+1)+1)}"/><text x="340" y="20" class="sm" style="font-weight:bold;font-size:3px">FIT AND FEATURE DATA (mm)</text>${fitRows.map((r,i)=>`<line class="k2" x1="338" y1="${n(21+i*rowH)}" x2="406" y2="${n(21+i*rowH)}"/><text class="sm" x="340" y="${n(24.4+i*rowH)}">${e(String(r[0]).slice(0,24))}</text><text class="sm" x="404" y="${n(24.4+i*rowH)}" text-anchor="end">${e(String(r[1]).slice(0,28))}</text>`).join('')}</g>`:''}
+${det}
 <g>${notes.map((t,i)=>`<text x="14" y="${236+i*4.4}" style="font-size:${i?3:3.8}px;${i?'':'font-weight:bold'}" xml:space="preserve">${e(t.length>118?t.slice(0,117)+"…":t)}</text>`).join('')}</g>
 <g>${cell(220,245,185,16,'','',1).replace(/<rect[^>]*\/>/,'<rect class="k1" x="220" y="245" width="185" height="16"/>')}<line class="k1" x1="262" y1="245" x2="262" y2="261"/>${lgBox}<text class="lb" x="263" y="247.6">TITLE</text><text x="264" y="257" style="font-size:${Math.min(4.6,138/Math.max(1,title.length*.52)).toFixed(2)}px">${e(title)}</text>
 ${cell(220,261,46,12,'MATERIAL',e(q?q.material:GRADES[g][0].replace('VESCONITE HILUBE','VES. HILUBE')),3.2)}${cell(266,261,46,12,'SCALE',scl)}${cell(312,261,46,12,'SIZE',e(dw.paper.toUpperCase()))}${cell(358,261,47,12,'SHEET','1 OF 1')}${cell(220,273,68,14,'DRAWING NO.',e(drg),3.2)}${cell(288,273,16,14,'REV',e(dw.rev))}${cell(304,273,50,14,'DATE',e(p.date))}${cell(354,273,51,14,'DRAWN BY',e(p.who),2.8)}</g>
@@ -607,12 +631,13 @@ function design(v){
   <div data-gt="spiral" hidden>${n('d24','Spiral pitch (advance per turn)','mm')}</div><div data-gt="blind" hidden>${n('d25','Groove length','mm')}</div></div>
   <div id="GR" class="note-box"></div></div></form>
   <div class="card" id="MD" hidden><div class="seg"><button type="button" data-t="3d" class="on">3D model</button><button type="button" data-t="dr">Drawing</button></div><div class="m3" id="m3"></div><div id="mdr" class="mdr" hidden></div>
-  <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button><button type="button" class="btn" id="mc">Cutaway view</button><button type="button" class="btn" id="mstep">STEP file</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. Colours are illustrative. The drawing is generated from the sizes below.</p></div>
+  <div class="acts"><button type="button" class="btn pri" id="mx">Expand to drawing</button><button type="button" class="btn" id="mc">Cutaway view</button><button type="button" class="btn" id="mstep">STEP file</button></div><p class="mut" style="margin:0">3D: drag to rotate, pinch or scroll to zoom. The drawing is generated from the sizes below.</p><p class="mut" id="stn" style="margin:6px 0 0"></p></div>
   <div id="DO"></div>`;
   $('#DF').onsubmit=e=>e.preventDefault();
   $$('#MD .seg button').forEach(b=>b.onclick=()=>{$$('#MD .seg button').forEach(x=>x.classList.toggle('on',x===b));$('#m3').hidden=b.dataset.t!=='3d';$('#mdr').hidden=b.dataset.t!=='dr'});
   $('#mx').onclick=openDrawing;$('#mstep').onclick=stepDownload;
   $('#mc').onclick=()=>{if(T3){T3.cut=!T3.cut;$('#mc').textContent=T3.cut?'Full view':'Cutaway view';if(T3.last)upd3(T3,T3.last)}};
+  let lastGt='none',autoDone=false;
   const cv=()=>{
     const g=id=>parseFloat($('#'+id).value),H=g('d1'),D=g('d2'),L=g('d3'),O=$('#DO'),mo=$('#d11').value,MD=$('#MD'),fl0=$('#d30').value==='y',gt=$('#d20').value;
     $$('[data-m]').forEach(x=>x.hidden=x.dataset.m!==mo);$$('[data-f]').forEach(x=>x.hidden=!fl0);$$('[data-g]').forEach(x=>x.hidden=gt==='none');$$('[data-gt]').forEach(x=>x.hidden=x.dataset.gt!==gt);
@@ -625,6 +650,8 @@ function design(v){
     const fl={on:fl0,FD:g('d31'),T:g('d32')};
     if(fl0){if(!(fl.FD>OD&&fl.T>0))return bad('<p class="note bad">Enter a flange diameter larger than the bearing outside diameter ('+fx(OD)+' mm) and a flange thickness.</p>');if(fl.T>=L)return bad('<p class="note bad">The flange thickness must be less than the overall bearing length.</p>')}
     const G={type:gt,n:g('d21'),d:g('d22'),r:g('d23'),pitch:g('d24'),len:g('d25')},rec=gt!=='none'?recGroove(gt,D,w,L):null;
+    if(gt!==lastGt){lastGt=gt;autoDone=false}
+    if(gt!=='none'&&rec&&!autoDone){autoDone=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){$('#'+id).value=x;ch=true}};set('d21',rec.n);set('d22',rec.d);set('d23',rec.r);if(gt==='spiral')set('d24',rec.pitch);if(gt==='blind')set('d25',rec.len);if(ch)return cv()}
     const grHtml=gt==='none'?'':rec?`<p class="mut" style="margin:6px 0">Recommended for a ${fx(D,0)} mm shaft: ${gt==='spiral'||gt==='blind'?'width, depth and radius from the manual\'s groove table; count, pitch and length are suggested starting points. ':''}<b>${rec.n} grooves, depth ${rec.d} mm, radius ${rec.r} mm</b> (about ${fx(grooveWidth(rec.d,rec.r),1)} mm wide)${gt==='spiral'?`, pitch ${rec.pitch} mm`:''}${gt==='blind'?`, length ${rec.len} mm`:''}. Water flow about ${rec.q} l/min.${rec.lim?' Depth reduced to keep it under half the wall.':''}</p><button type="button" class="btn" id="ra">Apply recommendation</button>`:'<p class="mut">The manual\'s groove table covers shaft diameters of 20–200 mm. Enter your own values.</p>';
     if($('#GR').dataset.h!==grHtml){$('#GR').dataset.h=grHtml;$('#GR').innerHTML=grHtml}
     if(rec&&$('#ra'))$('#ra').onclick=()=>{const set=(id,x)=>{$('#'+id).value=x!=null?x:''};set('d21',rec.n);set('d22',rec.d);set('d23',rec.r);if(gt==='spiral')set('d24',rec.pitch);if(gt==='blind')set('d25',rec.len);cv()};
@@ -656,8 +683,8 @@ function design(v){
     const tOD=tol(OD,.1,.025),tID=tol(ID,.1,.025),tW=tol(w,.5,.025),tL=tol(L,.5,.3),dt=new Date(),drg=`${S.dw.prefix||'VI'}-${dt.toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`;
     const logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
     LAST={drg,step:{name:'BEARING-BUSH',OD,ID,L,ch:chn||0.5,fl,G:Gu,gz},svg:drawSVG({OD,ID,L,ch:chn||0.5,w,H,D,press,clo,c,g:gk,tOD,tID,tW,tL,pf,drg,G:Gu,fl,dw:S.dw,logo,gz,date:dt.toLocaleDateString(),who:S.dw.who==='custom'?S.dw.whoText:(ME?.email||'').split('@')[0]})};
-    $('#mdr').innerHTML=LAST.svg;MD.hidden=false;
-    PEND3={OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu};if(T3)upd3(T3,PEND3);else if(!T3L){T3L=true;Promise.all([lib('three'),lib('tex').catch(()=>0)]).then(()=>{T3=init3($('#m3'));if(T3&&PEND3)upd3(T3,PEND3)}).catch(()=>{$('#m3').innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>'})}
+    $('#mdr').innerHTML=LAST.svg;MD.hidden=false;$('#stn').textContent='STEP file contains: the bush body'+(fl0?', flange':'')+(chn?', chamfer':'')+(gOK&&gt!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');
+    PEND3={OD,ID,L,ch:chn||0.5,g:gk,fl,gz,G:Gu};if(T3)upd3(T3,PEND3);else if(!T3L){T3L=true;lib('three').then(()=>{T3=init3($('#m3'));if(T3&&PEND3)upd3(T3,PEND3)}).catch(()=>{$('#m3').innerHTML='<p class="empty" style="margin:12px">The 3D viewer could not load. Check your connection.</p>'})}
     O.innerHTML=`<div class="card"><h2>Bearing dimensions at 20 °C</h2><dl class="spec" style="margin:0">
     <dt>Outside diameter</dt><dd>${fx(OD)} mm ± ${fx(tOD,3)}</dd><dt>Inside diameter</dt><dd>${fx(ID)} mm ± ${fx(tID,3)}</dd>
     <dt>Wall thickness</dt><dd>${fx(w)} mm +0 / −${fx(tW,3)}</dd><dt>Length</dt><dd>${fx(L)} mm +0 / −${fx(tL,2)}</dd>
@@ -707,8 +734,9 @@ function quickdraw(v){
   <h2>Notes</h2><textarea id="qNotes" rows="5">${esc(QNOTES)}</textarea>
   <div style="margin-top:8px"><label class="ck"><input type="checkbox" id="qLg" ${dw.showLogo?'checked':''}>Show logo</label><label class="ck"><input type="checkbox" id="qSt" checked>Show data table</label><label class="ck"><input type="checkbox" id="qSn" checked>Show notes</label></div>
   </form><div id="QM"></div>
-  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. The STEP file includes the flange, chamfer and grooves.</p></div>`;
+  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. </p><p class="mut" id="qsn" style="margin:6px 0 0"></p></div>`;
   const gv=id=>$('#'+id).value,gn=id=>parseFloat(gv(id));
+  let lastQ='none',autoQ=false;
   const gen=()=>{
     const fl0=gv('qFl')==='y',gt=gv('qG');
     $$('[data-qf]').forEach(x=>x.hidden=!fl0);$$('[data-qg]').forEach(x=>x.hidden=gt==='none');$$('[data-qgt]').forEach(x=>x.hidden=x.dataset.qgt!==gt);
@@ -716,6 +744,8 @@ function quickdraw(v){
     if(!(OD>0&&ID>0&&L>0))return stop('<p class="mut">Enter the outside diameter, inside diameter and length to see the drawing.</p>');
     if(OD<=ID)return stop('<p class="note bad">The outside diameter must be larger than the inside diameter.</p>');
     const w=(OD-ID)/2,fl={on:fl0,FD:gn('qFD'),T:gn('qT')};
+    if(gt!==lastQ){lastQ=gt;autoQ=false}
+    if(gt!=='none'&&!autoQ){const rc=recGroove(gt,ID,w,L);if(rc){autoQ=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){$('#'+id).value=x;ch=true}};set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);if(ch)return gen()}}
     if(fl0&&!(fl.FD>OD&&fl.T>0&&fl.T<L))return stop('<p class="note bad">For a flanged part, enter a flange OD larger than the OD and a flange length shorter than the overall length.</p>');
     const G={type:gt,n:gn('qGn'),d:gn('qGd'),r:gn('qGr'),pitch:gn('qGp'),len:gn('qGl')},gOK=gt==='none'||(G.n>0&&G.d>0&&G.r>0&&(gt!=='spiral'||G.pitch>0)&&(gt!=='blind'||G.len>0)),Gu=gOK?G:{type:'none'};
     const ch=nz(gn('qCh')),warn=[];
@@ -736,7 +766,7 @@ function quickdraw(v){
       dwq={...S.dw,company:gv('qCo'),rev:gv('qRev'),paper:gv('qPaper'),showLogo:$('#qLg').checked,fit:$('#qSt').checked,notes:$('#qSn').checked,noteText:gv('qNotes')},
       logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
     LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fx(ch,2)} × 45° CHAMFER`:'')}})};
-    $('#QV').innerHTML=LAST.svg;P.hidden=false;const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
+    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file contains: the bush body'+(fl0?', flange':'')+(ch>0?', chamfer':'')+(Gu.type!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
   };
   if(!S.dw.logo&&!window.__rl)repoLogo().then(r=>{if(r){window.__rl=r;gen()}});
   $('#QF').onsubmit=e=>e.preventDefault();
@@ -850,19 +880,43 @@ else{
   getDoc(dc('settings','app')).then(s=>{if(s.exists()){S=mergeS(s.data());try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}if(!t0&&S.mode!=='auto')setT(S.mode);apply(S);if(ready)soft()}}).catch(()=>{});
   onAuthStateChanged(au,u=>boot(u).catch(e=>{ready=true;$('#v').innerHTML=`<h1>Can't load data</h1><p class="mut">${esc(e.message)}</p><p class="mut">Check that the Firestore rules in firestore.rules are published.</p>`}));
 }
-/* Pull down to refresh: a small Hilube bush (50 x 40 x 60 mm, longitudinal grooves) that hops */
+/* ---------- Easter egg: a container ship sails up the page, propeller turning ---------- */
+const SHIP_SVG=(()=>{
+  const cols=['#c0392b','#2e86c1','#e0a21b','#27ae60','#8e44ad','#d35400','#16a085','#7f8c8d','#2c3e50','#e67e22'];let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  let cn='';for(let r=0;r<8;r++)for(let c=0;c<4;c++){const x=20.5+c*10,y=118+r*12.4,f=cols[Math.floor(rnd()*cols.length)];cn+=`<rect x="${x}" y="${y}" width="9" height="11.4" fill="${f}" stroke="rgba(0,0,0,.35)" stroke-width=".4"/><line x1="${x+4.5}" y1="${y+1}" x2="${x+4.5}" y2="${y+10.4}" stroke="rgba(0,0,0,.22)" stroke-width=".4"/>`}
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){const x=25.5+c*10,y=70+r*14,f=cols[Math.floor(rnd()*cols.length)];if(r===0&&c!==1)continue;cn+=`<rect x="${x}" y="${y}" width="9" height="13" fill="${f}" stroke="rgba(0,0,0,.35)" stroke-width=".4"/>`}
+  const bl=[0,90,180,270].map(a=>`<ellipse cx="0" cy="-6.2" rx="3.1" ry="6.3" fill="#d4a24c" stroke="#7a5a1c" stroke-width=".5" transform="rotate(${a})"/>`).join('');
+  return `<svg viewBox="0 0 80 340" xmlns="http://www.w3.org/2000/svg"><path class="wk" d="M30 284 C26 310 18 326 6 340 L74 340 C62 326 54 310 50 284Z" fill="rgba(255,255,255,.28)"/><path class="wk" d="M36 288 C34 312 30 326 24 340 L56 340 C50 326 46 312 44 288Z" fill="rgba(255,255,255,.35)"/>
+<path d="M40 4C58 40 66 80 66 130V270Q66 282 58 284H22Q14 282 14 270V130C14 80 22 40 40 4Z" fill="#1f3a5f" stroke="#0e2036" stroke-width="1"/><path d="M40 13C54 46 60 84 60 134V268Q60 276 54 278H26Q20 276 20 268V134C20 84 26 46 40 13Z" fill="#9aa5b1"/>${cn}
+<rect x="21" y="222" width="38" height="52" rx="2" fill="#eef1f4" stroke="#5b6672" stroke-width=".6"/><rect x="18" y="226" width="44" height="9" rx="1.5" fill="#fafbfc" stroke="#5b6672" stroke-width=".6"/><rect x="22" y="228" width="36" height="3.4" fill="#3b6ea5"/><ellipse cx="49" cy="258" rx="6" ry="7" fill="#c0392b" stroke="#6b1d14" stroke-width=".6"/><ellipse cx="49" cy="258" rx="3.6" ry="4.4" fill="#2a2a2a"/><rect x="25" y="246" width="12" height="22" fill="#cfd5db" stroke="#8a949e" stroke-width=".4"/>
+<rect x="38" y="283" width="4" height="14" rx="1" fill="#14253a"/><g transform="translate(40 298)"><circle r="12" fill="rgba(255,255,255,.18)"/><g class="prop">${bl}<circle r="2.2" fill="#8a6a2a" stroke="#4a3810" stroke-width=".5"/></g></g></svg>`;
+})();
+function showShip(){
+  if(document.getElementById('ship')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
+  const d=document.createElement('div');d.id='ship';d.setAttribute('aria-hidden','true');
+  d.innerHTML=`<div class="sea"></div><div class="waves"></div><div class="vessel"><div class="sway">${SHIP_SVG}</div></div>`;
+  document.body.appendChild(d);requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('on')));
+  setTimeout(()=>d.classList.remove('on'),8000);setTimeout(()=>d.remove(),8700);
+}
+/* Pull down to refresh: a small Hilube bush (50 x 40 x 60 mm, longitudinal grooves) that hops. A very long pull (or a long scroll-up on a computer) sends a container ship up the page. */
 (function(){
+  const REF=90,SHP=230;
   const el=document.createElement('div');el.id='ptr';el.setAttribute('aria-hidden','true');
   const notch=Array.from({length:6},(_,k)=>{const t=(90+k*60)*Math.PI/180;return `<circle cx="${(30+16*Math.cos(t)).toFixed(2)}" cy="${(20+5.1*Math.sin(t)).toFixed(2)}" r="1.9" fill="#2a2e33"/>`}).join('');
   const lines=[210,250,290,330].map(a=>{const t=a*Math.PI/180,x=(30+16*Math.cos(t)).toFixed(2),y=(20+5.1*Math.sin(t)).toFixed(2);return `<line x1="${x}" y1="${y}" x2="${x}" y2="${(+y+11).toFixed(2)}" stroke="#555b63" stroke-width="1.6"/>`}).join('');
-  el.innerHTML=`<div class="pb"><svg viewBox="0 0 60 84" width="50" height="70"><defs><linearGradient id="pbg" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="pbl" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="pbc"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#pbg)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#pbl)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#pbc)">${lines}</g>${notch}</svg></div><i class="ps"></i>`;
+  el.innerHTML=`<div class="pb"><svg viewBox="0 0 60 84" width="50" height="70"><defs><linearGradient id="pbg" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="pbl" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="pbc"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#pbg)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#pbl)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#pbc)">${lines}</g>${notch}</svg></div><div class="pshp">${SHIP_SVG}</div><i class="ps"></i>`;
   document.body.appendChild(el);
   const pb=el.querySelector('.pb');let y0=0,dy=0,on=false;
-  const pull=d=>{const q=Math.min(d,130);el.style.transform=`translate(-50%,${q*.78-84}px)`;pb.style.transform=`rotate(${Math.sin(q/15)*12}deg) scale(${.72+Math.min(q,90)/320})`;el.classList.toggle('ready',d>90)};
-  const rest=()=>{el.style.transform='';pb.style.transform='';el.classList.remove('ready')};
+  const pull=d=>{const q=Math.min(d,130);el.style.transform=`translate(-50%,${q*.78-84}px)`;pb.style.transform=`rotate(${Math.sin(q/15)*12}deg) scale(${.72+Math.min(q,90)/320})`;el.classList.toggle('ready',d>REF&&d<SHP);el.classList.toggle('sh',d>=SHP)};
+  const rest=()=>{el.style.transform='';pb.style.transform='';el.classList.remove('ready','sh')};
   addEventListener('touchstart',e=>{on=scrollY<=0&&e.touches.length===1&&!e.target.closest('.ov,.m3,textarea,input,select');if(on){y0=e.touches[0].clientY;dy=0}},{passive:true});
   addEventListener('touchmove',e=>{if(!on)return;dy=e.touches[0].clientY-y0;if(dy>0)pull(dy);else{on=false;rest()}},{passive:true});
-  addEventListener('touchend',()=>{if(on&&dy>90){el.classList.remove('ready');el.classList.add('go');el.style.transform='translate(-50%,26px)';pb.style.transform='';setTimeout(()=>location.reload(),1200)}else rest();on=false},{passive:true});
+  addEventListener('touchend',()=>{
+    if(on&&dy>=SHP){rest();showShip()}
+    else if(on&&dy>REF){el.classList.remove('ready');el.classList.add('go');el.style.transform='translate(-50%,26px)';pb.style.transform='';setTimeout(()=>location.reload(),1200)}
+    else rest();
+    on=false},{passive:true});
+  let wa=0,wt=0;addEventListener('wheel',e=>{if(scrollY<=0&&e.deltaY<0){const t=Date.now();if(t-wt>700)wa=0;wt=t;wa-=e.deltaY;if(wa>2400){wa=0;showShip()}}else wa=0},{passive:true});
 })();
 
 setInterval(()=>{if(!document.hidden)notifCheck()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)notifCheck()});

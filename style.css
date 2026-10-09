@@ -93,3 +93,20 @@ input[type=range]{padding:0;height:34px}
 @keyframes ptrWob{from{transform:rotate(-8deg) scale(1)}to{transform:rotate(8deg) scale(1.07)}}
 @keyframes ptrShad{0%,84%,100%{transform:scale(1.1);opacity:.28}40%{transform:scale(.55);opacity:.1}}
 @media(prefers-reduced-motion:reduce){#ptr.go .pb,#ptr.ready .pb{animation:none}}
+#ptr .pshp{display:none;width:34px;margin:0 auto;height:112px;overflow:hidden;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+#ptr .pshp svg{display:block;width:34px;height:auto}
+#ptr.sh .pb{display:none}#ptr.sh .pshp{display:block}#ptr.sh .ps{display:none}
+#ship{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0;transition:opacity .7s ease;overflow:hidden}
+#ship.on{opacity:1}
+#ship .sea{position:absolute;inset:0;background:linear-gradient(180deg,rgba(24,112,176,.9),rgba(12,70,126,.95))}
+#ship .waves{position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 38px,rgba(255,255,255,.13) 38px 41px),repeating-linear-gradient(100deg,transparent 0 70px,rgba(255,255,255,.05) 70px 72px);animation:waveRun 2.5s linear infinite}
+#ship .vessel{position:absolute;left:50%;bottom:0;width:min(24vw,104px);transform:translate(-50%,105%);animation:shipSail 7.4s cubic-bezier(.32,.12,.68,.88) forwards}
+#ship .sway{animation:shipSway 1.5s ease-in-out infinite alternate;transform-origin:50% 60%}
+#ship .sway svg{display:block;width:100%;height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+#ship .prop{animation:propSpin .26s linear infinite;transform-box:fill-box;transform-origin:center}
+#ship .wk{animation:wakePulse .9s ease-in-out infinite alternate}
+@keyframes shipSail{from{transform:translate(-50%,105%)}to{transform:translate(-50%,calc(-100vh - 20px))}}
+@keyframes shipSway{from{transform:rotate(-1.4deg)}to{transform:rotate(1.4deg)}}
+@keyframes propSpin{to{transform:rotate(360deg)}}
+@keyframes waveRun{to{background-position:0 410px,0 0}}
+@keyframes wakePulse{from{opacity:.55}to{opacity:1}}
