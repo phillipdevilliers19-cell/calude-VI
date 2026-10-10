@@ -1,3 +1,5 @@
+LATEST: OEM references moved into the Library page (switch at the top: Applications / OEM references); the OEM tab is gone. The trophy cabinet has a Clear trophies button (asks first, resets your trophies on this device and in the saved score).
+
 CHATS UPDATE: ATTACHMENTS, EDIT, DELETE, LEAVE, SEND TO CHAT
 - Paperclip in a chat attaches a photo or any file up to 8 MB (photos are shrunk first). Tap a photo to view it, tap a file to download or share it. Files are stored inside the chat, so only people in the chat can read them.
 - Your own messages have a small ... button: Edit (shows "edited") or Delete (leaves "This message was deleted" and removes the attached file).

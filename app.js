@@ -68,7 +68,6 @@ function apply(s){
   const R=document.documentElement,dk=R.dataset.t==='dark';
   R.style.setProperty('--pri',dk?s.amb:s.pri);R.style.setProperty('--amb',s.amb);R.style.setProperty('--rd',s.r+'px');
   R.style.setProperty('--f1',s.font==='serif'?'Georgia,"Times New Roman",serif':s.font==='std'?'var(--f2)':'"Barlow Condensed","Arial Narrow",sans-serif');
-  $('#t-oem').hidden=!s.feat.oem;
 }
 const setT=t=>{document.documentElement.dataset.t=t;$('meta[name=theme-color]').content=t==='dark'?'#0b1317':'#e6eaec';try{localStorage.setItem('vi4t',t)}catch{}apply(S)};
 let t0;try{t0=localStorage.getItem('vi4t')}catch{}
@@ -178,8 +177,9 @@ async function trophies(v,id){
   const last=TROPHIES.filter(t=>T[t.id]).sort((p,q)=>T[q.id]>T[p.id]?1:-1)[0]||TROPHIES.find(t=>!T[t.id]),C=2*Math.PI*30;
   v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><div class="cabh"><svg viewBox="0 0 70 70" width="74" height="74"><circle cx="35" cy="35" r="30" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="35" cy="35" r="30" fill="none" stroke="#e8a914" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C*n/TROPHIES.length).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 35 35)"/><text x="35" y="41" text-anchor="middle" font-size="18" font-weight="800" fill="currentColor">${n}</text></svg><div><h1>${mine?'Your trophies':esc(nm)+"'s trophies"}</h1><p class="mut">${n} of ${TROPHIES.length}${best?` · best ${best}`:''}${plays?` · ${plays} games`:''}</p></div></div>
   <div class="cabd" id="cabd"></div>
-  <div class="cab">${TROPHIES.map(t=>{const got=T[t.id];return `<button class="tr ${got?'got':'lk'}" data-t="${t.id}" aria-label="${got?esc(t.name):'Locked trophy'}"><span class="tm">${got?tsvg(t.id,40):'<i>?</i>'}</span></button>`}).join('')}</div>`;
+  <div class="cab">${TROPHIES.map(t=>{const got=T[t.id];return `<button class="tr ${got?'got':'lk'}" data-t="${t.id}" aria-label="${got?esc(t.name):'Locked trophy'}"><span class="tm">${got?tsvg(t.id,40):'<i>?</i>'}</span></button>`}).join('')}</div>${mine&&n?'<div class="acts" style="margin-top:14px"><button class="btn bad" id="tclr">Clear trophies</button></div>':''}`;
   document.getElementById('tbk').onclick=()=>setTimeout(playBush,60);
+  if($('#tclr'))$('#tclr').onclick=async()=>{if(!confirm('Clear all your trophies? You will have to win them again. This cannot be undone.'))return;try{MYT={};trSave();if(ME&&db)await updateDoc(dc('scores',ME.uid),{trophies:{},tc:0}).catch(()=>alert('Cleared on this device, but the saved copy could not be updated. Check your connection and try again.'));trophies(v,id)}catch(x){alert(x.message)}};
   const show=id=>{const t=TROPHIES.find(z=>z.id===id),got=T[id];document.getElementById('cabd').innerHTML=`<div class="tm ${got?'on':''}">${got?tsvg(id,52):'<i>?</i>'}</div><div><b>${got?esc(t.name):'Locked'}</b>${got?`<small class="ti">${esc(t.ind)}</small>`:''}<small>${got?esc(t.blurb):esc(t.hint)}</small>${got?`<small class="td">Won ${new Date(got).toLocaleDateString()}</small>`:''}</div>`;v.querySelectorAll('.cab .tr').forEach(b=>b.classList.toggle('sel',b.dataset.t===id))};
   v.querySelectorAll('.cab .tr').forEach(b=>b.onclick=()=>show(b.dataset.t));show(last.id);
 }
@@ -350,9 +350,10 @@ function eggTap(v){
   v.addEventListener('click',()=>{n=0});
 }
 const F={q:'',i:'',c:''};
+const libSeg=w=>S.feat.oem?`<div class="seg"><a href="#/library" class="${w==='lib'?'on':''}">Applications</a><a href="#/oem" class="${w==='oem'?'on':''}">OEM references</a></div>`:'';
 function library(v){
   const inds=[...new Set(A.map(a=>a.industry))].sort();
-  v.innerHTML=`<h1>Library</h1><div class="filters"><input id="q" type="search" placeholder="Search name, product, customer, notes" value="${esc(F.q)}"><select id="fi"><option value="">All industries</option>${inds.map(i=>`<option ${i===F.i?'selected':''}>${esc(i)}</option>`).join('')}</select><select id="fc"><option value="">Any quality</option>${['Complete','Needs detail','Draft'].map(g=>`<option ${g===F.c?'selected':''}>${g}</option>`).join('')}</select></div><div class="list" id="L"></div>`;
+  v.innerHTML=`<h1>Library</h1>${libSeg('lib')}<div class="filters"><input id="q" type="search" placeholder="Search name, product, customer, notes" value="${esc(F.q)}"><select id="fi"><option value="">All industries</option>${inds.map(i=>`<option ${i===F.i?'selected':''}>${esc(i)}</option>`).join('')}</select><select id="fc"><option value="">Any quality</option>${['Complete','Needs detail','Draft'].map(g=>`<option ${g===F.c?'selected':''}>${g}</option>`).join('')}</select></div><div class="list" id="L"></div>`;
   const upd=()=>{const q=F.q.toLowerCase(),l=A.filter(a=>(!F.i||a.industry===F.i)&&(!F.c||grade(a)[0]===F.c)&&[a.name,a.industry,a.product,a.customer,a.desc,a.problem,a.solution,a.proof].join(' ').toLowerCase().includes(q));$('#L').innerHTML=l.length?l.map(row).join(''):`<p class="empty">${A.length?'No applications match.':'The library is empty. Capture the first application.'}</p>`};
   $('#q').oninput=e=>{F.q=e.target.value;upd()};$('#fi').onchange=e=>{F.i=e.target.value;upd()};$('#fc').onchange=e=>{F.c=e.target.value;upd()};upd();
 }
@@ -400,7 +401,7 @@ async function form(v,id){
 }
 function oem(v){
   const inds=[...new Set(O.map(o=>o.industry).filter(Boolean))].sort();
-  v.innerHTML=`<h1>OEM references</h1><p class="mut">Public OEM material by application and industry. Add a web link, a PDF, or both.</p>
+  v.innerHTML=`<h1>Library</h1>${libSeg('oem')}<h2>OEM references</h2><p class="mut">Public OEM material by application and industry. Add a web link, a PDF, or both.</p>
   ${can('edit')?`<details class="card"><summary class="btn pri">+ Add reference</summary><form id="OF"><label>Application / title<input name="app" required></label>${indSelect('','oiSel','oiOther','oiOtherW')}<label>OEM / manufacturer<input name="maker"></label><label>Web link<input name="url" type="url" inputmode="url" placeholder="https://"></label><label>PDF (max 3 MB)<input name="f" type="file" accept="application/pdf"></label><label>Notes<textarea name="notes" rows="2"></textarea></label><button class="btn pri wide">Save reference</button></form></details>`:''}
   <div class="filters"><input id="oq" type="search" placeholder="Search references"><select id="oi"><option value="">All industries</option>${inds.map(i=>`<option>${esc(i)}</option>`).join('')}</select></div><div class="list" id="OL"></div>`;
   const upd=()=>{const q=$('#oq').value.toLowerCase(),i=$('#oi').value,l=O.filter(o=>(!i||o.industry===i)&&[o.app,o.industry,o.maker,o.notes].join(' ').toLowerCase().includes(q));
@@ -1272,7 +1273,7 @@ function render(){
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
   const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,trophies,chats,chat,chatnew,admin};
   (m[p]||home)(v,id);
-  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
+  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'||p==='oem'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
   $('.tabs .add').hidden=!ed;scrollTo(0,0);
 }
 const soft=()=>{const p=location.hash.slice(2).split('/')[0];if(['','library','oem','insights'].includes(p))render()};
