@@ -469,7 +469,7 @@ async function pdf(ids,o){
   const lg=(max)=>{if(!logo)return null;const h=Math.min(max,max*1.9/logo.r),w=h*logo.r;return{w,h}};
   let cur,y,label='';
   const np=l=>{label=l||label;cur=[`<rect width="210" height="19" fill="${ink}"/><rect y="19" width="210" height="1.6" fill="${acc}"/>`,`<text x="14" y="11.8" font-size="3.3" font-weight="bold" letter-spacing=".6" fill="#fff">${esc(label)}</text>`];
-    const s=lg(9);if(s)cur.push(`<rect x="${196-s.w-4}" y="4.2" width="${s.w+8}" height="${s.h+2}" rx="1.5" fill="#000"/>`,svgImg(logo.u,196-s.w,5.2,s.w,s.h));pages.push(cur);y=32};
+    const s=lg(9);if(s)cur.push(`<rect x="${196-s.w-4}" y="4.2" width="${s.w+8}" height="${s.h+2}" rx="1.5" fill="#fff"/>`,svgImg(logo.u,196-s.w,5.2,s.w,s.h));pages.push(cur);y=32};
   const room=h=>{if(y+h>276)np(label)};
   const para=(t,x,w,fs,fill,bold,lh)=>{for(const l of wrapLines(t,w,fs,bold)){room(lh);cur.push(`<text x="${x}" y="${y}" font-size="${fs}" fill="${fill}"${bold?' font-weight="bold"':''}>${esc(l)}</text>`);y+=lh}};
   const callout=(lab,text,res)=>{const lines=wrapLines(text,160,3.7).slice(0,34),h=11+lines.length*5.3;room(h+4);
@@ -481,7 +481,7 @@ async function pdf(ids,o){
   const cov=[`<rect width="210" height="297" fill="${bg}"/>`];
   if(hero)cov.push(svgClip(hero.u,0,0,210,172,0,'hc'));else cov.push(`<rect width="210" height="172" fill="${acc}" fill-opacity=".3"/><circle cx="170" cy="60" r="70" fill="${acc}" fill-opacity=".25"/><circle cx="40" cy="140" r="50" fill="#fff" fill-opacity=".08"/>`);
   cov.push(`<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset=".4" stop-color="#0e1a20" stop-opacity="0"/><stop offset="1" stop-color="#0e1a20" stop-opacity=".8"/></linearGradient></defs><rect width="210" height="172" fill="url(#hg)"/>`,`<polygon points="0,158 210,134 210,147 0,172" fill="${acc}"/><polygon points="0,172 210,147 210,153 0,178" fill="${acc}" fill-opacity=".4"/>`);
-  const cl=lg(14);if(cl)cov.push(`<rect x="14" y="14" width="${cl.w+10}" height="${cl.h+9}" rx="3" fill="#000"/>`,svgImg(logo.u,19,18.5,cl.w,cl.h));
+  const cl=lg(14);if(cl)cov.push(`<rect x="14" y="14" width="${cl.w+10}" height="${cl.h+9}" rx="3" fill="#fff"/>`,svgImg(logo.u,19,18.5,cl.w,cl.h));
   const t1=wrapLines(`${S.company} application portfolio`,172,13,true);
   cov.push(`<text x="20" y="197" font-size="3.4" font-weight="bold" letter-spacing=".9" fill="${sc}">CUSTOMER PROPOSAL</text>`);
   t1.forEach((t,i)=>cov.push(`<text x="20" y="${209+i*14}" font-size="13" font-weight="bold" fill="${tc}">${esc(t)}</text>`));
@@ -515,7 +515,7 @@ async function pdf(ids,o){
     if(S.secs.includes('Result')&&a.proof)callout('The result',a.proof,true)}
   /* ---- closing page */
   const end=[`<rect width="210" height="297" fill="${ink}"/><polygon points="0,200 210,170 210,182 0,212" fill="${acc}"/><circle cx="175" cy="48" r="60" fill="${acc}" fill-opacity=".12"/>`];
-  const el=lg(16);if(el)end.push(`<rect x="20" y="24" width="${el.w+10}" height="${el.h+10}" rx="3" fill="#000"/>`,svgImg(logo.u,25,29,el.w,el.h));
+  const el=lg(16);if(el)end.push(`<rect x="20" y="24" width="${el.w+10}" height="${el.h+10}" rx="3" fill="#fff"/>`,svgImg(logo.u,25,29,el.w,el.h));
   end.push(`<text x="20" y="120" font-size="14" font-weight="bold" fill="#fff">Let’s talk about</text><text x="20" y="136" font-size="14" font-weight="bold" fill="${acc}">your application.</text>`);
   wrapLines(`Every application above started with a problem like yours. Tell us about your bearings, shafts, loads and conditions and we will recommend the right material and design.`,150,4.2).forEach((t,i)=>end.push(`<text x="20" y="${152+i*6}" font-size="4.2" fill="#fff" fill-opacity=".85">${esc(t)}</text>`));
   end.push(`<text x="20" y="236" font-size="6" font-weight="bold" fill="#fff">${esc(S.company)}</text>`);if(S.footer)wrapLines(S.footer,170,3.8).slice(0,3).forEach((t,i)=>end.push(`<text x="20" y="${244+i*5.4}" font-size="3.8" fill="#fff" fill-opacity=".8">${esc(t)}</text>`));
