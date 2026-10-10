@@ -904,6 +904,11 @@ function openDrawing(){
 /* ---------- Design a bearing: industrial, pump, marine rudder and marine stern calculators ---------- */
 const MODES={ind:'Industrial',pump:'Pump',rud:'Marine rudder',stern:'Marine stern'};
 const GRS=[[79,7,7,4,12],[119,7,9,5,18],[159,7,10,6,24],[199,7,12,7,30],[249,7,12,8,38],[299,7,14,8,45],[349,8,15,8,53],[399,8,15,8,60],[499,9,15,9,75],[599,10,18,9,90],[699,11,18,9,105],[800,12,18,9,120]];  /* stern tube: shaft Ø max, grooves, width, depth, water l/min */
+/* Signed number boxes: the phone number pad has no minus key, so a +/- button sits in the box. */
+const numIn=v=>parseFloat(String(v).replace(/[−–]/g,'-').replace(',','.').replace(/^\s*\+/,''));
+const flipSign=e=>{let v=String(e.value).trim().replace(/−/g,'-');if(v==='')v='-';else if(v[0]==='-')v=v.slice(1);else if(v[0]==='+')v='-'+v.slice(1);else v='-'+v;e.value=v;delete e.dataset.mv;delete e.dataset.dv};
+const sgBtn=id=>`<button type="button" class="sgb" data-t="${id}" aria-label="Change between plus and minus">+/−</button>`;
+if(!window.__sgb){window.__sgb=1;document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('.sgb');if(!b)return;const e=document.getElementById(b.dataset.t);if(!e)return;flipSign(e);e.dispatchEvent(new Event('input',{bubbles:true}));e.focus()})}
 const DV={},UQ={'mm':'L','°C':'T','kg':'M','MPa·m/min':'PV'},UC={L:{u:'mm',i:'in',to:x=>x*25.4,from:x=>x/25.4,d:4},T:{u:'°C',i:'°F',to:x=>(x-32)*5/9,from:x=>x*9/5+32,d:1},M:{u:'kg',i:'lb',to:x=>x*.45359237,from:x=>x/.45359237,d:2},PV:{u:'MPa·m/min',i:'psi·ft/min',to:x=>x/475.86,from:x=>x*475.86,d:0}};
 /* All sizes from the Vesconite size-calculation equations (metric). Industrial and pump share one set; rudder and stern use the marine set. */
 function bearCalc(mode,i){
@@ -924,13 +929,13 @@ function design(v,id){
   try{localStorage.setItem('vi4m',mode)}catch{}
   const mar=mode==='rud'||mode==='stern',pump=mode==='pump',load=!mar;
   let im=false;try{im=localStorage.getItem('vi4u_'+mode)==='i'}catch{}
-  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
+  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=numIn(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>{const x=im?c*9/5+32:c;return `${Math.abs(x-Math.round(x))<.05?Math.round(x):x.toFixed(1)} ${im?'°F':'°C'}`};
   const nP=x=>fx(im?x*145.038:x,im?0:2),nV=x=>fx(im?x*3.28084:x,1),nPV=x=>fx(im?x*475.86:x,im?0:1),pM=x=>`${nP(x)} ${im?'psi':'MPa'}`,vS=x=>`${nV(x)} ${im?'ft/min':'m/min'}`,pvS=x=>`${nPV(x)} ${im?'psi·ft/min':'MPa·m/min'}`,fcS=x=>im?`${fx(x*224.809,0)} lbf`:`${fx(x,1)} kN`,flS=x=>im?`${fx(x*.264172,2)} US gal/min`:`${x} l/min`;
   T3=null;T3L=false;LAST=null;
   if(!S.dw.logo)repoLogo().then(r=>{if(r&&!window.__rl){window.__rl=r;if($('#DF'))$('#DF').dispatchEvent(new Event('input'))}});
-  const n=(id,l,u,val='',att='')=>{const q=UQ[u];return `<label>${l} <span class="mut" ${q?`data-u="${q}"`:''}>${q&&im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${q?`data-q="${q}"`:''} ${att}></label>`};
+  const n=(id,l,u,val='',att='')=>{const q=UQ[u];if(q==='T')return `<label class="sgl">${l} <span class="mut" data-u="T">${im?UC.T.i:u}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}" data-q="T" ${att}>${sgBtn(id)}</label>`;return `<label>${l} <span class="mut" ${q?`data-u="${q}"`:''}>${q&&im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${q?`data-q="${q}"`:''} ${att}></label>`};
   const intro={ind:'Bearing size, fit, clearance, grooves and PV for general industrial applications, using the equations in the Vesconite design manual (metric, free-standing bush, sizes at 20 °C).',
     pump:'Bearing and wear-ring sizes for pumps. Vesconite does not publish separate pump equations, so this uses the industrial size equations with the pump inputs (rotation only, wear ring option).',
     rud:'Rudder bearing sizes from the Vesconite marine equations: press fit from the minimum operating temperature, assembly clearance 0.2 mm + 0.0015 × shaft diameter. Rudder bearings generally need no grooves.',
@@ -1070,10 +1075,10 @@ const fzTime=s=>s<90?`${Math.round(s)} s`:s<5400?`${Math.round(s/60)} min`:`${Ma
 function freezer(v){
   if(!S.feat.pv){location.hash='#/tools';return}
   let im=false;try{im=localStorage.getItem('vi4u_frz')==='i'}catch{}
-  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
+  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=numIn(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>`${fx(im?c*9/5+32:c,0)} ${im?'°F':'°C'}`;
-  const n=(id,l,u,val='')=>{const q=UQ[u];return `<label>${l} <span class="mut" data-u="${q}">${im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" data-q="${q}"></label>`};
+  const n=(id,l,u,val='')=>{const q=UQ[u];if(q==='T')return `<label class="sgl">${l} <span class="mut" data-u="T">${im?UC.T.i:u}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}" data-q="T">${sgBtn(id)}</label>`;return `<label>${l} <span class="mut" data-u="${q}">${im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" data-q="${q}"></label>`};
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Freezer shrink time</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
   <p class="mut">Works out how long to leave a Vesconite or Vesconite Hilube bush in a freezer so that it shrinks enough to slide into its housing, and how long you have to fit it once it is out. Based on the published expansion of 6 × 10⁻⁵ per °C. The cooling time is an estimate: always measure the cooled bush before fitting.</p>
@@ -1176,22 +1181,22 @@ const FTV={};   /* remembered inputs, kept in millimetres, signed deviations */
 function fits(v){
   let im=false;try{im=localStorage.getItem('vi4u_fit')==='i'}catch{}
   let byW=FTV.mode==='w';
-  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
+  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=numIn(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=3)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm';
-  const n=(id,l,ph='')=>`<label>${l} <span class="mut" data-u="L">${im?'in':'mm'}</span><input id="${id}" type="number" inputmode="decimal" step="any" placeholder="${ph}" data-q="L"></label>`;
-  const blk=(t,p,nl,hint,k)=>`<h2 style="margin-top:14px">${t}</h2>${n(p+'n',nl)}${k?`<div class="g2" style="margin-top:8px"><label>ISO tolerance letter<select id="${p}L"></select></label><label>ISO grade<select id="${p}G"></select></label></div><p class="mut" id="${p}M" style="margin:6px 0 0"></p>`:''}<div class="g2" style="margin-top:8px">${n(p+'u','Upper deviation (+)',hint[0])}${n(p+'l','Lower deviation (−)',hint[1])}</div>`;
+  const n=(id,l,ph='',sg=false)=>sg?`<label class="sgl">${l} <span class="mut" data-u="L">${im?'in':'mm'}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" placeholder="${ph}" data-q="L">${sgBtn(id)}</label>`:`<label>${l} <span class="mut" data-u="L">${im?'in':'mm'}</span><input id="${id}" type="number" inputmode="decimal" step="any" placeholder="${ph}" data-q="L"></label>`;
+  const blk=(t,p,nl,hint,k)=>`<h2 style="margin-top:14px">${t}</h2>${n(p+'n',nl)}${k?`<div class="g2" style="margin-top:8px"><label>ISO tolerance letter<select id="${p}L"></select></label><label>ISO grade<select id="${p}G"></select></label></div><p class="mut" id="${p}M" style="margin:6px 0 0"></p>`:''}<div class="g2" style="margin-top:8px">${n(p+'u','Plus tolerance (+)',hint[0],1)}${n(p+'l','Minus tolerance (−)',hint[1],1)}</div>`;
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Fits and tolerances</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div>
   <p class="mut">Enter the shaft, the housing bore and the bush with their tolerances. The tool works through every combination of the extremes (shaft largest or smallest, housing largest or smallest, bush OD and ID or wall largest or smallest) and shows the press fit, the bore closure and the assembled clearance for each, then the tightest case, the average case and the loosest case.</p>
   <form class="card" id="FF">
-  <p class="mut" style="margin:0">For the shaft and the housing you can pick an ISO tolerance class (for example h7 or H7) and the deviations fill in by themselves once the nominal diameter is entered. Or type the tolerance as a deviation from the nominal size with its sign: a plain ±0.05 is upper 0.05, lower −0.05.</p>
-  ${blk('Shaft','fs','Shaft nominal diameter',['0','-0.025'],'s')}
+  <p class="mut" style="margin:0">For the shaft and the housing you can pick an ISO tolerance class (for example h7 or H7) and the deviations fill in by themselves once the nominal diameter is entered. Or type the tolerance as on a drawing: a plus tolerance and a minus tolerance, both as plain numbers. The minus box is always taken as a minus, so for 0 / −0.025 type 0 and 0.025, and for ±0.05 type 0.05 and 0.05. Only if the whole tolerance sits above the nominal size (for example +0.1 / +0.05) type a negative number in the minus box, or tap +/− in it.</p>
+  ${blk('Shaft','fs','Shaft nominal diameter',['0','0.025'],'s')}
   ${blk('Housing bore','fh','Housing nominal diameter',['0.025','0'],'h')}
-  ${blk('Bush outside diameter (OD)','fo','Bush OD nominal',['0.1','0.05'])}
+  ${blk('Bush outside diameter (OD)','fo','Bush OD nominal',['0.1','-0.05'])}
   <h2 style="margin-top:14px">Bush inside</h2>
   <div class="seg" id="MD"><button type="button" data-m="i" class="${byW?'':'on'}">Inside diameter</button><button type="button" data-m="w" class="${byW?'on':''}">Wall thickness</button></div>
-  ${n('fin','<span id="fnl"></span>')}<div class="g2" style="margin-top:8px">${n('fiu','Upper deviation (+)','0.1')}${n('fil','Lower deviation (−)','0')}</div>
+  ${n('fin','<span id="fnl"></span>')}<div class="g2" style="margin-top:8px">${n('fiu','Plus tolerance (+)','0.1',1)}${n('fil','Minus tolerance (−)','0',1)}</div>
   </form><div id="FO"></div>`;
   const lab=()=>{$('#fnl').textContent=byW?'Wall thickness nominal':'Bush ID nominal (before fitting)';$$('#MD button').forEach(b=>b.classList.toggle('on',(b.dataset.m==='w')===byW))};lab();
   const KIND={fs:'s',fh:'h'},LET=ISO.ORDER,nmL=(k,L)=>k==='h'?L.toUpperCase():L;
@@ -1202,7 +1207,7 @@ function fits(v){
   const fillC=p=>{const k=KIND[p],L=$('#'+p+'L').value,M=$('#'+p+'M');if(!L){M.textContent='';return false}
     const D=g(p+'n');if(!(D>0)){M.textContent='Enter the nominal diameter above and the tolerance fills in automatically.';return false}
     const r=isoDev(k,L,+$('#'+p+'G').value,D);if(typeof r==='string'){M.textContent=r;return false}
-    put(p+'u',r[0]/1000);put(p+'l',r[1]/1000);const sg=x=>(x>0?'+':'')+(Math.round(x*100)/100)+' µm';
+    put(p+'u',r[0]/1000);put(p+'l',-r[1]/1000);const sg=x=>(x>0?'+':'')+(Math.round(x*100)/100)+' µm';
     M.textContent=`${dL(D,3)} ${uL()} ${nmL(k,L)}${$('#'+p+'G').value}: upper ${sg(r[0])}, lower ${sg(r[1])}`;return true};
 
   Object.entries(FTV).forEach(([k,x])=>{const e=$('#'+k);if(!e||k==='mode')return;if(e.dataset.q&&x!=='')put(k,+x);else e.value=x});
@@ -1211,10 +1216,11 @@ function fits(v){
   const ids=['fsn','fsu','fsl','fhn','fhu','fhl','fon','fou','fol','fin','fiu','fil'];
   const cv=()=>{
     FTV.mode=byW?'w':'i';['fs','fh'].forEach(p=>{FTV[p+'L']=$('#'+p+'L').value;FTV[p+'G']=$('#'+p+'G').value});ids.forEach(id=>{const e=$('#'+id);FTV[id]=e.value===''?'':String(+g(id).toFixed(6))});
-    const O=$('#FO'),bad=m=>{O.innerHTML=m},val=ids.map(g);
+    const O=$('#FO'),bad=m=>{O.innerHTML=m},val=ids.map(g).map((x,i)=>ids[i].endsWith('l')?-x:x);
     if(ids.some((id,i)=>['fsn','fhn','fon','fin'].includes(id)&&!(val[i]>0)))return bad('<p class="mut">Enter the nominal sizes for the shaft, housing bore, bush outside diameter and bush '+(byW?'wall thickness':'inside diameter')+'. Leave a deviation empty if it is zero.</p>');
     const [sn,su,sl,hn,hu,hl,on,ou,ol,inn,iu,il]=val.map((x,i)=>Number.isFinite(x)?x:0);
-    if(su<sl||hu<hl||ou<ol||iu<il)return bad('<p class="note bad">The upper deviation must be larger than or equal to the lower deviation (for example +0.025 and 0, or 0 and −0.025).</p>');
+    const bp=[['shaft',su,sl],['housing',hu,hl],['bush OD',ou,ol],[byW?'wall thickness':'bush ID',iu,il]].find(q=>q[1]<q[2]);
+    if(bp)return bad(`<p class="note bad">${esc(bp[0][0].toUpperCase()+bp[0].slice(1))}: the top of the tolerance (${bp[1]>0?'+':''}${dL(bp[1])}) is below the bottom (${bp[2]>0?'+':''}${dL(bp[2])}). Check the plus and minus tolerances. If the whole tolerance is above the nominal size, enter a negative number in the minus box.</p>`);
     const S=[sn+sl,sn+su],H=[hn+hl,hn+hu],OD=[on+ol,on+ou],IN=[inn+il,inn+iu];
     const calc=(s,h,od,x)=>{const w=byW?x:(od-x)/2,id=byW?od-2*x:x,itf=Math.max(0,od-h),clo=itf*s/h,idA=id-clo;return{s,h,od,id,w,itf,clo,idA,cl:idA-s,loose:od<=h}};
     if(OD[0]<=0||(byW?OD[0]-2*IN[1]<=0:IN[1]>=OD[0]))return bad(`<p class="note bad">${byW?'Twice the wall thickness':'The inside diameter'} must be less than the bush outside diameter in every case.</p>`);

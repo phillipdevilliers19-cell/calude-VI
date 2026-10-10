@@ -1,3 +1,6 @@
+SIGNS ON PHONES
+Fits and tolerances now uses Plus tolerance and Minus tolerance boxes (type plain numbers; the minus box is taken as a minus). Temperature boxes in the Design tool and Freezer tool have a +/- button because phone number pads have no minus key. Upload app.js and style.css.
+
 FITS AND TOLERANCES: ISO CLASS DROPDOWNS
 Shaft (letters a to zc, grades per ISO 286) and housing (A to ZC) have an ISO letter and grade dropdown. Pick one and the upper and lower deviations fill in from the nominal size (sizes above 0 up to 500 mm). Typing in a deviation switches back to Custom. Clearance is shown with a sign: + means clearance, - means the bush ID after fitting is smaller than the shaft. Upload app.js only.
 
