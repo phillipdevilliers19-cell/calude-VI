@@ -1,3 +1,9 @@
+ADMIN REDESIGN + WHO CAN EDIT AN APPLICATION
+- Admin is now organised into tabs: Overview (notifications and status), Team (search, pending people first), Appearance, Documents, Data sheets, Settings (features, backups, weekly digest, industries), Activity and Data. A summary strip at the top shows people, waiting, applications and OEM references. The Save settings bar appears only on the tabs that have settings, and says when there are unsaved changes.
+- Editing applications: admins and editors can edit and delete every application. Viewers can capture new applications and edit (not delete) only the ones they added themselves (others show no Edit button). Applications created before owners were recorded (samples, imports) can be changed by admins and editors only. firestore.rules enforces this on the server, so REPUBLISH it.
+
+LATEST: Customer-safe share links and QR codes are removed (the Share / QR button, the public share page and the Admin feature switch). firestore.rules no longer has a public 'shared' rule and stored files can now be read only by signed-in staff. Share PDF and Send to chat are the ways to share an application. You can delete the old 'shared' collection in the Firebase console (Firestore Database) if it exists.
+
 LATEST: OEM references moved into the Library page (switch at the top: Applications / OEM references); the OEM tab is gone. The trophy cabinet has a Clear trophies button (asks first, resets your trophies on this device and in the saved score).
 
 CHATS UPDATE: ATTACHMENTS, EDIT, DELETE, LEAVE, SEND TO CHAT
