@@ -22,6 +22,34 @@ service cloud.firestore {
     match /activity/{id} { allow read, delete: if admin(); allow create: if member() && request.resource.data.uid == request.auth.uid; }
     match /datasheets/{id} { allow read: if member(); allow write: if admin(); }
     match /scores/{u} { allow read: if member(); allow create, update: if member() && request.auth.uid == u && request.resource.data.uid == request.auth.uid; allow delete: if admin(); }
+    // Chats: only the people in a chat can read it or write to it. Admins cannot read other people's chats through the app or the rules.
+    match /chats/{c} {
+      allow read: if member() && request.auth.uid in resource.data.members;
+      allow create: if member() && request.auth.uid in request.resource.data.members && request.resource.data.by == request.auth.uid && request.resource.data.members.size() <= 50;
+      allow update: if member() && request.auth.uid in resource.data.members
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members','mn','name','lastAt','lastBy','lastText','seen'])
+        && request.resource.data.members.toSet().hasAll(resource.data.members.removeAll([request.auth.uid]))
+        && request.resource.data.get('seen', {}).diff(resource.data.get('seen', {})).affectedKeys().hasOnly([request.auth.uid]);
+      match /msgs/{m} {
+        allow read: if member() && request.auth.uid in get(/databases/$(d)/documents/chats/$(c)).data.members;
+        allow create: if member() && request.auth.uid in get(/databases/$(d)/documents/chats/$(c)).data.members
+          && request.resource.data.from == request.auth.uid && request.resource.data.text is string
+          && request.resource.data.text.size() <= 2000
+          && (request.resource.data.text.size() > 0 || request.resource.data.get('att', null) != null);
+        // You can edit or delete only your own messages (a delete keeps a "deleted" marker).
+        allow update: if member() && request.auth.uid in get(/databases/$(d)/documents/chats/$(c)).data.members
+          && resource.data.from == request.auth.uid && request.resource.data.from == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','edited','del','att'])
+          && request.resource.data.text is string && request.resource.data.text.size() <= 2000;
+      }
+      // Attachments are stored in pieces; only people in the chat can read them.
+      match /files/{f} {
+        allow read: if member() && request.auth.uid in get(/databases/$(d)/documents/chats/$(c)).data.members;
+        allow create: if member() && request.auth.uid in get(/databases/$(d)/documents/chats/$(c)).data.members
+          && request.resource.data.by == request.auth.uid && request.resource.data.d is string && request.resource.data.d.size() <= 800000;
+        allow delete: if member() && resource.data.by == request.auth.uid;
+      }
+    }
     match /settings/{id} { allow read: if true; allow write: if admin(); }
   }
 }

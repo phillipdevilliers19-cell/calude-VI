@@ -1,3 +1,33 @@
+CHATS UPDATE: ATTACHMENTS, EDIT, DELETE, LEAVE, SEND TO CHAT
+- Paperclip in a chat attaches a photo or any file up to 8 MB (photos are shrunk first). Tap a photo to view it, tap a file to download or share it. Files are stored inside the chat, so only people in the chat can read them.
+- Your own messages have a small ... button: Edit (shows "edited") or Delete (leaves "This message was deleted" and removes the attached file).
+- Options (top right of a chat): Add people, Rename group (groups only), Leave chat (posts "<name> left the chat"; you no longer see the chat).
+- SEND TO CHAT: every time the app hands you a generated file (application PDF, customer portfolio, drawing PDF/SVG/STEP, data sheet) a small menu now offers "Open / share" or "Send to chat". Pick an existing chat or a person and add an optional note.
+- REPUBLISH firestore.rules again (new rules for editing messages, files and leaving). Replace ADMIN_EMAIL with your lowercase admin email.
+
+CHATS (private messages between staff)
+- New "Chats" tab. Start a chat from the tab (New chat), or open any application and tap Message to chat about that exact application (the chat shows "About: <application>" with a link back to it). Pick one person for a direct chat, or several for a group (optional group name). Inside a chat, "Add people" brings more staff in; they can read the earlier messages.
+- Unread messages: red number on the Chats tab, a red dot on the chat in the list, a card on Home, a pop-up when a message arrives while the app is open, and the app icon badge on iPhone/Android when installed. There are no notifications while the app is closed (that needs push, see earlier notes).
+- Privacy: each chat can be read only by the people in it. The Firestore rules enforce this, so admins cannot read other people's chats in the app. (Whoever owns the Firebase project can still see all data in the Firebase console.)
+- YOU MUST REPUBLISH firestore.rules (new /chats rules; replace ADMIN_EMAIL with your lowercase admin email again) or chats will show an error.
+- Not included yet: editing or deleting messages, leaving a chat, photos in chats.
+
+SHARE + WEEKLY DIGEST
+- Every application page now has "Share PDF" (a designed PDF of just that application; tap once to build, again to open or share). Customer-safe links still use Share / QR.
+- WEEKLY DIGEST EMAIL to all admins (new applications, top contributors, activity, who is waiting for approval). It runs from an admin's browser, so there is no server. Setup, using the same EmailJS account as the sign-up alert:
+  1. In EmailJS create a second Email Template. Set "To Email" to {{to_email}}, Subject to {{subject}}, and put {{message}} in the body (choose plain text or turn off HTML escaping). Note its Template ID.
+  2. Put that ID into config.js as emailjs.digest and upload config.js.
+  3. Admin > Weekly digest: choose "Ask me on the Home screen" (a card appears when a week has passed), "Send automatically when an admin opens the app", or Off. Preview and Send now buttons are there too.
+  It is not a true scheduler: if no admin opens the app, no digest goes out. A real scheduler would need a Firebase Cloud Function (paid plan).
+
+LATEST: Trophies sit in the centre of a gap again (like coins) and are re-offered if missed. The cabinet is a compact shelf (tap a medallion for details) and is only reachable from the game's 🏅 button or leaderboard, not from Tools/Account.
+
+LATEST: Trophies are now a challenge. Each run offers a trophy once, in one of four styles (hugging a shaft collar, floating between shafts at a random height, waving up and down, or dashing in fast). Miss it and you need another run. Pickup radius is smaller and the unlock message is a small toast, not a full banner.
+
+BUSH HOP TROPHIES
+- 20 equipment trophies (pump, propeller, excavator, crawler drill, Hamilton waterjet, vane motor, conveyor, drill seeder, double toggle jaw crusher, rudder, Pelton wheel, wind turbine, tractor, concrete mixer, gate valve, hydraulic cylinder, rail wagon, log grapple, clarifier, golden Hilube bush). Each appears in a shaft gap once its goal is met (score, coins in a run, or games played). Fly into it to unlock it.
+- Cabinet: the medal button in the game, or Tools > Account > Trophy cabinet once you own one. Tap a name on the game leaderboard to see their cabinet. Saved in the existing scores collection, so no rules change.
+
 NEW IN THIS UPDATE
 - Sign-up is limited to @vesconite.com and @vesconite.co.za. New people verify their email (link sent by Firebase), then an admin approves them. The Firestore rules enforce this too, so REPUBLISH firestore.rules (replace ADMIN_EMAIL with your lowercase admin email again).
 - Sign in / Create account show a spinner while working. "Forgot password?" sends a reset email.

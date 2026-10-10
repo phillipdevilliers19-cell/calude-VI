@@ -1,13 +1,13 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,sendPasswordResetEmail,sendEmailVerification,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {initializeFirestore,collection,doc,getDoc,getDocs,setDoc,deleteDoc,updateDoc,query,orderBy,limit} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {initializeFirestore,collection,doc,getDoc,getDocs,setDoc,deleteDoc,updateDoc,query,orderBy,limit,onSnapshot,where,arrayUnion,arrayRemove} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const C=window.VI_CONFIG||{};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const IND='Agriculture,Construction,Forestry,Hydraulics,Industrial,Marine,Mining,Pumps,Renewable Energy,Transport,Water & Wastewater,Valves'.split(',').join('\n');
 const SECS=['Overview','Problem','Solution','Result'];
-const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},bk:{every:7,last:''},ind:IND,dw:{logo:'',logoR:1,showLogo:true,company:'VESCONITE',title:'INDUSTRIAL BEARING BUSH',prefix:'VI',rev:'A',paper:'a3',who:'auto',whoText:'',fit:true,notes:true,noteText:'1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.\n2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);\n    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.\n3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.\n4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.\n5. {FIT}'}};
+const DS={pri:'#0f3f4a',amb:'#c9861a',r:10,font:'cond',mode:'auto',company:'Vesconite',footer:'',pdfAcc:'#c9861a',cover:'dark',logo:true,pp:1,secs:SECS,feat:{oem:true,ins:true,qr:true,pv:true},bk:{every:7,last:''},dg:{mode:'ask',last:''},ind:IND,dw:{logo:'',logoR:1,showLogo:true,company:'VESCONITE',title:'INDUSTRIAL BEARING BUSH',prefix:'VI',rev:'A',paper:'a3',who:'auto',whoText:'',fit:true,notes:true,noteText:'1. ALL DIMENSIONS IN mm, FOR A FREE-STANDING BUSH AT 20 °C.\n2. TOLERANCES: OD AND ID ±0.1% (MIN ±0.025); WALL +0/−0.5% (MIN −0.025);\n    LENGTH +0/−0.5% (MIN −0.3). STANDARD VESCONITE MACHINING TOLERANCES.\n3. CONTROL WALL THICKNESS AND OUTSIDE DIAMETER WHEN MACHINING.\n4. SIZES FROM THE VESCONITE DESIGN MANUAL EQUATIONS. VERIFY BEFORE MANUFACTURE.\n5. {FIT}'}};
 DS.dsc={v:{c:'#8a8d91',a:.3},h:{c:'#efe6cf',a:.6},h10:{c:'#e6dcc0',a:.55},h20:{c:'#ddd0ab',a:.55},s:{c:'#7fa3b8',a:.35},t150:{c:'#d9822b',a:.3},t160:{c:'#c9472b',a:.3},t230:{c:'#8f2d2d',a:.3},f:{c:'#3d3d42',a:.3},n:{c:'#d8d2c4',a:.55},pc:{c:'#c5ccd2',a:.55}};
 let S={...DS},MYN='',ME=null,ROLE=null,A=[],O=[],P=[],ready=false,au,db;
 try{P=JSON.parse(localStorage.getItem('vi4p')||'[]')}catch{}
@@ -32,7 +32,7 @@ async function notifCheck(){   /* admin badge: people waiting for access + chang
     const b=$('#ad');b.textContent=NB?`Admin · ${NB}`:'Admin';b.classList.toggle('alert',NB>0);
   }catch{}
 }
-const mergeS=d=>({...DS,...d,feat:{...DS.feat,...(d.feat||{})},dw:{...DS.dw,...(d.dw||{})},bk:{...DS.bk,...(d.bk||{})},dsc:{...DS.dsc,...(d.dsc||{})}});
+const mergeS=d=>({...DS,...d,feat:{...DS.feat,...(d.feat||{})},dw:{...DS.dw,...(d.dw||{})},bk:{...DS.bk,...(d.bk||{})},dg:{...DS.dg,...(d.dg||{})},dsc:{...DS.dsc,...(d.dsc||{})}});
 const indChoices=cur=>{const l=[...new Set([...S.ind.split('\n').map(x=>x.trim()).filter(Boolean),...A.map(a=>a.industry).filter(Boolean),...O.map(o=>o.industry).filter(Boolean)])].sort((x,y)=>x.localeCompare(y));if(cur&&!l.includes(cur))l.push(cur);return l};
 const indSelect=(cur,sid,oid,wid)=>`<label>Industry<select name="industry" id="${sid}" required><option value="">Select industry…</option>${indChoices(cur).map(i=>`<option ${i===cur?'selected':''}>${esc(i)}</option>`).join('')}<option value="__other">Other (type a new one)…</option></select></label><label id="${wid}" hidden>New industry name<input id="${oid}" autocomplete="off"></label>`;
 const indBind=(sid,wid)=>{const s=$('#'+sid);if(s)s.onchange=()=>{$('#'+wid).hidden=s.value!=='__other'}};
@@ -85,6 +85,36 @@ async function notifyAdmin(u,name){   /* optional email to the admins through Em
   const E=C.emailjs;if(!E||!E.service||!E.template||!E.key)return;
   try{await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:E.service,template_id:E.template,user_id:E.key,template_params:{name:name||'(no name given)',email:u.email||'',when:new Date().toLocaleString(),link:location.href.split('#')[0]+'#/admin'}})})}catch{}
 }
+/* ---------- Weekly digest to the admins (EmailJS, see README). Runs from an admin's browser: no server needed. ---------- */
+const dgOn=()=>{const E=C.emailjs;return !!(E&&E.service&&E.digest&&E.key)};
+const dgDue=()=>{if(!can('admin')||!dgOn()||!S.dg||S.dg.mode==='off')return false;const l=S.dg.last?Date.parse(S.dg.last):0;return !l||Date.now()-l>7*864e5};
+async function dgBuild(days=7){
+  const cs=new Date(Date.now()-days*864e5).toISOString(),ds=cs.slice(0,10);
+  const[m,q]=await Promise.all([getDocs(col('members')),getDocs(query(col('activity'),orderBy('t','desc'),limit(500)))]);
+  const mem=m.docs.map(d=>d.data()),act=q.docs.map(d=>d.data()).filter(x=>x.t>=cs);
+  const admins=[...new Set(mem.filter(x=>x.role==='admin'&&x.email).map(x=>x.email))],pend=mem.filter(x=>x.role==='pending');
+  const nw=A.filter(a=>(a.date||'')>=ds).sort(byDate),by={};nw.forEach(a=>{const k=(a.author||'').trim()||'Not recorded';by[k]=(by[k]||0)+1});
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5),who=new Set(act.map(x=>x.name||x.email).filter(Boolean));
+  const skip=['Opened data sheet','Made drawing PDF','Downloaded STEP'],cnt={};act.filter(x=>!skip.includes(x.action)).forEach(x=>cnt[x.action]=(cnt[x.action]||0)+1);
+  const L=[`${S.company} Intelligence: weekly digest`,`${new Date(cs).toLocaleDateString()} to ${new Date().toLocaleDateString()}`,'',
+    `Applications in the library: ${A.length}`,`New this week: ${nw.length}`];
+  nw.slice(0,10).forEach(a=>L.push(`  - ${a.name} (${a.industry||'Other'})${a.author?' by '+a.author:''}`));if(nw.length>10)L.push(`  ...and ${nw.length-10} more`);
+  if(top.length){L.push('','Top contributors');top.forEach(([k,n])=>L.push(`  - ${k}: ${n}`))}
+  L.push('',`Team members active: ${who.size}`);
+  const ce=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8);if(ce.length){L.push('','What people did');ce.forEach(([k,n])=>L.push(`  - ${k}: ${n}`))}
+  L.push('',pend.length?`Waiting for approval: ${pend.length} (${pend.slice(0,5).map(x=>x.name||x.email).join(', ')}${pend.length>5?', ...':''})`:'Nobody is waiting for approval.');
+  L.push('',`Open the app: ${location.href.split('#')[0]}`);
+  return{admins:admins.length?admins:[ME.email].filter(Boolean),subject:`${S.company} Intelligence weekly digest: ${nw.length} new application${nw.length===1?'':'s'}`,message:L.join('\n')};
+}
+async function dgSend(btn){
+  if(!dgOn())return alert('The digest email is not set up yet. See the README: add the digest template ID to config.js.');
+  const done=btn?busy(btn,'Sending…'):()=>{};
+  try{const E=C.emailjs,d=await dgBuild(),now=new Date().toISOString();
+    await setDoc(dc('settings','app'),{dg:{...S.dg,last:now}},{merge:true});S.dg={...S.dg,last:now};try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}
+    let ok=0;for(const to of d.admins){const r=await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:E.service,template_id:E.digest,user_id:E.key,template_params:{to_email:to,subject:d.subject,message:d.message,company:S.company}})});if(r.ok)ok++}
+    log('Sent weekly digest',`${ok} of ${d.admins.length} admins`);done();return ok}
+  catch(x){done();alert('Could not send the digest: '+(x.message||x));return 0}
+}
 function login(v,mode='in'){
   const up=mode==='up',fg=mode==='fg';
   v.innerHTML=`<h1>${up?'Create account':fg?'Reset password':'Sign in'}</h1><form id="LF" novalidate>${up?'<label>Full name<input name="n" required autocomplete="name" maxlength="60"></label>':''}<label>Email<input name="e" type="email" required autocomplete="username" placeholder="you@vesconite.com"></label>${fg?'':`<label>Password<input name="p" type="password" required minlength="6" autocomplete="${up?'new-password':'current-password'}"></label>`}<p class="note" id="LM" role="status" aria-live="polite" hidden></p><button class="btn pri wide" id="LB">${up?'Create account':fg?'Send reset link':'Sign in'}</button></form>
@@ -111,6 +141,7 @@ function verify(v){
 }
 function blocked(v){v.innerHTML=`<h1>Access is limited</h1><p class="lead">Sign-up is open to @vesconite.com and @vesconite.co.za email addresses. Your account (${esc(ME.email)}) is not one of them, so it cannot be approved. Ask an admin if you think this is a mistake.</p><button class="btn" id="so">Sign out</button>`;$('#so').onclick=()=>signOut(au)}
 function pending(v){v.innerHTML=`<h1>Waiting for approval</h1><p class="lead">Your account (${esc(ME.email)}) is created. An admin needs to give you access.</p><button class="btn" id="so">Sign out</button>`;$('#so').onclick=()=>signOut(au)}
+const dgSnoozed=()=>{try{return Date.now()<(+localStorage.getItem('vi4dgs')||0)}catch{return false}};
 const bkDue=()=>{if(!can('admin')||!S.bk||!(S.bk.every>0))return false;let sn=0;try{sn=+localStorage.getItem('vi4bks')||0}catch{}if(Date.now()<sn)return false;const l=S.bk.last?Date.parse(S.bk.last):0;return !l||Date.now()-l>S.bk.every*864e5};
 async function exportBackup(btn,label='Export backup'){
   if(btn)btn.textContent='Preparing…';
@@ -123,12 +154,14 @@ async function exportBackup(btn,label='Export backup'){
 async function saveName(n,btn){n=(n||'').trim().slice(0,60);if(!n){alert('Enter your name.');return false}const done=btn?busy(btn,'Saving…'):()=>{};try{await updateDoc(dc('members',ME.uid),{name:n});MYN=n;cacheSave();done();if(btn)btn.textContent='Saved ✓';return true}catch(x){alert(x.message);done();return false}}
 function home(v){
   const need=A.filter(a=>!a.proof||!a.photos.length).slice(0,4);
-  v.innerHTML=`${!MYN?`<section class="card bkb"><b>What should we call you?</b><p class="mut">Your name shows next to your applications and on the leaderboard.</p><div class="acts"><input id="hn" placeholder="Full name" maxlength="60" style="flex:1;min-width:160px"><button class="btn pri" id="hns" type="button">Save</button></div></section>`:''}${bkDue()?`<section class="card bkb"><b>Time for a backup</b><p class="mut">${S.bk.last?'Last backup was '+new Date(S.bk.last).toLocaleDateString()+'.':'No backup has been taken yet.'} Download one now so nothing is lost.</p><div class="acts"><button class="btn pri" id="bkn">Back up now</button><button class="btn" id="bks">Remind me tomorrow</button></div></section>`:''}<section class="hero"><h1>Every installation, on the record.</h1><p>Capture the problem, the fix and the proof while it is fresh. Then turn the best of it into a customer portfolio.</p><div class="acts">${can('edit')?'<a class="btn pri" href="#/new">Capture application</a>':''}<a class="btn" href="#/library">Open library</a>${S.feat.ins?'<a class="btn" href="#/insights">Insights</a>':''}</div></section>
+  v.innerHTML=`${!MYN?`<section class="card bkb"><b>What should we call you?</b><p class="mut">Your name shows next to your applications and on the leaderboard.</p><div class="acts"><input id="hn" placeholder="Full name" maxlength="60" style="flex:1;min-width:160px"><button class="btn pri" id="hns" type="button">Save</button></div></section>`:''}<a class="card bkb" id="cun" href="#/chats" ${cCount()?'':'hidden'}><b>You have unread messages</b><p class="mut">Open Chats to read them.</p></a>${dgDue()&&S.dg.mode==='ask'&&!dgSnoozed()?`<section class="card bkb"><b>Weekly digest is ready</b><p class="mut">${S.dg.last?'Last sent '+new Date(S.dg.last).toLocaleDateString()+'.':'None sent yet.'} Email a summary of the week to all admins.</p><div class="acts"><button class="btn pri" id="dgn">Send to admins</button><button class="btn" id="dgp">Preview</button><button class="btn" id="dgs">Not now</button></div></section>`:''}${bkDue()?`<section class="card bkb"><b>Time for a backup</b><p class="mut">${S.bk.last?'Last backup was '+new Date(S.bk.last).toLocaleDateString()+'.':'No backup has been taken yet.'} Download one now so nothing is lost.</p><div class="acts"><button class="btn pri" id="bkn">Back up now</button><button class="btn" id="bks">Remind me tomorrow</button></div></section>`:''}<section class="hero"><h1>Every installation, on the record.</h1><p>Capture the problem, the fix and the proof while it is fresh. Then turn the best of it into a customer portfolio.</p><div class="acts">${can('edit')?'<a class="btn pri" href="#/new">Capture application</a>':''}<a class="btn" href="#/library">Open library</a>${S.feat.ins?'<a class="btn" href="#/insights">Insights</a>':''}</div></section>
   <div class="stats"><div><b>${A.length}</b><span>applications</span></div><div><b>${new Set(A.map(a=>a.industry)).size}</b><span>industries</span></div><div><b>${A.reduce((n,a)=>n+a.photos.length,0)}</b><span>photos</span></div></div>
   ${A.length?charts():''}<h2>Needs evidence</h2>${need.length?`<div class="list">${need.map(row).join('')}</div>`:`<p class="empty">${A.length?'Every record has a result and a photo.':'Nothing captured yet. Start with your best-known installation.'}</p>`}
   ${A.length?`<h2>Recent</h2><div class="list">${A.slice(0,3).map(row).join('')}</div>`:''}`;
   eggTap(v);
   const hs=$('#hns');if(hs)hs.onclick=async()=>{if(await saveName($('#hn').value,hs))home(v)};
+  const dn=$('#dgn');if(dn){dn.onclick=async()=>{if(await dgSend(dn))home(v)};$('#dgp').onclick=async()=>{try{alert((await dgBuild()).message)}catch(x){alert(x.message)}};$('#dgs').onclick=()=>{try{localStorage.setItem('vi4dgs',Date.now()+864e5)}catch{}home(v)}}
+  if(dgDue()&&S.dg.mode==='auto'&&!window.__dga){window.__dga=1;dgSend()}
   const bn=$('#bkn');if(bn){bn.onclick=async()=>{if(await exportBackup(bn,'Back up now'))home(v)};$('#bks').onclick=()=>{try{localStorage.setItem('vi4bks',Date.now()+864e5)}catch{}home(v)}}
 }
 /* ---------- Trophies for Bush Hop ---------- */
@@ -331,10 +364,12 @@ function detail(v,id){
   ${spec.length?`<dl class="spec">${spec.map(([k,x])=>`<dt>${k}</dt><dd>${esc(x)}</dd>`).join('')}</dl>`:''}
   ${[['Problem',a.problem],['Solution',a.solution],['Result',a.proof]].map(([k,x])=>`<section class="story"><h3>${k}</h3><p>${x?esc(x):'<span class="mut">Not recorded yet.</span>'}</p></section>`).join('')}
   <div class="card" id="qr" hidden></div>
-  <div class="acts"><button class="btn" id="spf">${P.includes(a.id)?`Open customer portfolio (${P.length})`:P.length?`Add to customer portfolio (${P.length})`:'Start customer portfolio'}</button>${P.length&&!P.includes(a.id)?'<button class="btn" id="npf">Start a new portfolio</button>':''}${can('edit')?`<a class="btn pri" href="#/edit/${a.id}">Edit</a>${S.feat.qr?'<button class="btn" id="sh">Share / QR</button>':''}`:''}${can('edit')?'<button class="btn bad" id="dl">Delete</button>':''}</div>`;
+  <div class="acts"><button class="btn" id="spf">${P.includes(a.id)?`Open customer portfolio (${P.length})`:P.length?`Add to customer portfolio (${P.length})`:'Start customer portfolio'}</button>${P.length&&!P.includes(a.id)?'<button class="btn" id="npf">Start a new portfolio</button>':''}<button class="btn" id="spd">Share PDF</button><a class="btn" href="#/chatnew/${a.id}">Message</a>${can('edit')?`<a class="btn pri" href="#/edit/${a.id}">Edit</a>${S.feat.qr?'<button class="btn" id="sh">Share / QR</button>':''}`:''}${can('edit')?'<button class="btn bad" id="dl">Delete</button>':''}</div>`;
   if(a.photos.length)lazyImgs($('#st'),a.photos);
   $('#spf').onclick=()=>{if(!P.includes(a.id))P.push(a.id);savePf();location.hash='#/portfolio'};if($('#npf'))$('#npf').onclick=()=>{P=[a.id];savePf();location.hash='#/portfolio'};
   const link=`${location.origin}${location.pathname}#/share/${a.id}`,show=()=>{const q=$('#qr');q.hidden=false;q.innerHTML=`<h2>Customer-safe link</h2><div id="qc"></div><p class="mut" style="word-break:break-all">${esc(link)}</p><p class="mut">Shows only the overview, problem, solution, result and photos.</p><div class="acts"><button class="btn" id="cp">Copy link</button><button class="btn bad" id="us">Stop sharing</button></div>`;lib('qr').then(()=>new QRCode($('#qc'),{text:link,width:200,height:200})).catch(()=>{});$('#cp').onclick=()=>navigator.clipboard.writeText(link).then(()=>alert('Link copied.'));$('#us').onclick=async()=>{try{a.shared=false;await save(a);await deleteDoc(dc('shared',a.id));log('Stopped sharing',a.name);q.hidden=true}catch(x){alert(x.message)}}};
+  $('#spd').onclick=async()=>{const b=$('#spd');if(b._b){await deliver(b._b,b._n);return}b.disabled=true;b.textContent='Building…';
+    try{const r=await pdf([a.id],{cust:'',intro:''});b._b=r.blob;b._n=`${S.company}-${(a.name||'application').replace(/[^\w]+/g,'-').replace(/^-|-$/g,'')}.pdf`;b.textContent='Open PDF';log('Made application PDF',a.name)}catch(x){alert('Could not build the PDF: '+(x.message||x));b.textContent='Share PDF'}b.disabled=false};
   if(a.shared)show();
   if($('#sh'))$('#sh').onclick=async()=>{try{a.shared=true;await save(a);log('Shared application',a.name);show()}catch(x){a.shared=false;alert(x.message)}};
   if($('#dl'))$('#dl').onclick=async()=>{if(confirm('Delete this application? This cannot be undone.')){try{await remove(a);location.hash='#/library'}catch(x){alert(x.message)}}};
@@ -464,7 +499,7 @@ async function pdf(ids,o){
 function portfolio(v){
   P=P.filter(id=>A.some(a=>a.id===id));savePf();
   const inds=[...new Set(A.map(a=>a.industry).filter(Boolean))].sort(),st={q:'',i:''};
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Customer portfolio</h1><p class="mut">Choose the applications to feature and make a designed PDF proposal. Customer names, operating notes and recorded-by never appear in it.</p>
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Customer portfolio</h1><p class="mut">Choose the applications to feature and make a designed PDF proposal. Customer names, operating notes and recorded-by never appear in it.</p>
   <div class="card"><label>Prepared for<input id="pc1" placeholder="Customer or company"></label><label style="margin:0">Introduction on the cover (optional)<textarea id="pi" rows="3" placeholder="A short personal note"></textarea></label></div>
   <h2>1. Choose applications <small class="mut" id="pcn"></small></h2>
   <div class="filters"><input id="pq" type="search" placeholder="Search by name, product or industry"><select id="pin"><option value="">All industries</option>${inds.map(i=>`<option>${esc(i)}</option>`).join('')}</select><select id="pst"><option value="">All records</option><option value="sel">Selected only</option></select></div>
@@ -514,7 +549,7 @@ const DSH=[
 const hexRgb=h=>{h=String(h||'#888888').replace('#','');return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)||0)};
 const tabStyle=id=>{const d=(S.dsc&&S.dsc[id])||{c:'#8a8d91',a:.3},[r,g,b]=hexRgb(d.c),lum=(r*299+g*587+b*114)/1000,a=Math.max(0,Math.min(1,+d.a)),txt=a>=.55?(lum<140?'#ffffff':'#0e1a20'):'';return `background:rgba(${r},${g},${b},${a});border-left:7px solid rgb(${r},${g},${b});${txt?`color:${txt};--mut:${txt};`:''}`};
 function datasheets(v){
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Data sheets</h1><p class="mut">Typical properties from the Vesconite spec sheets. Tap a material to see its properties and open the PDF.</p><div class="list">${DSH.map(d=>`<a class="row dtab" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto;${tabStyle(d.id)}"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip">PDF ›</span></a>`).join('')}</div>`;
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Data sheets</h1><p class="mut">Typical properties from the Vesconite spec sheets. Tap a material to see its properties and open the PDF.</p><div class="list">${DSH.map(d=>`<a class="row dtab" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto;${tabStyle(d.id)}"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip">PDF ›</span></a>`).join('')}</div>`;
 }
 function datasheet(v,id){
   const d=DSH.find(x=>x.id===id);
@@ -806,7 +841,8 @@ function stepFile(p){
 const stepDownload=()=>{if(!LAST||!LAST.step)return;deliver(new Blob([stepFile(LAST.step)],{type:'application/octet-stream'}),LAST.drg+'.step');log('Downloaded STEP',LAST.drg)};
 
 /* Files: iOS home-screen apps cannot download directly, so use the share sheet when available */
-async function deliver(blob,name){
+async function deliver(blob,name,o={}){
+  if(!o.noChat&&ME&&OKR.includes(ROLE)&&db&&!o.chosen){return sheet(`<h2>${esc(name)}</h2><div class="acts" style="flex-direction:column;align-items:stretch"><button class="btn pri" id="dgo">Open / share</button><button class="btn" id="dgc">Send to chat</button><button class="btn" id="dgx">Cancel</button></div>`,(w,x)=>{$('#dgx',w).onclick=x;$('#dgo',w).onclick=()=>{x();deliver(blob,name,{chosen:1})};$('#dgc',w).onclick=()=>{x();cShare(blob,name)}})}
   const f=new File([blob],name,{type:blob.type});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:name});return}catch(x){if(x.name==='AbortError')return}}
   const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
@@ -870,7 +906,7 @@ function design(v,id){
     pump:'Bearing and wear-ring sizes for pumps. Vesconite does not publish separate pump equations, so this uses the industrial size equations with the pump inputs (rotation only, wear ring option).',
     rud:'Rudder bearing sizes from the Vesconite marine equations: press fit from the minimum operating temperature, assembly clearance 0.2 mm + 0.0015 × shaft diameter. Rudder bearings generally need no grooves.',
     stern:'Water-lubricated stern tube and strut bearing sizes from the Vesconite marine equations: assembly clearance 0.2 mm + 0.002 × shaft diameter, with the manual\'s groove table. Do not grease these bearings.'}[mode];
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Design a bearing</h1>
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Design a bearing</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
   <div class="dts" id="MS">${Object.entries(MODES).map(([k,l])=>`<a href="#/design/${k}" class="dt dt-${k} ${k===mode?'on':''}"><i>${{ind:'⚙️',pump:'💧',rud:'🧭',stern:'⚓'}[k]}</i><span>${l.replace('Marine ','Marine<br>')}</span></a>`).join('')}</div>
   <p class="mut">${intro} A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
@@ -1009,7 +1045,7 @@ function freezer(v){
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>`${fx(im?c*9/5+32:c,0)} ${im?'°F':'°C'}`;
   const n=(id,l,u,val='')=>{const q=UQ[u];return `<label>${l} <span class="mut" data-u="${q}">${im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" data-q="${q}"></label>`};
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Freezer shrink time</h1>
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Freezer shrink time</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
   <p class="mut">Works out how long to leave a Vesconite or Vesconite Hilube bush in a freezer so that it shrinks enough to slide into its housing, and how long you have to fit it once it is out. Based on the published expansion of 6 × 10⁻⁵ per °C. The cooling time is an estimate: always measure the cooled bush before fitting.</p>
   <form class="card" id="FF"><div class="g2">${n('f1','Bearing outside diameter at 20 °C','mm')}${n('f2','Housing bore diameter','mm')}${n('f3','Bearing wall thickness','mm')}${n('f4','Clearance you want when sliding in','mm','0.10')}${n('f5','Starting (room) temperature','°C','20')}</div>
@@ -1083,7 +1119,7 @@ function quickdraw(v){
   const num=(id,l,u='',val='',q='L')=>`<label>${l} <span class="mut" ${q&&u?'data-u="L"':''}>${q&&u?(im?'in':'mm'):u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${q?`data-q="${q}"`:''}></label>`;
   const txt=(id,l,val='',ph='')=>`<label>${l}<input id="${id}" value="${esc(val)}" placeholder="${esc(ph)}"></label>`;
   const today=new Date().toLocaleDateString(),dw=S.dw;
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
   <form class="card" id="QF">
   <h2>Part</h2><div class="g2">${txt('qName','Part name / title','BEARING BUSH')}${txt('qMat','Material / grade','VESCONITE')}${txt('qDrg','Drawing number','','Auto')}${txt('qRev','Revision',dw.rev)}${txt('qCo','Company (when no logo)',dw.company)}${txt('qWho','Drawn by',(ME?.email||'').split('@')[0])}${txt('qDate','Date',today)}
   <label>Paper size<select id="qPaper"><option value="a3">A3</option><option value="a4" ${dw.paper==='a4'?'selected':''}>A4</option></select></label>
@@ -1159,7 +1195,7 @@ const PRE=[['Steel & amber','#0f3f4a','#c9861a'],['Forest','#1d4a33','#d29a2c'],
 async function admin(v){
   if(!can('del')){location.hash='#/';return}
   const s=S,dw=s.dw;let dwLogo={u:dw.logo,r:dw.logoR};
-  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Admin</h1><section class="card" id="NT"><h2>Notifications</h2><p class="mut">Loading…</p></section><form id="AF">
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Admin</h1><section class="card" id="NT"><h2>Notifications</h2><p class="mut">Loading…</p></section><form id="AF">
   <section class="card"><h2>App appearance</h2><div class="acts">${PRE.map((p,i)=>`<button type="button" class="btn" data-p="${i}" style="border-left:8px solid ${p[2]}">${p[0]}</button>`).join('')}</div>
   <div class="g2"><label>Main colour<input type="color" name="pri" value="${s.pri}"></label><label>Accent colour<input type="color" name="amb" value="${s.amb}"></label>
   <label>Corners${sel('r',[[3,'Sharp'],[10,'Soft'],[18,'Round']],s.r)}</label><label>Heading font${sel('font',[['cond','Condensed'],['std','Standard'],['serif','Serif']],s.font)}</label>
@@ -1181,15 +1217,17 @@ async function admin(v){
   <div class="acts"><button type="button" class="btn" id="dsb">Store the included PDFs in Firebase</button></div></section>
   <section class="card"><h2>Features</h2>${ckb('oem',s.feat.oem,'OEM references')}${ckb('ins',s.feat.ins,'Insights page')}${ckb('qr',s.feat.qr,'Share links and QR codes')}${ckb('pv',s.feat.pv,'Design calculators')}</section>
   <section class="card"><h2>Backups</h2><p class="mut">Get a reminder on the Home screen when a backup is due. Last backup: <b id="bkl">${s.bk&&s.bk.last?new Date(s.bk.last).toLocaleString():'never'}</b>.</p><label>Remind me to back up<select name="bkEvery">${[[0,'Never'],[1,'Every day'],[7,'Every week'],[14,'Every 2 weeks'],[30,'Every month']].map(([n,t])=>`<option value="${n}" ${+(s.bk&&s.bk.every)===n?'selected':''}>${t}</option>`).join('')}</select></label></section>
+  <section class="card"><h2>Weekly digest</h2><p class="mut">${dgOn()?'Emails every admin a summary of the last 7 days: new applications, top contributors, activity and who is waiting for approval.':'Not set up yet. Add the digest template ID to config.js (see README).'} Last sent: <b>${s.dg&&s.dg.last?new Date(s.dg.last).toLocaleString():'never'}</b>.</p><label>When a digest is due<select name="dgMode">${[['ask','Ask me on the Home screen'],['auto','Send automatically when an admin opens the app'],['off','Off']].map(([k,t])=>`<option value="${k}" ${(s.dg&&s.dg.mode||'ask')===k?'selected':''}>${t}</option>`).join('')}</select></label><div class="acts"><button type="button" class="btn" id="dgv">Preview</button><button type="button" class="btn" id="dgx">Send now</button></div></section>
   <section class="card"><h2>Industries</h2><p class="mut">One per line. Used as suggestions when capturing and adding OEM references.</p><textarea name="ind" rows="8">${esc(s.ind)}</textarea></section>
   <button class="btn pri wide">Save settings</button></form>
   <section class="card"><h2>Team</h2><p class="mut">New sign-ups start as Pending and cannot see anything until you set a role. Viewer reads, Editor adds and edits, Admin manages everything.</p><div id="tm"><p class="mut">Loading…</p></div></section>
   <section class="card"><h2>Activity log</h2><p class="mut">Only admins can see this. Newest first.</p><input id="alf" type="search" placeholder="Filter by person or action"><div class="lg" id="ALL"><p class="mut">Loading…</p></div><div class="acts"><button type="button" class="btn" id="alm">Load more</button><button type="button" class="btn bad" id="alc">Clear log</button></div></section>
   <section class="card"><h2>Data</h2><p class="mut">Back up before big changes. Backups from the earlier version import too.</p><div class="acts"><button class="btn" id="ex">Export backup</button><label class="btn">Import backup<input type="file" accept=".json,application/json" hidden id="im"></label><button class="btn bad" id="ca">Delete everything</button></div><h3 style="margin-top:14px">Sample data</h3><p class="mut">Adds 10 example applications with photos and every field filled in, to try the app. They are marked as samples and can be removed in one tap.</p><div class="acts"><button type="button" class="btn" id="sl">Load 10 sample applications</button><button type="button" class="btn bad" id="sr">Remove sample applications</button></div></section>`;
-  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind'),bk:{...S.bk,every:+f.get('bkEvery')},dw:{...S.dw,logo:dwLogo.u||'',logoR:dwLogo.r||1,company:f.get('dw_company').trim(),title:f.get('dw_title').trim(),prefix:f.get('dw_prefix').trim(),rev:f.get('dw_rev').trim(),paper:f.get('dw_paper'),who:f.get('dw_who'),whoText:f.get('dw_whoText').trim(),showLogo:f.has('dw_showLogo'),fit:f.has('dw_fit'),notes:f.has('dw_notes'),noteText:f.get('dw_noteText')},dsc:Object.fromEntries(DSH.map(d=>[d.id,{c:f.get('dsc_'+d.id)||'#888888',a:(+f.get('dsa_'+d.id))/100}]))}};
+  const read=()=>{const f=new FormData($('#AF'));return{...S,pri:f.get('pri'),amb:f.get('amb'),r:+f.get('r'),font:f.get('font'),mode:f.get('mode'),company:f.get('company').trim()||'Vesconite',footer:f.get('footer').trim(),pdfAcc:f.get('pdfAcc'),cover:f.get('cover'),logo:f.has('logo'),pp:+f.get('pp'),secs:f.getAll('secs'),feat:{oem:f.has('oem'),ins:f.has('ins'),qr:f.has('qr'),pv:f.has('pv')},ind:f.get('ind'),bk:{...S.bk,every:+f.get('bkEvery')},dg:{...S.dg,mode:f.get('dgMode')||'ask'},dw:{...S.dw,logo:dwLogo.u||'',logoR:dwLogo.r||1,company:f.get('dw_company').trim(),title:f.get('dw_title').trim(),prefix:f.get('dw_prefix').trim(),rev:f.get('dw_rev').trim(),paper:f.get('dw_paper'),who:f.get('dw_who'),whoText:f.get('dw_whoText').trim(),showLogo:f.has('dw_showLogo'),fit:f.has('dw_fit'),notes:f.has('dw_notes'),noteText:f.get('dw_noteText')},dsc:Object.fromEntries(DSH.map(d=>[d.id,{c:f.get('dsc_'+d.id)||'#888888',a:(+f.get('dsa_'+d.id))/100}]))}};
   const lgShow=()=>{$('#lgp').innerHTML=dwLogo.u?`<img src="${dwLogo.u}" alt="" style="max-height:48px;background:#fff;padding:4px;border-radius:6px;vertical-align:middle"> Uploaded logo is used on drawings and documents.`:'No uploaded logo. The logo file in your repo is used instead.'};lgShow();
   $('#lgf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const u=URL.createObjectURL(f),im=await img(u);URL.revokeObjectURL(u);let m=500,out;do{const k=Math.min(1,m/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);out={u:cv.toDataURL('image/png'),r:cv.width/cv.height};m-=140}while(out.u.length>450000&&m>100);dwLogo=out;lgShow()}catch{alert('That image could not be read.')}e.target.value=''};
   $('#lgx').onclick=()=>{dwLogo={u:'',r:1};lgShow()};
+  $('#dgv').onclick=async()=>{try{alert((await dgBuild()).message)}catch(x){alert(x.message)}};$('#dgx').onclick=async e=>{const n=await dgSend(e.target);if(n)alert(`Digest sent to ${n} admin${n===1?'':'s'}.`)};
   $('#AF').addEventListener('input',()=>apply(read()));
   $$('[data-p]').forEach(b=>b.onclick=()=>{const p=PRE[+b.dataset.p];$('[name=pri]').value=p[1];$('[name=amb]').value=p[2];$('[name=pdfAcc]').value=p[2];apply(read())});
   $('#AF').onsubmit=async e=>{e.preventDefault();try{const n=read();await setDoc(dc('settings','app'),clean(n));log('Changed settings');S=n;try{localStorage.setItem('vi4s',JSON.stringify(S))}catch{}apply(S);alert('Settings saved for everyone.')}catch(x){alert('Could not save: '+x.message)}};
@@ -1224,7 +1262,7 @@ async function admin(v){
 const splOff=()=>{const s=$('#spl');if(!s||s.dataset.x)return;s.dataset.x=1;setTimeout(()=>{s.classList.add('off');setTimeout(()=>s.remove(),500)},Math.max(0,900-performance.now()))};setTimeout(splOff,9000);
 function render(){
   const[p='',id]=location.hash.slice(2).split('/'),v=$('#v');
-  if(!ready&&p!=='share')return;splOff();
+  if(!ready&&p!=='share')return;splOff();if(MG.mu){MG.mu();MG.mu=null}MG.cur=null;document.body.classList.toggle('chatpage',p==='chat');
   apply(S);document.body.classList.toggle('bare',p==='share'||!ME||['pending','verify','blocked'].includes(ROLE));
   $('#ad').hidden=!(ME&&can('del'));
   if(p==='share')return share(v,id);
@@ -1232,9 +1270,9 @@ function render(){
   if(ROLE==='verify')return verify(v);
   if(ROLE==='blocked')return blocked(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
-  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,trophies,admin};
+  const ed=can('edit'),m={'':home,library,new:ed?form:home,edit:ed?form:home,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,trophies,chats,chat,chatnew,admin};
   (m[p]||home)(v,id);
-  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p)));
+  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
   $('.tabs .add').hidden=!ed;scrollTo(0,0);
 }
 const soft=()=>{const p=location.hash.slice(2).split('/')[0];if(['','library','oem','insights'].includes(p))render()};
@@ -1252,12 +1290,169 @@ async function refresh(u){
     m=await getDoc(dc('members',u.uid));await load().catch(()=>0)}
   MYN=m.data().name||'';ROLE=m.data().role;if(!OKR.includes(ROLE)){A=[];O=[]}cacheSave();
 }
+/* ---------- Chats: private messages between staff, about an application or not. Rules keep each chat readable only by the people in it. ---------- */
+const MG={list:[],un:null,mu:null,cur:null,mem:null,first:true,ms:[],blobs:new Map(),pend:null};
+const cnm=()=>MYN||(ME&&ME.email||'').split('@')[0]||'Someone';
+const cUnread=c=>!!c.lastAt&&c.lastBy!==ME.uid&&c.lastAt>((c.seen||{})[ME.uid]||'');
+const cCount=()=>MG.list.filter(cUnread).length;
+const cWho=(c,u)=>(c.mn&&c.mn[u])||'Someone';
+const cTitle=c=>c.name||(c.members.filter(u=>u!==ME.uid).map(u=>cWho(c,u)).join(', ')||'Just you');
+const cTime=t=>{if(!t)return'';const d=new Date(t);return d.toDateString()===new Date().toDateString()?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{day:'numeric',month:'short'})};
+const ini=s=>(String(s).trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('')||'?').toUpperCase();
+const cSize=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const CMAX=8*1048576;
+function cBadge(){const n=cCount(),b=$('#t-chat b');if(b){b.hidden=!n;b.textContent=n>9?'9+':n}try{if(navigator.setAppBadge){n?navigator.setAppBadge(n):navigator.clearAppBadge()}}catch{}}
+function toast(t,href){const o=document.createElement('div');o.className='tst';o.textContent=t;o.onclick=()=>{o.remove();if(href)location.hash=href};document.body.appendChild(o);setTimeout(()=>o.remove(),6000)}
+function sheet(html,wire){const o=document.createElement('div');o.className='cmo';o.innerHTML=`<div>${html}</div>`;document.body.appendChild(o);const x=()=>o.remove();o.onclick=e=>{if(e.target===o)x()};wire&&wire(o,x);return x}
+function chatStart(){
+  if(MG.un||!ME||!db||!OKR.includes(ROLE))return;MG.first=true;
+  MG.un=onSnapshot(query(col('chats'),where('members','array-contains',ME.uid)),snap=>{
+    const old=new Map(MG.list.map(c=>[c.id,c.lastAt]));
+    MG.list=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.lastAt||b.created||'').localeCompare(a.lastAt||a.created||''));
+    if(!MG.first)MG.list.forEach(c=>{if(cUnread(c)&&c.id!==MG.cur&&old.get(c.id)!==c.lastAt)toast(`${cWho(c,c.lastBy)}${c.name?' in '+c.name:''}: ${c.lastText||''}`,'#/chat/'+c.id)});
+    MG.first=false;cBadge();
+    const p=location.hash.slice(2).split('/')[0];
+    if(p==='chats')chats($('#v'));else if(p==='chat'&&MG.cur){chatHead();cSeen()}else if(p===''&&$('#cun'))$('#cun').hidden=!cCount();
+  },e=>console.warn('chats',e.message));
+}
+function chatStop(){if(MG.un)MG.un();MG.un=null;MG.list=[];MG.first=true;cBadge()}
+/* attachments are stored as base64 chunks under the chat itself, so only people in the chat can read them */
+async function cPut(cid,blob){
+  const s=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error('Could not read the file'));r.readAsDataURL(blob)}),id=crypto.randomUUID(),n=Math.ceil(s.length/CH);
+  await Promise.all(Array.from({length:n},(_,i)=>setDoc(doc(db,'chats',cid,'files',`${id}_${i}`),{by:ME.uid,d:s.slice(i*CH,(i+1)*CH)})));return{id,n}}
+async function cGet(cid,a){
+  if(MG.blobs.has(a.id))return MG.blobs.get(a.id);
+  const parts=await Promise.all([...Array(a.n).keys()].map(i=>getDoc(doc(db,'chats',cid,'files',`${a.id}_${i}`)))),b=await (await fetch(parts.map(d=>d.data().d).join(''))).blob();MG.blobs.set(a.id,b);return b}
+async function cPrep(file){   /* photos are shrunk before sending; returns {blob,name,type,th} */
+  if(!/^image\/(jpeg|png|webp|heic|heif|gif)$/i.test(file.type)||/gif/i.test(file.type))return{blob:file,name:file.name,type:file.type||'application/octet-stream'};
+  try{const u=URL.createObjectURL(file),im=await img(u);URL.revokeObjectURL(u);
+    const mk=(m,q)=>{const k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)};
+    const big=mk(1600,.82),th=mk(240,.6);return{blob:await (await fetch(big)).blob(),name:file.name.replace(/\.\w+$/,'')+'.jpg',type:'image/jpeg',th}}
+  catch{return{blob:file,name:file.name,type:file.type||'application/octet-stream'}}}
+async function cSend(cid,text,sys,file){
+  const now=new Date().toISOString(),m={from:ME.uid,n:cnm(),text:text||'',t:now};if(sys)m.sys=true;
+  if(file){if(file.blob.size>CMAX)throw new Error(`That file is ${cSize(file.blob.size)}. The limit is ${cSize(CMAX)}.`);const f=await cPut(cid,file.blob);m.att={id:f.id,n:f.n,name:file.name,type:file.type,size:file.blob.size};if(file.th)m.att.th=file.th}
+  await setDoc(doc(db,'chats',cid,'msgs',crypto.randomUUID()),m);
+  const last=text?text.slice(0,120):m.att?(m.att.type.startsWith('image/')?'📷 Photo':'📎 '+m.att.name.slice(0,80)):'';
+  await updateDoc(dc('chats',cid),{lastAt:now,lastBy:ME.uid,lastText:last,['seen.'+ME.uid]:now});
+}
+function cSeen(){
+  const c=MG.list.find(x=>x.id===MG.cur);if(!c||!cUnread(c)||document.hidden)return;
+  const now=new Date().toISOString();updateDoc(dc('chats',c.id),{['seen.'+ME.uid]:c.lastAt>now?c.lastAt:now}).catch(()=>{});
+}
+async function cMembers(){
+  if(!MG.mem)try{const q=await getDocs(col('members'));MG.mem=q.docs.map(d=>({id:d.id,...d.data()})).filter(m=>OKR.includes(m.role)).map(m=>({id:m.id,name:m.name||(m.email||'').split('@')[0],email:m.email||''}))}catch{MG.mem=[]}
+  return MG.mem.filter(m=>m.id!==ME.uid);
+}
+async function cEnsure(sel,name,a){   /* open the matching chat or create it; sel = ids of the other people */
+  const all=await cMembers(),ids=[ME.uid,...sel],key=[...ids].sort().join(),aid=a?a.id:'';
+  let c=MG.list.find(x=>(x.appId||'')===aid&&[...x.members].sort().join()===key&&!x.name);
+  if(!c){const mn={[ME.uid]:cnm()};all.forEach(m=>{if(sel.includes(m.id))mn[m.id]=m.name});const id=crypto.randomUUID(),now=new Date().toISOString();
+    const d={members:ids,mn,name:sel.length>1?(name||'').trim().slice(0,60):'',appId:aid,appName:a?a.name:'',by:ME.uid,created:now,seen:{[ME.uid]:now}};await setDoc(dc('chats',id),d);c={id,...d}}
+  return c}
+function chats(v){
+  const L=MG.list;
+  v.innerHTML=`<div class="chh"><h1>Chats</h1><a class="btn pri" href="#/chatnew">New chat</a></div>${L.length?`<div class="cl">${L.map(c=>{const t=cTitle(c),u=cUnread(c);return `<a class="row crow${u?' un':''}" href="#/chat/${c.id}"><div class="av${c.members.length>2||c.name?' gr':''}">${esc(ini(t))}</div><div><strong>${esc(t)}</strong>${c.appName?`<small class="mut">About: ${esc(c.appName)}</small>`:''}<small>${c.lastAt?`${c.lastBy===ME.uid?'You: ':c.members.length>2?esc(cWho(c,c.lastBy).split(' ')[0])+': ':''}${esc(c.lastText||'')}`:'No messages yet'}</small></div><div class="ct">${esc(cTime(c.lastAt))}${u?'<i class="dot"></i>':''}</div></a>`}).join('')}</div>`:'<p class="empty">No chats yet. Start one here, or open an application and tap Message.</p>'}<p class="mut">Chats are private to the people in them. Admins cannot read them in the app.</p>`;
+}
+const cPick=(list,sel,box,onch)=>{const q=(box.q&&box.q.value||'').toLowerCase(),l=list.filter(m=>!q||(m.name+' '+m.email).toLowerCase().includes(q));
+  box.el.innerHTML=l.length?l.map(m=>`<button type="button" class="row pick${sel.has(m.id)?' on':''}" data-u="${m.id}"><div class="av">${esc(ini(m.name))}</div><div><strong>${esc(m.name)}</strong><small>${esc(m.email)}</small></div><span class="tick">${sel.has(m.id)?'✓':'+'}</span></button>`).join(''):'<p class="mut">Nobody found.</p>';
+  $$('[data-u]',box.el).forEach(b=>b.onclick=()=>{const u=b.dataset.u;sel.has(u)?sel.delete(u):sel.add(u);cPick(list,sel,box,onch);onch&&onch()})};
+async function chatnew(v,appId){
+  const a=appId?A.find(x=>x.id===appId):null,sel=new Set();
+  v.innerHTML='<p class="empty">Loading…</p>';const all=await cMembers();
+  v.innerHTML=`<a class="back" href="#/${a?'app/'+a.id:'chats'}">← ${a?'Application':'Chats'}</a><h1>New chat</h1>${a?`<div class="card cab2"><small class="mut">About this application</small><b>${esc(a.name)}</b> <span class="mut">${esc(a.industry||'')}</span></div>`:''}
+  <label>To<input id="cq" type="search" placeholder="Search people"></label><div id="cp" class="cpk"></div><p class="mut" id="cs">Choose one person, or several for a group chat.</p>
+  <label id="cgl" hidden>Group name (optional)<input id="cg" maxlength="60" placeholder="e.g. Pump project"></label>
+  <label>Message<textarea id="cm" rows="3" maxlength="2000" placeholder="${a?'Write about this application…':'Write a message…'}"></textarea></label>
+  <div class="acts"><button class="btn pri" id="cgo">Send</button></div>`;
+  const box={el:$('#cp'),q:$('#cq')},onch=()=>{$('#cgl').hidden=sel.size<2;$('#cs').textContent=sel.size?`${sel.size} selected${sel.size>1?' (group chat)':''}`:'Choose one person, or several for a group chat.'};
+  cPick(all,sel,box,onch);$('#cq').oninput=()=>cPick(all,sel,box,onch);
+  $('#cgo').onclick=async()=>{const text=$('#cm').value.trim();if(!sel.size)return alert('Choose at least one person.');if(!text)return alert('Write a message first.');
+    const b=$('#cgo'),done=busy(b,'Sending…');
+    try{const c=await cEnsure([...sel],$('#cg').value,a);await cSend(c.id,text);done();location.hash='#/chat/'+c.id}catch(x){done();alert('Could not send: '+(x.message||x))}};
+}
+function chatHead(){
+  const c=MG.list.find(x=>x.id===MG.cur),h=$('#cht');if(!h)return;
+  if(!c){h.innerHTML=MG.first?'<b>Loading…</b>':'<b>Chat not found</b><small>It may not exist, or you are not in it.</small>';return}
+  h.innerHTML=`<b>${esc(cTitle(c))}</b><small>${esc(c.members.map(u=>u===ME.uid?'You':cWho(c,u)).join(', '))}</small>${c.appName?`<a class="lnk" href="#/app/${c.appId}">About: ${esc(c.appName)}</a>`:''}`;
+}
+function drawMsgs(){
+  const el=$('#mg');if(!el)return;const c=MG.list.find(x=>x.id===MG.cur),near=innerHeight+scrollY>=document.body.scrollHeight-160||!el.dataset.d;let day='',last='';
+  el.innerHTML=MG.ms.length?MG.ms.map(m=>{const d=new Date(m.t),ds=d.toDateString(),h=ds!==day?`<div class="mday">${esc(d.toLocaleDateString([],{weekday:'long',day:'numeric',month:'long'}))}</div>`:'';day=ds;
+    if(m.sys){last='';return h+`<div class="msys">${esc(m.text)}</div>`}
+    const me=m.from===ME.uid,nm=!me&&c&&c.members.length>2&&last!==m.from?`<small>${esc(m.n||'')}</small>`:'';last=m.from;
+    if(m.del)return h+`<div class="mb${me?' me':''} gone">${nm}This message was deleted<time>${esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}</time></div>`;
+    const a=m.att,at=a?(a.th?`<img class="ai" data-a="${m.id}" src="${a.th}" alt="${esc(a.name)}">`:`<button type="button" class="afile" data-a="${m.id}"><span>${/pdf/i.test(a.type)?'PDF':'FILE'}</span><b>${esc(a.name)}</b><small>${esc(cSize(a.size||0))}</small></button>`):'';
+    return h+`<div class="mb${me?' me':''}">${nm}${at}${m.text?`<div class="mt">${esc(m.text)}</div>`:''}<time>${m.edited?'edited · ':''}${esc(d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}${me?` <button type="button" class="mx" data-x="${m.id}" aria-label="Message options">⋯</button>`:''}</time></div>`}).join(''):'<p class="mut" style="text-align:center">No messages yet.</p>';
+  el.dataset.d=1;if(near)scrollTo(0,document.body.scrollHeight);
+}
+async function cOpenAtt(m){
+  const a=m.att;if(!a)return;let b;try{b=await cGet(MG.cur,a)}catch(x){return alert('Could not load the file: '+(x.message||x))}
+  if(/^image\//.test(a.type)){const u=URL.createObjectURL(b);sheet(`<img class="aview" src="${u}" alt=""><div class="acts"><button class="btn pri" id="asv">Save / share</button><button class="btn" id="ax">Close</button></div>`,(o,x)=>{$('#ax',o).onclick=()=>{URL.revokeObjectURL(u);x()};$('#asv',o).onclick=()=>deliver(b,a.name,{noChat:true})})}
+  else deliver(b,a.name,{noChat:true});
+}
+function cMsgMenu(m){
+  const c=MG.list.find(x=>x.id===MG.cur);
+  sheet(`<h2>Message</h2><div class="acts" style="flex-direction:column;align-items:stretch"><button class="btn" id="me">Edit</button><button class="btn bad" id="md">Delete</button><button class="btn" id="mc">Cancel</button></div>`,(o,x)=>{
+    $('#mc',o).onclick=x;
+    $('#me',o).onclick=()=>{x();sheet(`<h2>Edit message</h2><textarea id="et" rows="4" maxlength="2000">${esc(m.text||'')}</textarea><div class="acts"><button class="btn pri" id="es">Save</button><button class="btn" id="ec">Cancel</button></div>`,(o2,x2)=>{
+      $('#ec',o2).onclick=x2;$('#es',o2).onclick=async()=>{const t=$('#et',o2).value.trim();if(!t&&!m.att)return alert('A message cannot be empty. Delete it instead.');const done=busy($('#es',o2),'Saving…');
+        try{await updateDoc(doc(db,'chats',MG.cur,'msgs',m.id),{text:t,edited:true});if(c&&c.lastAt===m.t)await updateDoc(dc('chats',MG.cur),{lastText:t.slice(0,120)||(m.att?'📎 '+m.att.name.slice(0,80):'')});x2()}catch(e){done();alert('Could not save: '+(e.message||e))}}})};
+    $('#md',o).onclick=async()=>{if(!confirm('Delete this message for everyone in the chat?'))return;
+      try{await updateDoc(doc(db,'chats',MG.cur,'msgs',m.id),{del:true,text:'',att:null,edited:false});
+        if(m.att)for(let i=0;i<m.att.n;i++)deleteDoc(doc(db,'chats',MG.cur,'files',`${m.att.id}_${i}`)).catch(()=>{});
+        if(c&&c.lastAt===m.t)await updateDoc(dc('chats',MG.cur),{lastText:'Message deleted'});x()}catch(e){alert('Could not delete: '+(e.message||e))}}})
+}
+function cOptions(){
+  const id=MG.cur,c=MG.list.find(x=>x.id===id);if(!c)return;
+  sheet(`<h2>${esc(cTitle(c))}</h2><div class="acts" style="flex-direction:column;align-items:stretch"><button class="btn" id="oa">Add people</button>${c.members.length>2||c.name?'<button class="btn" id="orn">Rename group</button>':''}<button class="btn bad" id="ol">Leave chat</button><button class="btn" id="oc">Close</button></div>`,(o,x)=>{
+    $('#oc',o).onclick=x;$('#oa',o).onclick=()=>{x();cAdd()};
+    if($('#orn',o))$('#orn',o).onclick=async()=>{const n=prompt('Group name',c.name||'');if(n===null)return;x();try{await updateDoc(dc('chats',id),{name:n.trim().slice(0,60)})}catch(e){alert(e.message)}};
+    $('#ol',o).onclick=async()=>{if(!confirm('Leave this chat? You will no longer see it or its messages.'))return;
+      try{await cSend(id,`${cnm()} left the chat`,true);await updateDoc(dc('chats',id),{members:arrayRemove(ME.uid)});x();location.hash='#/chats'}catch(e){alert('Could not leave: '+(e.message||e))}}})
+}
+async function cAdd(){
+  const id=MG.cur,c=MG.list.find(x=>x.id===id);if(!c)return;const all=(await cMembers()).filter(m=>!c.members.includes(m.id)),sel=new Set();
+  sheet(`<h2>Add people</h2><p class="mut">They will be able to read the earlier messages in this chat.</p>${all.length?`<input id="aq" type="search" placeholder="Search people"><div id="ap" class="cpk"></div>`:'<p class="empty">Everyone is already in this chat.</p>'}<div class="acts"><button class="btn pri" id="aok"${all.length?'':' hidden'}>Add</button><button class="btn" id="ax">Close</button></div>`,(o,x)=>{
+    const box={el:$('#ap',o),q:$('#aq',o)};if(all.length){cPick(all,sel,box);$('#aq',o).oninput=()=>cPick(all,sel,box)}
+    $('#ax',o).onclick=x;
+    $('#aok',o).onclick=async()=>{if(!sel.size)return;const b=$('#aok',o),done=busy(b,'Adding…'),add=all.filter(m=>sel.has(m.id)),up={members:arrayUnion(...add.map(m=>m.id))};add.forEach(m=>up['mn.'+m.id]=m.name);
+      try{await updateDoc(dc('chats',id),up);await cSend(id,`${cnm()} added ${add.map(m=>m.name).join(', ')}`,true);x()}catch(e){done();alert('Could not add: '+(e.message||e))}}})
+}
+function chat(v,id){
+  MG.cur=id;MG.ms=[];MG.pend=null;
+  v.innerHTML=`<div class="chv"><div class="chb"><a class="back" href="#/chats" aria-label="Back to chats">←</a><div class="cht" id="cht"></div><button class="btn" id="cad" type="button">Options</button></div><div class="msgs" id="mg"><p class="mut" style="text-align:center">Loading…</p></div><div class="pnd" id="pnd" hidden></div><form class="cmp" id="cf"><label class="btn attb" aria-label="Attach a file">📎<input type="file" id="cfi" hidden></label><textarea id="ci" rows="1" maxlength="2000" placeholder="Message"></textarea><button class="btn pri" id="csd">Send</button></form></div>`;
+  chatHead();cSeen();
+  MG.mu=onSnapshot(query(collection(db,'chats',id,'msgs'),orderBy('t','desc'),limit(200)),snap=>{MG.ms=snap.docs.map(d=>({id:d.id,...d.data()})).reverse();drawMsgs();cSeen()},e=>{const m=$('#mg');if(m)m.innerHTML=`<p class="note bad">Could not open this chat: ${esc(e.message)}. Check that the latest firestore.rules are published.</p>`});
+  const ci=$('#ci'),grow=()=>{ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,120)+'px'};ci.oninput=grow;
+  const showP=()=>{const p=MG.pend,el=$('#pnd');el.hidden=!p;if(p)el.innerHTML=`${p.th?`<img src="${p.th}" alt="">`:'<span class="pf">FILE</span>'}<div><b>${esc(p.name)}</b><small>${esc(cSize(p.blob.size))}</small></div><button type="button" class="btn" id="pdx" aria-label="Remove attachment">✕</button>`;if(p)$('#pdx').onclick=()=>{MG.pend=null;showP()}};
+  $('#cfi').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;MG.pend=await cPrep(f);if(MG.pend.blob.size>CMAX){alert(`That file is ${cSize(MG.pend.blob.size)}. The limit is ${cSize(CMAX)}.`);MG.pend=null}showP()};
+  const go=async()=>{const t=ci.value.trim(),f=MG.pend;if(!t&&!f)return;const b=$('#csd'),done=busy(b,f?'Uploading…':'Sending…');
+    try{await cSend(id,t,false,f);ci.value='';grow();MG.pend=null;showP()}catch(x){alert('Could not send: '+(x.message||x))}done()};
+  $('#cf').onsubmit=e=>{e.preventDefault();go()};
+  ci.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&matchMedia('(pointer:fine)').matches){e.preventDefault();go()}};
+  $('#cad').onclick=cOptions;
+  $('#mg').onclick=e=>{const x=e.target.closest('[data-x]'),a=e.target.closest('[data-a]');const m=MG.ms.find(z=>z.id===(x?x.dataset.x:a&&a.dataset.a));if(!m)return;x?cMsgMenu(m):cOpenAtt(m)};
+}
+/* "Send to chat" for anything the app generates (PDFs, drawings, data sheets) */
+async function cShare(blob,name){
+  if(blob.size>CMAX)return alert(`That file is ${cSize(blob.size)}. Chats take files up to ${cSize(CMAX)}.`);
+  const all=await cMembers(),sel={c:null,u:null};
+  sheet(`<h2>Send to chat</h2><p class="mut">${esc(name)} · ${esc(cSize(blob.size))}</p><input id="sq" type="search" placeholder="Search chats and people"><div id="sl" class="cpk"></div><label>Note (optional)<input id="sn" maxlength="300"></label><div class="acts"><button class="btn pri" id="sok" disabled>Send</button><button class="btn" id="sx">Cancel</button></div>`,(o,x)=>{
+    const draw=()=>{const q=($('#sq',o).value||'').toLowerCase(),cs=MG.list.filter(c=>!q||cTitle(c).toLowerCase().includes(q)),ps=all.filter(m=>!q||(m.name+' '+m.email).toLowerCase().includes(q));
+      $('#sl',o).innerHTML=(cs.length?'<small class="mut">Chats</small>'+cs.map(c=>`<button type="button" class="row pick${sel.c===c.id?' on':''}" data-c="${c.id}"><div class="av${c.members.length>2||c.name?' gr':''}">${esc(ini(cTitle(c)))}</div><div><strong>${esc(cTitle(c))}</strong>${c.appName?`<small>About: ${esc(c.appName)}</small>`:''}</div><span class="tick">${sel.c===c.id?'✓':'+'}</span></button>`).join(''):'')+(ps.length?'<small class="mut">New chat with</small>'+ps.map(m=>`<button type="button" class="row pick${sel.u===m.id?' on':''}" data-p="${m.id}"><div class="av">${esc(ini(m.name))}</div><div><strong>${esc(m.name)}</strong><small>${esc(m.email)}</small></div><span class="tick">${sel.u===m.id?'✓':'+'}</span></button>`).join(''):'');
+      $$('[data-c]',o).forEach(b=>b.onclick=()=>{sel.c=b.dataset.c;sel.u=null;$('#sok',o).disabled=false;draw()});$$('[data-p]',o).forEach(b=>b.onclick=()=>{sel.u=b.dataset.p;sel.c=null;$('#sok',o).disabled=false;draw()})};
+    draw();$('#sq',o).oninput=draw;$('#sx',o).onclick=x;
+    $('#sok',o).onclick=async()=>{const b=$('#sok',o),done=busy(b,'Sending…');
+      try{const c=sel.c?MG.list.find(z=>z.id===sel.c):await cEnsure([sel.u],'',null);await cSend(c.id,$('#sn',o).value.trim(),false,{blob,name,type:blob.type||'application/octet-stream'});x();toast(`Sent to ${cTitle(c)}. Tap to open.`,'#/chat/'+c.id)}
+      catch(e){done();alert('Could not send: '+(e.message||e))}}})
+}
 async function boot(u){
   ME=u;
-  if(!u){ROLE=null;A=[];O=[];try{localStorage.removeItem('vi4d')}catch{}ready=true;render();return}
+  if(!u){chatStop();ROLE=null;A=[];O=[];try{localStorage.removeItem('vi4d')}catch{}ready=true;render();return}
   const c=cacheGet();
-  if(c&&c.uid===u.uid&&OKR.includes(c.role)){ROLE=c.role;MYN=c.nm||'';A=c.A||[];O=c.O||[];ready=true;render();notifCheck();refresh(u).then(()=>{soft();notifCheck()}).catch(()=>{});return}   /* show cached data instantly, refresh in the background */
-  ROLE=null;await refresh(u);ready=true;render();notifCheck();
+  if(c&&c.uid===u.uid&&OKR.includes(c.role)){ROLE=c.role;MYN=c.nm||'';A=c.A||[];O=c.O||[];ready=true;render();notifCheck();chatStart();refresh(u).then(()=>{soft();notifCheck();chatStart()}).catch(()=>{});return}   /* show cached data instantly, refresh in the background */
+  ROLE=null;await refresh(u);ready=true;render();notifCheck();chatStart();
 }
 addEventListener('hashchange',render);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ME&&['admin','editor','viewer'].includes(ROLE))load().catch(()=>{})});
