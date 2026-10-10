@@ -50,7 +50,7 @@ fieldset{border:1px solid var(--line);border-radius:12px;margin:0 0 18px;padding
 @media(prefers-reduced-motion:no-preference){.btn,.row{transition:border-color .15s,background .15s}}
 @media(max-width:420px){.g2{grid-template-columns:1fr}}
 body.bare .tabs{display:none}body.bare main{padding-bottom:40px}.tabs [hidden],#ad[hidden]{display:none}
-.brand img{height:38px;width:auto;display:block}[data-t=dark] .brand img{background:#fff;padding:3px 8px;border-radius:6px}
+.brand img{height:36px;width:auto;flex:none;display:block;border-radius:8px;background:#000}.brand span{overflow:hidden;text-overflow:ellipsis}
 .hb{display:flex;gap:8px}#ad{height:40px;padding:0 13px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font:600 14px var(--f2)}
 details.card summary{list-style:none;cursor:pointer}details.card summary::-webkit-details-marker{display:none}details.card form{margin-top:14px}
 #qc{display:inline-block;background:#fff;padding:12px;border-radius:10px;margin-bottom:10px}
@@ -68,7 +68,7 @@ html,body{overscroll-behavior-y:none}
 .ovb button{min-width:42px;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:600 14px var(--f2)}
 .ovs{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom;padding:10px}.ovs svg{display:block;box-shadow:0 2px 12px rgba(0,0,0,.25)}
 .note-box{margin:4px 0 12px}svg.vd .k6{stroke-dasharray:3 1.5}
-.top{gap:8px}.brand{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;font-size:17px}.brand img{max-width:100%}.hb{flex:none}
+.top{gap:8px}.brand{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;font-size:17px}.hb{flex:none}
 @media(max-width:420px){.brand{font-size:15px;gap:8px}.brand b{width:26px;height:26px;font-size:13px}#ad{padding:0 10px}}
 #ad.alert{border-color:var(--bad);color:var(--bad)}
 .lg{display:grid;gap:6px;margin:10px 0}.lr{padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}.lr small{display:block;color:var(--mut)}.lr.nw{border-color:var(--amb);box-shadow:inset 3px 0 0 var(--amb)}

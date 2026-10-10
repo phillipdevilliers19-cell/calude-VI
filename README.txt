@@ -1,3 +1,8 @@
+NEW LOGOS (this round)
+Upload ALL of these to your repo: logo-full.png, vi-mark.png (new), vesco-intelligence-logo-header.png, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png, favicon-32.png, index.html, manifest.json, style.css, app.js.
+On phones, remove the home-screen icon and add it again to see the new icon. firestore.rules does NOT need republishing.
+If you uploaded a custom logo in Admin, remove it so the new one is used on PDFs and drawings.
+
 REVIEW, HISTORY, PERMISSIONS, PERSONAL THEME
 - REVIEW BEFORE PUBLISHING: Admin > Permissions > "Review new applications" (Nobody / viewers / viewers and editors; default viewers). New applications from those people are saved as "In review": only the author and admins can see them. Admins approve or reject them in Admin > Overview > Awaiting review, or on the application itself. A rejection carries a note; the author edits and saves to send it again. Note: this hides them in the app. They are not hidden from a determined person using the database directly, because Firestore cannot filter a list by who is allowed to see each item.
 - CHANGE HISTORY: every save is recorded (who, when, which fields, old and new text). Application page > History. People who can edit that application can restore an earlier version (text only, not photos). History is kept while the application exists.
