@@ -457,7 +457,7 @@ function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)
 
 /* ---------- Portfolio PDF (colours, logo, sections, footer all come from Admin settings) ---------- */
 const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png?v5');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
+const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png?v7');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
 const logoData=async()=>S.logo?(S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:repoLogo()):null;
 /* ---------- Customer portfolio: searchable picker and a designed PDF proposal ---------- */
 const savePf=()=>{try{localStorage.setItem('vi4p',JSON.stringify(P))}catch{}};
@@ -553,7 +553,7 @@ function portfolio(v){
 function tools(v){
   P=P.filter(id=>A.some(a=>a.id===id));
   v.innerHTML=`<h1>Tools</h1>
-  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a><a class="row" href="#/freezer" style="margin-top:8px"><div class="th">❄</div><div><strong>Freezer shrink time</strong><small>How long to cool a bush so it slides into the housing</small></div><span class="chip ok">Open</span></a></section>':''}
+  ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a><a class="row" href="#/freezer" style="margin-top:8px"><div class="th">❄</div><div><strong>Freezer shrink time</strong><small>How long to cool a bush so it slides into the housing</small></div><span class="chip ok">Open</span></a><a class="row" href="#/fits" style="margin-top:8px"><div class="th">⌀</div><div><strong>Fits and tolerances</strong><small>Shaft, housing and bush tolerances: bore closure and assembled clearance</small></div><span class="chip ok">Open</span></a></section>':''}
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><div class="g2"><label>Your name<input id="myn" value="${esc(MYN)}" maxlength="60" placeholder="Full name"></label><div style="display:flex;align-items:flex-end"><button class="btn" id="mys" type="button">Save name</button></div></div><label style="margin-top:12px">Appearance on my login<select id="myt"><option value="auto">Match my device</option><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="mut">Remembered for your account, on every device you sign in on.</p><button class="btn" id="so" style="margin-top:12px">Sign out</button></section>`;
@@ -1138,6 +1138,80 @@ function freezer(v){
   cv();
 }
 
+/* ---------- Fits and tolerances: every extreme combination of shaft, housing, bush OD and bush ID (or wall) ---------- */
+const FTV={};   /* remembered inputs, kept in millimetres, signed deviations */
+function fits(v){
+  let im=false;try{im=localStorage.getItem('vi4u_fit')==='i'}catch{}
+  let byW=FTV.mode==='w';
+  const g=id=>{const e=$('#'+id);if(!e)return NaN;const x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return UC[e.dataset.q].to(x)};
+  const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
+  const dL=(x,d=3)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm';
+  const n=(id,l,ph='')=>`<label>${l} <span class="mut" data-u="L">${im?'in':'mm'}</span><input id="${id}" type="number" inputmode="decimal" step="any" placeholder="${ph}" data-q="L"></label>`;
+  const blk=(t,p,nl,hint)=>`<h2 style="margin-top:14px">${t}</h2>${n(p+'n',nl)}<div class="g2" style="margin-top:8px">${n(p+'u','Upper deviation (+)',hint[0])}${n(p+'l','Lower deviation (−)',hint[1])}</div>`;
+  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Fits and tolerances</h1>
+  <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div>
+  <p class="mut">Enter the shaft, the housing bore and the bush with their tolerances. The tool works through every combination of the extremes (shaft largest or smallest, housing largest or smallest, bush OD and ID or wall largest or smallest) and shows the press fit, the bore closure and the assembled clearance for each, then the tightest case, the average case and the loosest case.</p>
+  <form class="card" id="FF">
+  <p class="mut" style="margin:0">Enter each tolerance as a deviation from the nominal size, with its sign. For example a 50 mm shaft h7 is upper 0, lower −0.025, and a 50 mm housing H7 is upper +0.025, lower 0. A plain ±0.05 is upper 0.05, lower −0.05.</p>
+  ${blk('Shaft','fs','Shaft nominal diameter',['0','-0.025'])}
+  ${blk('Housing bore','fh','Housing nominal diameter',['0.025','0'])}
+  ${blk('Bush outside diameter (OD)','fo','Bush OD nominal',['0.1','0.05'])}
+  <h2 style="margin-top:14px">Bush inside</h2>
+  <div class="seg" id="MD"><button type="button" data-m="i" class="${byW?'':'on'}">Inside diameter</button><button type="button" data-m="w" class="${byW?'on':''}">Wall thickness</button></div>
+  ${n('fin','<span id="fnl"></span>')}<div class="g2" style="margin-top:8px">${n('fiu','Upper deviation (+)','0.1')}${n('fil','Lower deviation (−)','0')}</div>
+  </form><div id="FO"></div>`;
+  const lab=()=>{$('#fnl').textContent=byW?'Wall thickness nominal':'Bush ID nominal (before fitting)';$$('#MD button').forEach(b=>b.classList.toggle('on',(b.dataset.m==='w')===byW))};lab();
+  Object.entries(FTV).forEach(([k,x])=>{const e=$('#'+k);if(!e||k==='mode')return;if(e.dataset.q&&x!=='')put(k,+x);else e.value=x});
+  $('#FF').onsubmit=e=>e.preventDefault();
+  const ids=['fsn','fsu','fsl','fhn','fhu','fhl','fon','fou','fol','fin','fiu','fil'];
+  const cv=()=>{
+    FTV.mode=byW?'w':'i';ids.forEach(id=>{const e=$('#'+id);FTV[id]=e.value===''?'':String(+g(id).toFixed(6))});
+    const O=$('#FO'),bad=m=>{O.innerHTML=m},val=ids.map(g);
+    if(ids.some((id,i)=>['fsn','fhn','fon','fin'].includes(id)&&!(val[i]>0)))return bad('<p class="mut">Enter the nominal sizes for the shaft, housing bore, bush outside diameter and bush '+(byW?'wall thickness':'inside diameter')+'. Leave a deviation empty if it is zero.</p>');
+    const [sn,su,sl,hn,hu,hl,on,ou,ol,inn,iu,il]=val.map((x,i)=>Number.isFinite(x)?x:0);
+    if(su<sl||hu<hl||ou<ol||iu<il)return bad('<p class="note bad">The upper deviation must be larger than or equal to the lower deviation (for example +0.025 and 0, or 0 and −0.025).</p>');
+    const S=[sn+sl,sn+su],H=[hn+hl,hn+hu],OD=[on+ol,on+ou],IN=[inn+il,inn+iu];
+    const calc=(s,h,od,x)=>{const w=byW?x:(od-x)/2,id=byW?od-2*x:x,itf=Math.max(0,od-h),clo=itf*s/h,idA=id-clo;return{s,h,od,id,w,itf,clo,idA,cl:idA-s,loose:od<=h}};
+    if(OD[0]<=0||(byW?OD[0]-2*IN[1]<=0:IN[1]>=OD[0]))return bad(`<p class="note bad">${byW?'Twice the wall thickness':'The inside diameter'} must be less than the bush outside diameter in every case.</p>`);
+    if(byW&&IN[0]<=0)return bad('<p class="note bad">The wall thickness must be larger than zero in every case.</p>');
+    const all=[];S.forEach((s,a)=>H.forEach((h,b)=>OD.forEach((od,c)=>IN.forEach((x,d)=>all.push({...calc(s,h,od,x),k:[a,b,c,d]})))));
+    const mid=a=>(a[0]+a[1])/2,avg=calc(mid(S),mid(H),mid(OD),mid(IN));
+    const sorted=[...all].sort((p,q)=>p.cl-q.cl),tight=sorted[0],big=sorted[sorted.length-1];
+    const c3=[['Tightest (worst case)',tight],['Average',avg],['Biggest clearance',big]];
+    const clr=x=>x.cl<0?'color:var(--bad)':'';
+    const ck=[];
+    if(tight.cl<0)ck.push(['bad',`In the tightest case the bush is ${dL(-tight.cl)} ${uL()} too big for the shaft after fitting (clearance ${dL(tight.cl)}). The shaft will not turn freely. Open up the bush ID, or tighten the housing and shaft tolerances.`]);
+    else if(tight.cl===0)ck.push(['warn','In the tightest case there is no clearance at all.']);
+    else ck.push(['ok',`Even in the tightest case there is ${dL(tight.cl)} ${uL()} clearance after fitting.`]);
+    const nl=all.filter(x=>x.loose).length;
+    if(nl===all.length)ck.push(['warn','The bush is never larger than the housing, so there is no press fit in any case. The bush must be secured another way (bonding, keeper plate, screws).']);
+    else if(nl)ck.push(['warn',`In ${nl} of ${all.length} cases the bush is not larger than the housing, so there is no press fit and no closure. The bush may not grip the housing in those cases.`]);
+    const negN=all.filter(x=>x.cl<0).length;if(negN&&negN<all.length)ck.push(['warn',`${negN} of ${all.length} combinations give negative clearance.`]);
+    const w=[...all.map(x=>x.w)];ck.push(['ok',`Wall thickness ranges from ${dL(Math.min(...w))} to ${dL(Math.max(...w))} ${uL()}.`]);
+    const row=(l,f)=>`<tr><td>${l}</td>${c3.map(([,x])=>`<td>${f(x)}</td>`).join('')}</tr>`;
+    const hdr=['Tightest','Average','Biggest'];
+    const cmp=`<div style="overflow-x:auto"><table class="tbl"><tr><th></th>${hdr.map(h=>`<th>${h}</th>`).join('')}</tr>
+      ${row('Shaft Ø',x=>dL(x.s))}${row('Housing Ø',x=>dL(x.h))}${row('Bush OD',x=>dL(x.od))}${row('Bush ID (free)',x=>dL(x.id))}${row('Wall',x=>dL(x.w))}
+      ${row('Interference fit',x=>x.loose?'none':dL(x.itf))}${row('Bore closure',x=>x.loose?'0':dL(x.clo))}${row('ID after fitting',x=>dL(x.idA))}
+      ${row('<b>Assembled clearance</b>',x=>`<b style="${clr(x)}">${dL(x.cl)}</b>`)}</table></div>`;
+    const rows=sorted.map((x,i)=>{const t=x===tight?' tightest':x===big?' biggest':'';return `<tr ${t?'style="font-weight:700"':''}><td>${i+1}${t}</td><td style="${clr(x)}"><b>${dL(x.cl)}</b></td><td>${dL(x.s)}</td><td>${dL(x.h)}</td><td>${dL(x.od)}</td><td>${dL(x.id)}</td><td>${x.loose?'none':dL(x.itf)}</td><td>${x.loose?'0':dL(x.clo)}</td></tr>`}).join('');
+    const rng=(f)=>{const a=all.map(f);return `${dL(Math.min(...a))} to ${dL(Math.max(...a))}`};
+    O.innerHTML=`<div class="card"><h2>Your result</h2>
+      <div class="res">${c3.map(([l,x],i)=>`<div><b style="${clr(x)}">${dL(x.cl)}</b><span>${['tightest','average','biggest'][i]} clearance (${uL()})</span></div>`).join('')}</div>
+      <dl class="spec" style="margin:10px 0 0"><dt>Press fit range</dt><dd>${rng(x=>x.itf)} ${uL()}</dd><dt>Bore closure range</dt><dd>${rng(x=>x.clo)} ${uL()}</dd><dt>Assembled clearance range</dt><dd>${rng(x=>x.cl)} ${uL()}</dd><dt>Combinations checked</dt><dd>${all.length}</dd></dl></div>
+      <div class="card"><h2>The three cases</h2>${cmp}<p class="mut" style="margin:8px 0 0">Tightest = largest shaft, smallest bush ID and the most closure. Biggest = smallest shaft, largest bush ID and the least closure. Average = every size at the middle of its tolerance.</p></div>
+      <div class="card"><h2>Notes</h2>${ck.map(([k,t])=>`<p class="note ${k}">${k==='ok'?'✓':'⚠'} ${esc(t)}</p>`).join('')}<button class="btn" id="fcp" type="button">Copy summary</button></div>
+      <div class="card"><h2>Every combination (${all.length}), tightest first</h2><div style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Clearance</th><th>Shaft</th><th>Housing</th><th>Bush OD</th><th>Bush ID</th><th>Press fit</th><th>Closure</th></tr>${rows}</table></div><p class="mut" style="margin:8px 0 0">All sizes in ${uL()}. Each row is one combination of the largest and smallest sizes of the shaft, housing, bush OD and bush ${byW?'wall':'ID'}.</p></div>
+      <div class="card"><h2>How this is calculated</h2><p class="mut">Press fit = bush OD − housing bore (zero when the bush is not larger than the housing). Bore closure = press fit × shaft Ø ÷ housing Ø, the same estimate the bearing design tool uses. ID after fitting = bush free ID − bore closure. Assembled clearance = ID after fitting − shaft Ø.${byW?' Bush free ID = OD − 2 × wall thickness.':''} All values are at 20 °C. Add thermal expansion, shaft expansion and wear allowances separately: this tool covers manufacturing tolerances only. The largest and smallest cases are found by checking all ${all.length} combinations of the extremes, so they are the true limits.</p></div>`;
+    $('#fcp').onclick=()=>navigator.clipboard.writeText([`Fits and tolerances (${uL()})`,...c3.map(([l,x])=>`${l}: clearance ${dL(x.cl)}, press fit ${x.loose?'none':dL(x.itf)}, closure ${x.loose?'0':dL(x.clo)}, shaft ${dL(x.s)}, housing ${dL(x.h)}, OD ${dL(x.od)}, ID ${dL(x.id)}`)].join('\n')).then(()=>toast('Copied'),()=>{});
+  };
+  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=ids.map(id=>{const e=$('#'+id);return[id,e.value===''?null:g(id)]});im=ni;try{localStorage.setItem('vi4u_fit',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#FF [data-u]').forEach(s=>{s.textContent=im?'in':'mm'});$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));cv()};
+  $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
+  $$('#MD button').forEach(b=>b.onclick=()=>{byW=b.dataset.m==='w';lab();cv()});
+  $$('#FF input').forEach(e=>e.addEventListener('input',cv));
+  cv();
+}
+
 /* ---------- QuickDraw: type the sizes, get a full drawing and PDF. Every field is editable. ---------- */
 const nz=x=>Number.isFinite(x)&&x>0?x:0;
 const tolStr=(p,m)=>{p=nz(p);m=nz(m);return !p&&!m?'':p===m?`±${fx(p,3)}`:`+${fx(p,3)}/−${fx(m,3)}`};
@@ -1373,9 +1447,9 @@ function render(){
   if(ROLE==='verify')return verify(v);
   if(ROLE==='blocked')return blocked(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
-  const ed=can('edit'),m={'':home,library,new:form,edit:form,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,trophies,chats,chat,chatnew,admin};
+  const ed=can('edit'),m={'':home,library,new:form,edit:form,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,fits:S.feat.pv?fits:home,trophies,chats,chat,chatnew,admin};
   (m[p]||home)(v,id);
-  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'||p==='oem'?'library':p==='design'||p==='quickdraw'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
+  $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'||p==='oem'?'library':p==='design'||p==='quickdraw'||p==='fits'||p==='freezer'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
   $('.tabs .add').hidden=false;scrollTo(0,0);
 }
 const soft=()=>{const p=location.hash.slice(2).split('/')[0];if(['','library','oem','insights'].includes(p))render()};

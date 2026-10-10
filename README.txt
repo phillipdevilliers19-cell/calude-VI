@@ -1,3 +1,6 @@
+NEW TOOL: FITS AND TOLERANCES (Tools page)
+Enter shaft, housing bore and bush OD with signed tolerances, and the bush ID or wall thickness. The tool checks all 16 extreme combinations and shows press fit, bore closure and assembled clearance, then the tightest, average and biggest-clearance cases. Closure uses the same estimate as the Design tool (press fit x shaft / housing). Upload app.js only; firestore.rules is unchanged.
+
 NEW LOGOS (this round)
 Upload ALL of these to your repo: logo-full.png, vi-mark.png (new), vesco-intelligence-logo-header.png, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png, favicon-32.png, index.html, manifest.json, style.css, app.js.
 On phones, remove the home-screen icon and add it again to see the new icon. firestore.rules does NOT need republishing.
