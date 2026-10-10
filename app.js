@@ -139,12 +139,16 @@ let MYT={};try{MYT=JSON.parse(localStorage.getItem('vi4tr')||'{}')}catch{}
 const trSave=()=>{try{localStorage.setItem('vi4tr',JSON.stringify(MYT))}catch{}};
 async function trophies(v,id){
   const mine=!id||id===ME.uid;let T=mine?MYT:{},nm=mine?(MYN||'You'):'Player',best=0,plays=0;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Trophy cabinet</h1><p class="mut">Loading…</p>`;
+  v.innerHTML=`<a class="back" href="#/">← Back</a><h1>Trophy cabinet</h1><p class="mut">Loading…</p>`;
   try{const d=await getDoc(dc('scores',mine?ME.uid:id));if(d.exists()){const r=d.data();T=r.trophies||{};nm=r.name||nm;best=r.best||0;plays=r.plays||0;if(mine){MYT={...MYT,...T};T=MYT;trSave()}}}catch{}
   const n=TROPHIES.filter(t=>T[t.id]).length;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>${mine?'Your trophy cabinet':esc(nm)+"'s trophy cabinet"}</h1>
-  <p class="mut">${n} of ${TROPHIES.length} collected${best?` · best score ${best}`:''}${plays?` · ${plays} games`:''}</p><div class="tbar"><i style="width:${Math.round(n/TROPHIES.length*100)}%"></i></div>
-  <div class="cab">${TROPHIES.map(t=>{const got=T[t.id];return `<div class="tr ${got?'got':'lk'}"><div class="tm">${got?tsvg(t.id,58):'<span>?</span>'}</div><b>${got?esc(t.name):'Locked'}</b><small class="ti">${got?esc(t.ind):''}</small><small>${got?esc(t.blurb):esc(t.hint)}</small>${got?`<small class="td">${new Date(got).toLocaleDateString()}</small>`:''}</div>`}).join('')}</div>`;
+  const last=TROPHIES.filter(t=>T[t.id]).sort((p,q)=>T[q.id]>T[p.id]?1:-1)[0]||TROPHIES.find(t=>!T[t.id]),C=2*Math.PI*30;
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><div class="cabh"><svg viewBox="0 0 70 70" width="74" height="74"><circle cx="35" cy="35" r="30" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="35" cy="35" r="30" fill="none" stroke="#e8a914" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C*n/TROPHIES.length).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 35 35)"/><text x="35" y="41" text-anchor="middle" font-size="18" font-weight="800" fill="currentColor">${n}</text></svg><div><h1>${mine?'Your trophies':esc(nm)+"'s trophies"}</h1><p class="mut">${n} of ${TROPHIES.length}${best?` · best ${best}`:''}${plays?` · ${plays} games`:''}</p></div></div>
+  <div class="cabd" id="cabd"></div>
+  <div class="cab">${TROPHIES.map(t=>{const got=T[t.id];return `<button class="tr ${got?'got':'lk'}" data-t="${t.id}" aria-label="${got?esc(t.name):'Locked trophy'}"><span class="tm">${got?tsvg(t.id,40):'<i>?</i>'}</span></button>`}).join('')}</div>`;
+  document.getElementById('tbk').onclick=()=>setTimeout(playBush,60);
+  const show=id=>{const t=TROPHIES.find(z=>z.id===id),got=T[id];document.getElementById('cabd').innerHTML=`<div class="tm ${got?'on':''}">${got?tsvg(id,52):'<i>?</i>'}</div><div><b>${got?esc(t.name):'Locked'}</b>${got?`<small class="ti">${esc(t.ind)}</small>`:''}<small>${got?esc(t.blurb):esc(t.hint)}</small>${got?`<small class="td">Won ${new Date(got).toLocaleDateString()}</small>`:''}</div>`;v.querySelectorAll('.cab .tr').forEach(b=>b.classList.toggle('sel',b.dataset.t===id))};
+  v.querySelectorAll('.cab .tr').forEach(b=>b.onclick=()=>show(b.dataset.t));show(last.id);
 }
 /* ---------- Easter egg: Bush Hop. Click the industries counter on Home 7 times in a row. ---------- */
 function playBush(){
@@ -193,11 +197,8 @@ function playBush(){
   const pop=(txt,px,py,c='#fff')=>pops.push({txt,x:px,y:py,l:1,c});
   const reset=()=>{tro=null;ban=null;runT=[];offered={};pipes=[];coins=[];parts=[];pops=[];score=0;cn=0;shield=false;shT=0;inv=0;shake=0;combo=0;B.y=300;B.vy=0;B.rot=0;B.spin=0;newBest=false;since=0;st='idle'};
   const dueT=()=>{if(st==='dead')return null;return TROPHIES.find(t=>!MYT[t.id]&&!offered[t.id]&&(t.k==='score'?score>=t.v:t.k==='coins'?cn>=t.v:(plays>=t.v&&score>=3)))||null};
-  /* A trophy is a challenge: it hugs a shaft collar, floats between the shafts, waves up and down, or dashes in fast. It is offered once per run. */
-  const spawnT=(T,np,px)=>{offered[T.id]=1;const stl=['edge','between','wave','dash'][Math.floor(Math.random()*4)],q={id:T.id,st:stl,ph:rnd(0,6)};
-    if(stl==='edge'){q.p=np;q.off=(Math.random()<.5?-1:1)*(gap/2-14)}
-    else{q.x=stl==='between'?px-150:px+20;q.y=stl==='wave'?rnd(220,400):rnd(90,640-FL-70);q.amp=stl==='wave'?rnd(80,130):0}
-    tro=q};
+  /* The trophy sits in the centre of a gap, like a coin, but it is bigger and only appears once its goal is reached. */
+  const spawnT=(T,np)=>{offered[T.id]=1;tro={id:T.id,st:'edge',p:np,off:0,ph:rnd(0,6)}};
   const tpos=q=>q.p?{x:q.p.x+PW/2,y:q.p.cy+q.off}:{x:q.x,y:q.y+(q.st==='wave'?Math.sin(t*2.6+q.ph)*q.amp:0)};
   const addPipe=px=>{const prev=pipes[pipes.length-1],lo=gap/2+70,hi=640-FL-gap/2-60;let gy=rnd(lo,hi);if(prev)gy=clamp(gy,prev.gy-150,prev.gy+150);gy=clamp(gy,lo,hi);const mv=score>=8&&Math.random()<.55;pipes.push({x:px,gy,mv,ph:rnd(0,6),amp:mv?Math.min(48,10+score*1.4):0,pass:false,cy:gy});const np=pipes[pipes.length-1],dt_=dueT();if(dt_&&!tro)spawnT(dt_,np,px);if(!(tro&&tro.p===np)&&Math.random()<.65)coins.push({p:np,t:rnd(0,6),got:false})};
   const medal=s=>s>=100?['HILUBE LEGEND','#7fd0ff']:s>=50?['GOLD','#ffd23f']:s>=25?['SILVER','#d6dde3']:s>=10?['BRONZE','#d98a4a']:null;
@@ -237,8 +238,8 @@ function playBush(){
           const top=p.cy-gap/2,bot=p.cy+gap/2,hit=(rx,ry,rw,rh)=>hx<rx+rw&&hx+hw>rx&&hy<ry+rh&&hy+hh>ry;
           if(hit(p.x,0,PW,top-22)||hit(p.x-8,top-22,PW+16,22)||hit(p.x-8,bot,PW+16,22)||hit(p.x,bot+22,PW,640)){die();break}}
         if(tro&&!tro.p)tro.x-=sp*(tro.st==='dash'?1.7:1);
-        if(tro&&(tro.p?tro.p.x<-90:tro.x<-70))tro=null;
-        if(tro&&st!=='dead'){const q=tro,pp=tpos(q);if(Math.hypot(B.x-pp.x,B.y-pp.y)<25){const T=TROPHIES.find(z=>z.id===q.id);tro=null;MYT[T.id]=new Date().toISOString();runT.push(T);saveTr();ban={t:T,l:2.2};flash=.15;buzz([30,40,30,40,80]);puff(pp.x,pp.y,26,['#ffd23f','#fff3c4','#7fd0ff','#ff6b6b','#35b34a'],300,.9,3.5);[0,.09,.18,.27,.4].forEach((d,k)=>beep(523*[1,1.25,1.5,2,2.5][k],.2,'triangle',.08,undefined,d))}}
+        if(tro&&(tro.p?tro.p.x<-90:tro.x<-70)){delete offered[tro.id];tro=null}
+        if(tro&&st!=='dead'){const q=tro,pp=tpos(q);if(Math.hypot(B.x-pp.x,B.y-pp.y)<34){const T=TROPHIES.find(z=>z.id===q.id);tro=null;MYT[T.id]=new Date().toISOString();runT.push(T);saveTr();ban={t:T,l:2.2};flash=.15;buzz([30,40,30,40,80]);puff(pp.x,pp.y,26,['#ffd23f','#fff3c4','#7fd0ff','#ff6b6b','#35b34a'],300,.9,3.5);[0,.09,.18,.27,.4].forEach((d,k)=>beep(523*[1,1.25,1.5,2,2.5][k],.2,'triangle',.08,undefined,d))}}
         if(st!=='dead')for(const c of coins){const cx=c.p.x+PW/2,cy=c.p.cy;if(!c.got&&Math.hypot(B.x-cx,B.y-cy)<30){c.got=true;cn++;combo++;beep(1046,.07,'square',.05);beep(1568,.12,'square',.05,undefined,.07);puff(cx,cy,12,['#35b34a','#b6f0bf','#fff'],170,.55,3);pop(combo>1?`+1 x${combo}`:'+1',cx,cy-20,'#8ff0a4');
           if(cn%10===0){shield=true;shT=5;pop('SHIELD! 5 seconds',W/2,250,'#7fd0ff');beep(660,.3,'triangle',.07,1320)}}}
       }
@@ -463,7 +464,7 @@ async function pdf(ids,o){
 function portfolio(v){
   P=P.filter(id=>A.some(a=>a.id===id));savePf();
   const inds=[...new Set(A.map(a=>a.industry).filter(Boolean))].sort(),st={q:'',i:''};
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Customer portfolio</h1><p class="mut">Choose the applications to feature and make a designed PDF proposal. Customer names, operating notes and recorded-by never appear in it.</p>
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Customer portfolio</h1><p class="mut">Choose the applications to feature and make a designed PDF proposal. Customer names, operating notes and recorded-by never appear in it.</p>
   <div class="card"><label>Prepared for<input id="pc1" placeholder="Customer or company"></label><label style="margin:0">Introduction on the cover (optional)<textarea id="pi" rows="3" placeholder="A short personal note"></textarea></label></div>
   <h2>1. Choose applications <small class="mut" id="pcn"></small></h2>
   <div class="filters"><input id="pq" type="search" placeholder="Search by name, product or industry"><select id="pin"><option value="">All industries</option>${inds.map(i=>`<option>${esc(i)}</option>`).join('')}</select><select id="pst"><option value="">All records</option><option value="sel">Selected only</option></select></div>
@@ -491,7 +492,7 @@ function tools(v){
   ${S.feat.pv?'<section class="card"><h2>Design</h2><a class="row" href="#/design"><div class="th">◉</div><div><strong>Design a bearing</strong><small>Industrial, pump, marine rudder and marine stern</small></div><span class="chip ok">Open</span></a><a class="row" href="#/quickdraw" style="margin-top:8px"><div class="th">✎</div><div><strong>QuickDraw</strong><small>Type sizes, get a full drawing and PDF</small></div><span class="chip ok">Open</span></a><a class="row" href="#/freezer" style="margin-top:8px"><div class="th">❄</div><div><strong>Freezer shrink time</strong><small>How long to cool a bush so it slides into the housing</small></div><span class="chip ok">Open</span></a></section>':''}
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
-  <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><div class="g2"><label>Your name<input id="myn" value="${esc(MYN)}" maxlength="60" placeholder="Full name"></label><div style="display:flex;align-items:flex-end"><button class="btn" id="mys" type="button">Save name</button></div></div>${Object.keys(MYT).length?`<a class="row" href="#/trophies" style="margin-top:12px"><div class="th">🏅</div><div><strong>Trophy cabinet</strong><small>${Object.keys(MYT).length} of ${TROPHIES.length} collected</small></div><span class="chip ok">Open</span></a>`:''}<button class="btn" id="so" style="margin-top:12px">Sign out</button></section>`;
+  <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><div class="g2"><label>Your name<input id="myn" value="${esc(MYN)}" maxlength="60" placeholder="Full name"></label><div style="display:flex;align-items:flex-end"><button class="btn" id="mys" type="button">Save name</button></div></div><button class="btn" id="so" style="margin-top:12px">Sign out</button></section>`;
   $('#mys').onclick=()=>saveName($('#myn').value,$('#mys'));
   $('#so').onclick=()=>signOut(au);
 }
@@ -513,7 +514,7 @@ const DSH=[
 const hexRgb=h=>{h=String(h||'#888888').replace('#','');return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)||0)};
 const tabStyle=id=>{const d=(S.dsc&&S.dsc[id])||{c:'#8a8d91',a:.3},[r,g,b]=hexRgb(d.c),lum=(r*299+g*587+b*114)/1000,a=Math.max(0,Math.min(1,+d.a)),txt=a>=.55?(lum<140?'#ffffff':'#0e1a20'):'';return `background:rgba(${r},${g},${b},${a});border-left:7px solid rgb(${r},${g},${b});${txt?`color:${txt};--mut:${txt};`:''}`};
 function datasheets(v){
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Data sheets</h1><p class="mut">Typical properties from the Vesconite spec sheets. Tap a material to see its properties and open the PDF.</p><div class="list">${DSH.map(d=>`<a class="row dtab" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto;${tabStyle(d.id)}"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip">PDF ›</span></a>`).join('')}</div>`;
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Data sheets</h1><p class="mut">Typical properties from the Vesconite spec sheets. Tap a material to see its properties and open the PDF.</p><div class="list">${DSH.map(d=>`<a class="row dtab" href="#/datasheet/${d.id}" style="grid-template-columns:1fr auto;${tabStyle(d.id)}"><div><strong>${esc(d.name)}</strong><small>${esc(d.tag)}</small></div><span class="chip">PDF ›</span></a>`).join('')}</div>`;
 }
 function datasheet(v,id){
   const d=DSH.find(x=>x.id===id);
@@ -869,7 +870,7 @@ function design(v,id){
     pump:'Bearing and wear-ring sizes for pumps. Vesconite does not publish separate pump equations, so this uses the industrial size equations with the pump inputs (rotation only, wear ring option).',
     rud:'Rudder bearing sizes from the Vesconite marine equations: press fit from the minimum operating temperature, assembly clearance 0.2 mm + 0.0015 × shaft diameter. Rudder bearings generally need no grooves.',
     stern:'Water-lubricated stern tube and strut bearing sizes from the Vesconite marine equations: assembly clearance 0.2 mm + 0.002 × shaft diameter, with the manual\'s groove table. Do not grease these bearings.'}[mode];
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Design a bearing</h1>
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Design a bearing</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
   <div class="dts" id="MS">${Object.entries(MODES).map(([k,l])=>`<a href="#/design/${k}" class="dt dt-${k} ${k===mode?'on':''}"><i>${{ind:'⚙️',pump:'💧',rud:'🧭',stern:'⚓'}[k]}</i><span>${l.replace('Marine ','Marine<br>')}</span></a>`).join('')}</div>
   <p class="mut">${intro} A design aid: confirm with Vesconite's own Design a Bearing calculator before ordering.</p>
@@ -1008,7 +1009,7 @@ function freezer(v){
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=2)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm',tF=c=>`${fx(im?c*9/5+32:c,0)} ${im?'°F':'°C'}`;
   const n=(id,l,u,val='')=>{const q=UQ[u];return `<label>${l} <span class="mut" data-u="${q}">${im?UC[q].i:u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" data-q="${q}"></label>`};
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Freezer shrink time</h1>
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Freezer shrink time</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm, °C</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in, °F</button></div>
   <p class="mut">Works out how long to leave a Vesconite or Vesconite Hilube bush in a freezer so that it shrinks enough to slide into its housing, and how long you have to fit it once it is out. Based on the published expansion of 6 × 10⁻⁵ per °C. The cooling time is an estimate: always measure the cooled bush before fitting.</p>
   <form class="card" id="FF"><div class="g2">${n('f1','Bearing outside diameter at 20 °C','mm')}${n('f2','Housing bore diameter','mm')}${n('f3','Bearing wall thickness','mm')}${n('f4','Clearance you want when sliding in','mm','0.10')}${n('f5','Starting (room) temperature','°C','20')}</div>
@@ -1082,7 +1083,7 @@ function quickdraw(v){
   const num=(id,l,u='',val='',q='L')=>`<label>${l} <span class="mut" ${q&&u?'data-u="L"':''}>${q&&u?(im?'in':'mm'):u}</span><input id="${id}" type="number" inputmode="decimal" step="any" value="${val}" ${q?`data-q="${q}"`:''}></label>`;
   const txt=(id,l,val='',ph='')=>`<label>${l}<input id="${id}" value="${esc(val)}" placeholder="${esc(ph)}"></label>`;
   const today=new Date().toLocaleDateString(),dw=S.dw;
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
   <form class="card" id="QF">
   <h2>Part</h2><div class="g2">${txt('qName','Part name / title','BEARING BUSH')}${txt('qMat','Material / grade','VESCONITE')}${txt('qDrg','Drawing number','','Auto')}${txt('qRev','Revision',dw.rev)}${txt('qCo','Company (when no logo)',dw.company)}${txt('qWho','Drawn by',(ME?.email||'').split('@')[0])}${txt('qDate','Date',today)}
   <label>Paper size<select id="qPaper"><option value="a3">A3</option><option value="a4" ${dw.paper==='a4'?'selected':''}>A4</option></select></label>
@@ -1158,7 +1159,7 @@ const PRE=[['Steel & amber','#0f3f4a','#c9861a'],['Forest','#1d4a33','#d29a2c'],
 async function admin(v){
   if(!can('del')){location.hash='#/';return}
   const s=S,dw=s.dw;let dwLogo={u:dw.logo,r:dw.logoR};
-  v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Admin</h1><section class="card" id="NT"><h2>Notifications</h2><p class="mut">Loading…</p></section><form id="AF">
+  v.innerHTML=`<a class="back" href="#/" id="tbk">← Back to game</a><h1>Admin</h1><section class="card" id="NT"><h2>Notifications</h2><p class="mut">Loading…</p></section><form id="AF">
   <section class="card"><h2>App appearance</h2><div class="acts">${PRE.map((p,i)=>`<button type="button" class="btn" data-p="${i}" style="border-left:8px solid ${p[2]}">${p[0]}</button>`).join('')}</div>
   <div class="g2"><label>Main colour<input type="color" name="pri" value="${s.pri}"></label><label>Accent colour<input type="color" name="amb" value="${s.amb}"></label>
   <label>Corners${sel('r',[[3,'Sharp'],[10,'Soft'],[18,'Round']],s.r)}</label><label>Heading font${sel('font',[['cond','Condensed'],['std','Standard'],['serif','Serif']],s.font)}</label>
