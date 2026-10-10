@@ -457,7 +457,7 @@ function insights(v){const q=A.reduce((m,a)=>{const g=grade(a)[0];m[g]=(m[g]||0)
 
 /* ---------- Portfolio PDF (colours, logo, sections, footer all come from Admin settings) ---------- */
 const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
+const repoLogo=async()=>{try{const r=await fetch('vesco-intelligence-logo-header.png?v5');if(!r.ok)return null;const u=await rd(await r.blob()),i=await img(u);return{u,r:i.width/i.height}}catch{return null}};
 const logoData=async()=>S.logo?(S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:repoLogo()):null;
 /* ---------- Customer portfolio: searchable picker and a designed PDF proposal ---------- */
 const savePf=()=>{try{localStorage.setItem('vi4p',JSON.stringify(P))}catch{}};
