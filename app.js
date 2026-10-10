@@ -1138,6 +1138,39 @@ function freezer(v){
   cv();
 }
 
+/* ISO 286 tolerance classes, sizes above 0 up to 500 mm. IT grades per ISO 286-1; fundamental deviations as in ISO 286-1/-2 (shaft letters a to zc, hole letters A to ZC). */
+const ISO={"MH":[3,6,10,18,30,50,80,120,180,250,315,400,500],"IT":{"1":[0.8,1,1,1.2,1.5,1.5,2,2.5,3.5,4.5,6,7,8],"2":[1.2,1.5,1.5,2,2.5,2.5,3,4,5,7,8,9,10],"3":[2,2.5,2.5,3,4,4,5,6,8,10,12,13,15],"4":[3,4,4,5,6,7,8,10,12,14,16,18,20],"5":[4,5,6,8,9,11,13,15,18,20,23,25,27],"6":[6,8,9,11,13,16,19,22,25,29,32,36,40],"7":[10,12,15,18,21,25,30,35,40,46,52,57,63],"8":[14,18,22,27,33,39,46,54,63,72,81,89,97],"9":[25,30,36,43,52,62,74,87,100,115,130,140,155],"10":[40,48,58,70,84,100,120,140,160,185,210,230,250],"11":[60,75,90,110,130,160,190,220,250,290,320,360,400],"12":[100,120,150,180,210,250,300,350,400,460,520,570,630],"13":[140,180,220,270,330,390,460,540,630,720,810,890,970],"14":[250,300,360,430,520,620,740,870,1000,1150,1300,1400,1550],"15":[400,480,580,700,840,1000,1200,1400,1600,1850,2100,2300,2500],"16":[600,750,900,1100,1300,1600,1900,2200,2500,2900,3200,3600,4000],"17":[1000,1200,1500,1800,2100,2500,3000,3500,4000,4600,5200,5700,6300],"18":[1400,1800,2200,2700,3300,3900,4600,5400,6300,7200,8100,8900,9700]},"FD":{"a":{"b":[3,6,10,18,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[-270,-270,-280,-290,-300,-310,-320,-340,-360,-380,-410,-460,-520,-580,-660,-740,-820,-920,-1050,-1200,-1350,-1500,-1650],"s":0},"b":{"b":[3,6,10,18,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[-140,-140,-150,-150,-160,-170,-180,-190,-200,-220,-240,-260,-280,-310,-340,-380,-420,-480,-540,-600,-680,-760,-840],"s":0},"c":{"b":[3,6,10,18,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[-60,-70,-80,-95,-110,-120,-130,-140,-150,-170,-180,-200,-210,-230,-240,-260,-280,-300,-330,-360,-400,-440,-480],"s":0},"cd":{"b":[3,6,10],"v":[-34,-46,-56],"s":0},"d":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[-20,-30,-40,-50,-65,-80,-100,-120,-145,-170,-190,-210,-230],"s":0},"e":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[-14,-20,-25,-32,-40,-50,-60,-72,-85,-100,-110,-125,-135],"s":0},"ef":{"b":[3,6,10],"v":[-10,-14,-18],"s":0},"f":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[-6,-10,-13,-16,-20,-25,-30,-36,-43,-50,-56,-62,-68],"s":0},"fg":{"b":[3,6,10],"v":[-4,-6,-8],"s":0},"g":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[-2,-4,-5,-6,-7,-9,-10,-12,-14,-15,-17,-18,-20],"s":0},"h":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[0,0,0,0,0,0,0,0,0,0,0,0,0],"s":0},"k":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[0,1,1,1,2,2,2,3,3,4,4,4,5],"s":0},"m":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[2,4,6,7,8,9,11,13,15,17,20,21,23],"s":0},"n":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[4,8,10,12,15,17,20,23,27,31,34,37,40],"s":0},"p":{"b":[3,6,10,18,30,50,80,120,180,250,315,400,500],"v":[6,12,15,18,22,26,32,37,43,50,56,62,68],"s":0},"r":{"b":[3,6,10,18,30,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[10,15,19,23,28,34,41,43,51,54,63,65,68,77,80,84,94,98,108,114,126,132],"s":0},"s":{"b":[3,6,10,18,30,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[14,19,23,28,35,43,53,59,71,79,92,100,108,122,130,140,158,170,190,208,232,252],"s":0},"t":{"b":[30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[41,48,54,66,75,91,104,122,134,146,166,180,196,218,240,268,294,330,360],"s":24},"u":{"b":[3,6,10,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[18,23,28,33,41,48,60,70,87,102,124,144,170,190,210,236,258,284,315,350,390,435,490,540],"s":0},"v":{"b":[18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[39,47,55,68,81,102,120,146,172,202,228,252,284,310,340,385,425,475,530,595,660],"s":14},"x":{"b":[3,6,10,14,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[20,28,34,40,45,54,64,80,97,122,146,178,210,248,280,310,350,385,425,475,525,590,660,740,820],"s":0},"y":{"b":[24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[63,75,94,114,144,174,214,254,300,340,380,425,470,520,580,650,730,820,920,1000],"s":18},"z":{"b":[3,6,10,14,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[26,35,42,50,60,73,88,112,136,172,210,258,310,365,415,465,520,575,640,710,790,900,1000,1100,1250],"s":0},"za":{"b":[3,6,10,14,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[32,42,52,64,77,98,118,148,180,226,274,335,400,470,535,600,670,740,820,920,1000,1150,1300,1450,1600],"s":0},"zb":{"b":[6,10,14,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[50,67,90,108,136,160,200,242,300,360,445,525,620,700,780,880,960,1050,1200,1300,1500,1650,1850,2100],"s":3},"zc":{"b":[3,6,10,14,18,24,30,40,50,65,80,100,120,140,160,180,200,225,250,280,315,355,400,450,500],"v":[60,80,97,130,150,188,218,274,325,405,480,585,690,800,900,1000,1150,1250,1350,1500,1700,1900,2100,2400,2600],"s":0}},"J5":[-2,-2,-2,-3,-4,-5,-7,-9,-11,-13,-16,-18,-20],"J7":[-4,-4,-5,-6,-8,-10,-12,-15,-18,-21,-26,-28,-32],"HJ":{"6":[2,5,5,6,8,10,13,16,18,22,25,29,33],"7":[4,6,8,10,12,14,18,22,26,30,36,39,43],"8":[6,10,12,15,20,24,28,34,41,47,55,60,66]},"GR":{"a":[9,13],"b":[9,13],"c":[8,12],"cd":[5,10],"d":[5,13],"e":[5,10],"ef":[5,10],"f":[3,10],"fg":[3,10],"g":[3,10],"h":[1,18],"js":[1,18],"j":[5,7],"k":[3,13],"m":[3,10],"n":[3,11],"p":[3,10],"r":[3,10],"s":[3,10],"t":[5,8],"u":[5,9],"v":[5,8],"x":[5,10],"y":[6,10],"z":[6,11],"za":[6,11],"zb":[7,11],"zc":[7,11]},"ORDER":["a","b","c","cd","d","e","ef","f","fg","g","h","js","j","k","m","n","p","r","s","t","u","v","x","y","z","za","zb","zc"]};
+const isoStep=(D,b)=>{for(let i=0;i<b.length;i++)if(D<=b[i])return i;return -1};
+const isoIT=(n,D)=>ISO.IT[n][isoStep(D,ISO.MH)];
+const isoFD=(L,D)=>{const s=ISO.FD[L];if(!s||D<=s.s)return null;const i=isoStep(D,s.b);return i<0?null:s.v[i]};
+const isoGR=(k,L)=>k==='h'&&L==='j'?[6,8]:ISO.GR[L];
+/* returns [upper, lower] in micrometres, or a text message when the class does not exist */
+function isoDev(k,L,n,D){
+  if(!(D>0&&D<=500))return 'ISO tolerances are tabulated for sizes above 0 up to 500 mm. Type the deviations in by hand.';
+  const gr=isoGR(k,L),nm=k==='h'?L.toUpperCase():L;
+  if(!gr)return 'Unknown tolerance letter.';
+  if(!(n>=gr[0]&&n<=gr[1]))return `${nm} is only defined for grades ${gr[0]} to ${gr[1]}.`;
+  const t=isoIT(n,D),A='a b c cd d e ef f fg g h'.split(' ');
+  if(L==='js')return [t/2,-t/2];
+  const none=`${nm}${n} does not exist at this size.`;
+  if(k==='s'){
+    if(L==='j'){const i=isoStep(D,ISO.MH),ei=n===7?ISO.J7[i]:ISO.J5[i];return [ei+t,ei]}
+    const f=isoFD(L,D);if(f==null)return none;
+    if(A.includes(L))return [f,f-t];
+    const ei=L==='k'?(n>=4&&n<=7?f:0):f;return [ei+t,ei];
+  }
+  if(L==='j'){const es=ISO.HJ[n][isoStep(D,ISO.MH)];return [es,es-t]}
+  const f=isoFD(L,D);if(f==null)return none;
+  if(A.includes(L))return [-f+t,-f];
+  let es;
+  if(L==='k'||L==='m'||L==='n'){
+    if(L==='n'&&n>8)es=D>3?0:-f;
+    else if(n<=8)es=-f+(D<=3?0:isoIT(n,D)-isoIT(n-1,D));
+    else es=-f;
+  }else es=-f+(D<=3||n>7?0:isoIT(n,D)-isoIT(n-1,D));
+  return [es,es-t];
+}
+
 /* ---------- Fits and tolerances: every extreme combination of shaft, housing, bush OD and bush ID (or wall) ---------- */
 const FTV={};   /* remembered inputs, kept in millimetres, signed deviations */
 function fits(v){
@@ -1147,25 +1180,37 @@ function fits(v){
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}const q=e.dataset.q;if(q&&im){e.value=+UC[q].from(+x).toFixed(UC[q].d);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const dL=(x,d=3)=>fx(im?x/25.4:x,im?d+1:d),uL=()=>im?'in':'mm';
   const n=(id,l,ph='')=>`<label>${l} <span class="mut" data-u="L">${im?'in':'mm'}</span><input id="${id}" type="number" inputmode="decimal" step="any" placeholder="${ph}" data-q="L"></label>`;
-  const blk=(t,p,nl,hint)=>`<h2 style="margin-top:14px">${t}</h2>${n(p+'n',nl)}<div class="g2" style="margin-top:8px">${n(p+'u','Upper deviation (+)',hint[0])}${n(p+'l','Lower deviation (−)',hint[1])}</div>`;
+  const blk=(t,p,nl,hint,k)=>`<h2 style="margin-top:14px">${t}</h2>${n(p+'n',nl)}${k?`<div class="g2" style="margin-top:8px"><label>ISO tolerance letter<select id="${p}L"></select></label><label>ISO grade<select id="${p}G"></select></label></div><p class="mut" id="${p}M" style="margin:6px 0 0"></p>`:''}<div class="g2" style="margin-top:8px">${n(p+'u','Upper deviation (+)',hint[0])}${n(p+'l','Lower deviation (−)',hint[1])}</div>`;
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>Fits and tolerances</h1>
   <div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div>
   <p class="mut">Enter the shaft, the housing bore and the bush with their tolerances. The tool works through every combination of the extremes (shaft largest or smallest, housing largest or smallest, bush OD and ID or wall largest or smallest) and shows the press fit, the bore closure and the assembled clearance for each, then the tightest case, the average case and the loosest case.</p>
   <form class="card" id="FF">
-  <p class="mut" style="margin:0">Enter each tolerance as a deviation from the nominal size, with its sign. For example a 50 mm shaft h7 is upper 0, lower −0.025, and a 50 mm housing H7 is upper +0.025, lower 0. A plain ±0.05 is upper 0.05, lower −0.05.</p>
-  ${blk('Shaft','fs','Shaft nominal diameter',['0','-0.025'])}
-  ${blk('Housing bore','fh','Housing nominal diameter',['0.025','0'])}
+  <p class="mut" style="margin:0">For the shaft and the housing you can pick an ISO tolerance class (for example h7 or H7) and the deviations fill in by themselves once the nominal diameter is entered. Or type the tolerance as a deviation from the nominal size with its sign: a plain ±0.05 is upper 0.05, lower −0.05.</p>
+  ${blk('Shaft','fs','Shaft nominal diameter',['0','-0.025'],'s')}
+  ${blk('Housing bore','fh','Housing nominal diameter',['0.025','0'],'h')}
   ${blk('Bush outside diameter (OD)','fo','Bush OD nominal',['0.1','0.05'])}
   <h2 style="margin-top:14px">Bush inside</h2>
   <div class="seg" id="MD"><button type="button" data-m="i" class="${byW?'':'on'}">Inside diameter</button><button type="button" data-m="w" class="${byW?'on':''}">Wall thickness</button></div>
   ${n('fin','<span id="fnl"></span>')}<div class="g2" style="margin-top:8px">${n('fiu','Upper deviation (+)','0.1')}${n('fil','Lower deviation (−)','0')}</div>
   </form><div id="FO"></div>`;
   const lab=()=>{$('#fnl').textContent=byW?'Wall thickness nominal':'Bush ID nominal (before fitting)';$$('#MD button').forEach(b=>b.classList.toggle('on',(b.dataset.m==='w')===byW))};lab();
+  const KIND={fs:'s',fh:'h'},LET=ISO.ORDER,nmL=(k,L)=>k==='h'?L.toUpperCase():L;
+  const gradeOpts=(p,keep)=>{const k=KIND[p],L=$('#'+p+'L').value,sel=$('#'+p+'G');if(!L){sel.innerHTML='<option value="">–</option>';sel.disabled=true;return}
+    const[lo,hi]=isoGR(k,L);sel.disabled=false;let o='';for(let i=lo;i<=hi;i++)o+=`<option value="${i}">${i}</option>`;sel.innerHTML=o;
+    sel.value=keep>=lo&&keep<=hi?keep:(lo<=7&&7<=hi?7:lo)};
+  ['fs','fh'].forEach(p=>{const k=KIND[p];$('#'+p+'L').innerHTML='<option value="">Custom (type it in)</option>'+LET.map(L=>`<option value="${L}">${nmL(k,L)}</option>`).join('');gradeOpts(p)});
+  const fillC=p=>{const k=KIND[p],L=$('#'+p+'L').value,M=$('#'+p+'M');if(!L){M.textContent='';return false}
+    const D=g(p+'n');if(!(D>0)){M.textContent='Enter the nominal diameter above and the tolerance fills in automatically.';return false}
+    const r=isoDev(k,L,+$('#'+p+'G').value,D);if(typeof r==='string'){M.textContent=r;return false}
+    put(p+'u',r[0]/1000);put(p+'l',r[1]/1000);const sg=x=>(x>0?'+':'')+(Math.round(x*100)/100)+' µm';
+    M.textContent=`${dL(D,3)} ${uL()} ${nmL(k,L)}${$('#'+p+'G').value}: upper ${sg(r[0])}, lower ${sg(r[1])}`;return true};
+
   Object.entries(FTV).forEach(([k,x])=>{const e=$('#'+k);if(!e||k==='mode')return;if(e.dataset.q&&x!=='')put(k,+x);else e.value=x});
+  ['fs','fh'].forEach(p=>{if(FTV[p+'L']){$('#'+p+'L').value=FTV[p+'L'];gradeOpts(p,+FTV[p+'G']);fillC(p)}});
   $('#FF').onsubmit=e=>e.preventDefault();
   const ids=['fsn','fsu','fsl','fhn','fhu','fhl','fon','fou','fol','fin','fiu','fil'];
   const cv=()=>{
-    FTV.mode=byW?'w':'i';ids.forEach(id=>{const e=$('#'+id);FTV[id]=e.value===''?'':String(+g(id).toFixed(6))});
+    FTV.mode=byW?'w':'i';['fs','fh'].forEach(p=>{FTV[p+'L']=$('#'+p+'L').value;FTV[p+'G']=$('#'+p+'G').value});ids.forEach(id=>{const e=$('#'+id);FTV[id]=e.value===''?'':String(+g(id).toFixed(6))});
     const O=$('#FO'),bad=m=>{O.innerHTML=m},val=ids.map(g);
     if(ids.some((id,i)=>['fsn','fhn','fon','fin'].includes(id)&&!(val[i]>0)))return bad('<p class="mut">Enter the nominal sizes for the shaft, housing bore, bush outside diameter and bush '+(byW?'wall thickness':'inside diameter')+'. Leave a deviation empty if it is zero.</p>');
     const [sn,su,sl,hn,hu,hl,on,ou,ol,inn,iu,il]=val.map((x,i)=>Number.isFinite(x)?x:0);
@@ -1178,36 +1223,42 @@ function fits(v){
     const mid=a=>(a[0]+a[1])/2,avg=calc(mid(S),mid(H),mid(OD),mid(IN));
     const sorted=[...all].sort((p,q)=>p.cl-q.cl),tight=sorted[0],big=sorted[sorted.length-1];
     const c3=[['Tightest (worst case)',tight],['Average',avg],['Biggest clearance',big]];
-    const clr=x=>x.cl<0?'color:var(--bad)':'';
+    const clr=x=>x.cl<0?'color:var(--bad)':'',sg=x=>(x>0?'+':'')+dL(x);
     const ck=[];
-    if(tight.cl<0)ck.push(['bad',`In the tightest case the bush is ${dL(-tight.cl)} ${uL()} too big for the shaft after fitting (clearance ${dL(tight.cl)}). The shaft will not turn freely. Open up the bush ID, or tighten the housing and shaft tolerances.`]);
+    if(tight.cl<0)ck.push(['bad',`In the tightest case the bush ID after fitting is ${dL(-tight.cl)} ${uL()} smaller than the shaft (clearance ${sg(tight.cl)}). The shaft will not fit. Open up the bush ID, or tighten the housing and shaft tolerances.`]);
     else if(tight.cl===0)ck.push(['warn','In the tightest case there is no clearance at all.']);
-    else ck.push(['ok',`Even in the tightest case there is ${dL(tight.cl)} ${uL()} clearance after fitting.`]);
+    else ck.push(['ok',`Even in the tightest case there is ${dL(tight.cl)} ${uL()} of clearance left after fitting (${sg(tight.cl)}).`]);
     const nl=all.filter(x=>x.loose).length;
     if(nl===all.length)ck.push(['warn','The bush is never larger than the housing, so there is no press fit in any case. The bush must be secured another way (bonding, keeper plate, screws).']);
     else if(nl)ck.push(['warn',`In ${nl} of ${all.length} cases the bush is not larger than the housing, so there is no press fit and no closure. The bush may not grip the housing in those cases.`]);
-    const negN=all.filter(x=>x.cl<0).length;if(negN&&negN<all.length)ck.push(['warn',`${negN} of ${all.length} combinations give negative clearance.`]);
+    const negN=all.filter(x=>x.cl<0).length;if(negN&&negN<all.length)ck.push(['warn',`${negN} of ${all.length} combinations give negative clearance (the bush ID after fitting is smaller than the shaft).`]);
     const w=[...all.map(x=>x.w)];ck.push(['ok',`Wall thickness ranges from ${dL(Math.min(...w))} to ${dL(Math.max(...w))} ${uL()}.`]);
     const row=(l,f)=>`<tr><td>${l}</td>${c3.map(([,x])=>`<td>${f(x)}</td>`).join('')}</tr>`;
     const hdr=['Tightest','Average','Biggest'];
     const cmp=`<div style="overflow-x:auto"><table class="tbl"><tr><th></th>${hdr.map(h=>`<th>${h}</th>`).join('')}</tr>
       ${row('Shaft Ø',x=>dL(x.s))}${row('Housing Ø',x=>dL(x.h))}${row('Bush OD',x=>dL(x.od))}${row('Bush ID (free)',x=>dL(x.id))}${row('Wall',x=>dL(x.w))}
       ${row('Interference fit',x=>x.loose?'none':dL(x.itf))}${row('Bore closure',x=>x.loose?'0':dL(x.clo))}${row('ID after fitting',x=>dL(x.idA))}
-      ${row('<b>Assembled clearance</b>',x=>`<b style="${clr(x)}">${dL(x.cl)}</b>`)}</table></div>`;
-    const rows=sorted.map((x,i)=>{const t=x===tight?' tightest':x===big?' biggest':'';return `<tr ${t?'style="font-weight:700"':''}><td>${i+1}${t}</td><td style="${clr(x)}"><b>${dL(x.cl)}</b></td><td>${dL(x.s)}</td><td>${dL(x.h)}</td><td>${dL(x.od)}</td><td>${dL(x.id)}</td><td>${x.loose?'none':dL(x.itf)}</td><td>${x.loose?'0':dL(x.clo)}</td></tr>`}).join('');
-    const rng=(f)=>{const a=all.map(f);return `${dL(Math.min(...a))} to ${dL(Math.max(...a))}`};
+      ${row('<b>Assembled clearance</b>',x=>`<b style="${clr(x)}">${sg(x.cl)}</b>`)}</table></div>`;
+    const rows=sorted.map((x,i)=>{const t=x===tight?' tightest':x===big?' biggest':'';return `<tr ${t?'style="font-weight:700"':''}><td>${i+1}${t}</td><td style="${clr(x)}"><b>${sg(x.cl)}</b></td><td>${dL(x.s)}</td><td>${dL(x.h)}</td><td>${dL(x.od)}</td><td>${dL(x.id)}</td><td>${x.loose?'none':dL(x.itf)}</td><td>${x.loose?'0':dL(x.clo)}</td></tr>`}).join('');
+    const rng=(f,s)=>{const a=all.map(f),F=s?sg:dL;return `${F(Math.min(...a))} to ${F(Math.max(...a))}`};
     O.innerHTML=`<div class="card"><h2>Your result</h2>
-      <div class="res">${c3.map(([l,x],i)=>`<div><b style="${clr(x)}">${dL(x.cl)}</b><span>${['tightest','average','biggest'][i]} clearance (${uL()})</span></div>`).join('')}</div>
-      <dl class="spec" style="margin:10px 0 0"><dt>Press fit range</dt><dd>${rng(x=>x.itf)} ${uL()}</dd><dt>Bore closure range</dt><dd>${rng(x=>x.clo)} ${uL()}</dd><dt>Assembled clearance range</dt><dd>${rng(x=>x.cl)} ${uL()}</dd><dt>Combinations checked</dt><dd>${all.length}</dd></dl></div>
-      <div class="card"><h2>The three cases</h2>${cmp}<p class="mut" style="margin:8px 0 0">Tightest = largest shaft, smallest bush ID and the most closure. Biggest = smallest shaft, largest bush ID and the least closure. Average = every size at the middle of its tolerance.</p></div>
+      <div class="res">${c3.map(([l,x],i)=>`<div><b style="${clr(x)}">${sg(x.cl)}</b><span>${['tightest','average','biggest'][i]} clearance (${uL()})</span></div>`).join('')}</div>
+      <dl class="spec" style="margin:10px 0 0"><dt>Press fit range</dt><dd>${rng(x=>x.itf)} ${uL()}</dd><dt>Bore closure range</dt><dd>${rng(x=>x.clo)} ${uL()}</dd><dt>Assembled clearance range</dt><dd>${rng(x=>x.cl,1)} ${uL()}</dd><dt>Combinations checked</dt><dd>${all.length}</dd></dl></div>
+      <div class="card"><h2>The three cases</h2>${cmp}<p class="mut" style="margin:8px 0 0"><b>Clearance sign:</b> positive (+) means there is clearance, the bush ID after fitting is bigger than the shaft. Negative (−) means the bush ID after fitting is smaller than the shaft. Tightest = largest shaft, smallest bush ID and the most closure. Biggest = smallest shaft, largest bush ID and the least closure. Average = every size at the middle of its tolerance.</p></div>
       <div class="card"><h2>Notes</h2>${ck.map(([k,t])=>`<p class="note ${k}">${k==='ok'?'✓':'⚠'} ${esc(t)}</p>`).join('')}<button class="btn" id="fcp" type="button">Copy summary</button></div>
       <div class="card"><h2>Every combination (${all.length}), tightest first</h2><div style="overflow-x:auto"><table class="tbl"><tr><th>#</th><th>Clearance</th><th>Shaft</th><th>Housing</th><th>Bush OD</th><th>Bush ID</th><th>Press fit</th><th>Closure</th></tr>${rows}</table></div><p class="mut" style="margin:8px 0 0">All sizes in ${uL()}. Each row is one combination of the largest and smallest sizes of the shaft, housing, bush OD and bush ${byW?'wall':'ID'}.</p></div>
       <div class="card"><h2>How this is calculated</h2><p class="mut">Press fit = bush OD − housing bore (zero when the bush is not larger than the housing). Bore closure = press fit × shaft Ø ÷ housing Ø, the same estimate the bearing design tool uses. ID after fitting = bush free ID − bore closure. Assembled clearance = ID after fitting − shaft Ø.${byW?' Bush free ID = OD − 2 × wall thickness.':''} All values are at 20 °C. Add thermal expansion, shaft expansion and wear allowances separately: this tool covers manufacturing tolerances only. The largest and smallest cases are found by checking all ${all.length} combinations of the extremes, so they are the true limits.</p></div>`;
-    $('#fcp').onclick=()=>navigator.clipboard.writeText([`Fits and tolerances (${uL()})`,...c3.map(([l,x])=>`${l}: clearance ${dL(x.cl)}, press fit ${x.loose?'none':dL(x.itf)}, closure ${x.loose?'0':dL(x.clo)}, shaft ${dL(x.s)}, housing ${dL(x.h)}, OD ${dL(x.od)}, ID ${dL(x.id)}`)].join('\n')).then(()=>toast('Copied'),()=>{});
+    $('#fcp').onclick=()=>navigator.clipboard.writeText([`Fits and tolerances (${uL()})`,...c3.map(([l,x])=>`${l}: clearance ${sg(x.cl)}, press fit ${x.loose?'none':dL(x.itf)}, closure ${x.loose?'0':dL(x.clo)}, shaft ${dL(x.s)}, housing ${dL(x.h)}, OD ${dL(x.od)}, ID ${dL(x.id)}`)].join('\n')).then(()=>toast('Copied'),()=>{});
   };
   const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=ids.map(id=>{const e=$('#'+id);return[id,e.value===''?null:g(id)]});im=ni;try{localStorage.setItem('vi4u_fit',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#FF [data-u]').forEach(s=>{s.textContent=im?'in':'mm'});$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));cv()};
   $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
   $$('#MD button').forEach(b=>b.onclick=()=>{byW=b.dataset.m==='w';lab();cv()});
+  ['fs','fh'].forEach(p=>{
+    $('#'+p+'n').addEventListener('input',()=>fillC(p));
+    ['u','l'].forEach(s=>$('#'+p+s).addEventListener('input',()=>{$('#'+p+'L').value='';gradeOpts(p);$('#'+p+'M').textContent=''}));
+    $('#'+p+'L').onchange=()=>{gradeOpts(p,+$('#'+p+'G').value||7);fillC(p);cv()};
+    $('#'+p+'G').onchange=()=>{fillC(p);cv()};
+  });
   $$('#FF input').forEach(e=>e.addEventListener('input',cv));
   cv();
 }

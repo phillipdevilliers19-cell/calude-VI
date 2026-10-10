@@ -1,3 +1,6 @@
+FITS AND TOLERANCES: ISO CLASS DROPDOWNS
+Shaft (letters a to zc, grades per ISO 286) and housing (A to ZC) have an ISO letter and grade dropdown. Pick one and the upper and lower deviations fill in from the nominal size (sizes above 0 up to 500 mm). Typing in a deviation switches back to Custom. Clearance is shown with a sign: + means clearance, - means the bush ID after fitting is smaller than the shaft. Upload app.js only.
+
 NEW TOOL: FITS AND TOLERANCES (Tools page)
 Enter shaft, housing bore and bush OD with signed tolerances, and the bush ID or wall thickness. The tool checks all 16 extreme combinations and shows press fit, bore closure and assembled clearance, then the tightest, average and biggest-clearance cases. Closure uses the same estimate as the Design tool (press fit x shaft / housing). Upload app.js only; firestore.rules is unchanged.
 
