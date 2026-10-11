@@ -1,5 +1,3 @@
-SECRET GAME 2 (do not tell anyone): tap the word "Account" on the Tools page 10 times in a row. Super Bush: your Hilube bush with a cape, arms and legs flies free across the sky. Hold anywhere to climb, let go to fall. Dodge gears, spanners, nuts, drill missiles, anvils and storm clouds, grab Hilube drops (10 = 5 s of laser eyes), earn 16 trophies and a separate leaderboard. It saves into the same "scores" records, so firestore.rules does NOT need republishing. Upload: app.js and index.html.
-
 SIGNS ON PHONES
 Fits and tolerances now uses Plus tolerance and Minus tolerance boxes (type plain numbers; the minus box is taken as a minus). Temperature boxes in the Design tool and Freezer tool have a +/- button because phone number pads have no minus key. Upload app.js and style.css.
 
@@ -113,3 +111,14 @@ THIS UPDATE
 Upload app.js and style.css. Firestore rules are unchanged. Delete textures.js from the repo if it is still there.
 
 RULES CHANGED: republish firestore.rules in Firebase (adds the scores collection for the leaderboard). Remember to put your admin email in it.
+
+QuickDraw: chamfers, flange radius and ID or wall
+- Choose whether the drawing shows the inside diameter or the wall thickness (only one is dimensioned).
+- OD and ID chamfers each have their own size and angle (angle from the bush axis, 45 = equal). Size can be measured along the length or across the wall.
+- Flanged bushes: optional radius where the barrel meets the flange. Drawing and STEP file both include it.
+
+QuickDraw: flat plates and wear pads
+- Set "What are you drawing" to "Flat plate or wear pad".
+- Outline: rectangle with optional corner radius, or a custom outline typed as points (X, Y, optional corner radius per point).
+- Add round holes (X, Y, diameter) and slots (X, Y, length, width, angle), with tolerances.
+- Output: drawing with plan and side view, hole and slot schedule, outline point table, PDF, SVG, STEP (true arcs and round holes) and a DXF for cutting.

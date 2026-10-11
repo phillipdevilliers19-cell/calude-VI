@@ -351,369 +351,6 @@ function playBush(){
   bm.onclick=()=>{mute=!mute;try{localStorage.setItem('vi4gm',mute?'1':'0')}catch{}icon();if(!mute)beep(660,.1,'triangle',.06)};
   reset();raf=requestAnimationFrame(loop);
 }
-/* ---------- Easter egg 2: Super Bush. Click "Account" on the Tools page 10 times in a row. ---------- */
-const gpts=(cx,cy,ro,ri,n,rot=0)=>{let s='';for(let i=0;i<n*4;i++){const a=rot+i*Math.PI/(n*2),r=(i%4===1||i%4===2)?ro:ri;s+=`${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)} `}return s};
-const FSVG={
-  wrench:`<g transform="rotate(-40 32 32)"><rect x="28.5" y="24" width="7" height="34" rx="3.5" fill="#e0a81a"/><path d="M21 5h7v9h8V5h7v15a11 11 0 0 1-9 10.8h-4A11 11 0 0 1 21 20z" fill="#ffd23f"/></g>`,
-  gear:`<polygon points="${gpts(32,32,26,20,10)}" fill="#aeb8c1"/><circle cx="32" cy="32" r="9" fill="#23272c"/><circle cx="32" cy="32" r="3.5" fill="#aeb8c1"/>`,
-  bolt:`<path d="M37 3 15 36h15l-5 25 24-35H34z" fill="#ffd23f" stroke="#e0a81a" stroke-width="2" stroke-linejoin="round"/>`,
-  rocket:`<path d="M32 3c9 9 12 22 9 40H23c-3-18 0-31 9-40z" fill="#f2f5f7"/><circle cx="32" cy="22" r="5" fill="#2f7de1"/><path d="M23 33 13 46l10-3zM41 33l10 13-10-3z" fill="#e84a4a"/><path d="M27 45h10l-5 14z" fill="#ff9d2e"/>`,
-  level:`<rect x="5" y="22" width="54" height="20" rx="4" fill="#e8b923"/><rect x="24" y="27" width="16" height="10" rx="5" fill="#d6f0b8" stroke="#6b5a12" stroke-width="1.5"/><circle cx="32" cy="32" r="2.6" fill="#7fbf3a"/><circle cx="12" cy="32" r="2" fill="#6b5a12"/><circle cx="52" cy="32" r="2" fill="#6b5a12"/>`,
-  cogs:`<polygon points="${gpts(22,38,18,13,8)}" fill="#aeb8c1"/><circle cx="22" cy="38" r="5" fill="#23272c"/><polygon points="${gpts(45,20,13,9,7,.3)}" fill="#ffd23f"/><circle cx="45" cy="20" r="3.5" fill="#23272c"/>`,
-  drill:`<path d="M24 6h16v26L32 58 24 32z" fill="#aeb8c1"/><path d="M24 14l16 6M24 24l16 6M26 34l12 5M28 44l8 3" stroke="#5c6670" stroke-width="3" fill="none"/><rect x="22" y="2" width="20" height="6" rx="2" fill="#e8a914"/>`,
-  anvil:`<path d="M6 16h40c6 0 12 4 12 8-8 0-12 2-14 6v6h8v8H16v-8h8v-6c0-4-4-8-18-8z" fill="#8c97a1"/><rect x="12" y="52" width="40" height="6" rx="2" fill="#4d565f"/>`,
-  sat:`<rect x="26" y="22" width="12" height="20" rx="3" fill="#cfd6dc"/><rect x="3" y="26" width="19" height="12" fill="#2f7de1"/><rect x="42" y="26" width="19" height="12" fill="#2f7de1"/><path d="M32 22v-8" stroke="#cfd6dc" stroke-width="2"/><circle cx="32" cy="12" r="3" fill="#e84a4a"/><path d="M12 26v12M20 26v12M48 26v12M56 26v12" stroke="#a9cdf5" stroke-width="1.5"/>`,
-  planet:`<circle cx="32" cy="32" r="16" fill="#e8884a"/><path d="M20 28c8-3 18-3 24 0" stroke="#c46a30" stroke-width="3" fill="none"/><ellipse cx="32" cy="34" rx="28" ry="7" fill="none" stroke="#ffd23f" stroke-width="3" transform="rotate(-18 32 34)"/>`,
-  crown:`<path d="M8 46 6 18l14 12 12-18 12 18 14-12-2 28z" fill="#ffd23f" stroke="#e0a81a" stroke-width="2" stroke-linejoin="round"/><rect x="8" y="46" width="48" height="8" rx="2" fill="#e0a81a"/><circle cx="32" cy="38" r="4" fill="#e84a4a"/>`,
-  star:`<polygon points="${Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?13:29;return (32+r*Math.cos(a)).toFixed(1)+','+(34+r*Math.sin(a)).toFixed(1)}).join(' ')}" fill="#ffd23f" stroke="#e0a81a" stroke-width="2" stroke-linejoin="round"/><text x="32" y="41" text-anchor="middle" font-size="19" font-weight="800" fill="#d7263d" font-family="system-ui,sans-serif">V</text>`,
-  drop:`<path d="M32 5C44 22 50 31 50 40a18 18 0 0 1-36 0c0-9 6-18 18-35z" fill="#35b34a"/><path d="M24 40a9 9 0 0 0 7 9" stroke="#b6f0bf" stroke-width="3" fill="none" stroke-linecap="round"/>`,
-  nodrop:`<path d="M32 7C43 22 48 30 48 38a16 16 0 0 1-32 0c0-8 5-16 16-31z" fill="#35b34a"/><circle cx="32" cy="36" r="22" fill="none" stroke="#e84a4a" stroke-width="5"/><path d="M16 52 48 20" stroke="#e84a4a" stroke-width="5"/>`,
-  plane:`<path d="M4 30 60 6 44 58 32 40 24 52 22 38z" fill="#f2f5f7" stroke="#9fb4c4" stroke-width="2" stroke-linejoin="round"/><path d="M60 6 22 38" stroke="#9fb4c4" stroke-width="2"/>`,
-  ticket:`<path d="M6 16h52v10a6 6 0 0 0 0 12v10H6V38a6 6 0 0 0 0-12z" fill="#ffd23f" stroke="#e0a81a" stroke-width="2"/><path d="M42 16v32" stroke="#e0a81a" stroke-width="2" stroke-dasharray="3 3"/><text x="23" y="38" text-anchor="middle" font-size="12" font-weight="800" fill="#7a5a00" font-family="system-ui,sans-serif">VIP</text>`
-};
-const FT=[
-  {id:'wrench',name:'Golden spanner',ind:'Workshop',k:'score',v:100,blurb:'A full 100 m of flying without a single stripped thread.',hint:'Fly 100 m in one flight'},
-  {id:'gear',name:'Gear head',ind:'Gearboxes',k:'score',v:250,blurb:'Zero backlash, zero grease. Hilube bushes in gearboxes just keep meshing.',hint:'Fly 250 m in one flight'},
-  {id:'bolt',name:'Bolt from the blue',ind:'Electrical',k:'score',v:400,blurb:'Faster than a speeding shaft.',hint:'Fly 400 m in one flight'},
-  {id:'rocket',name:'Rocket bush',ind:'Aerospace',k:'score',v:600,blurb:'Bushes that cope with launch loads and then some.',hint:'Fly 600 m in one flight'},
-  {id:'level',name:'Spirit level',ind:'Construction',k:'score',v:800,blurb:'Perfectly level flying. The bubble never left the middle.',hint:'Fly 800 m in one flight'},
-  {id:'cogs',name:'Cogs of steel',ind:'Machinery',k:'score',v:1000,blurb:'One kilometre. Gears turn, Hilube bushes quietly carry the load.',hint:'Fly 1,000 m in one flight'},
-  {id:'drill',name:'Drill sergeant',ind:'Mining',k:'score',v:1500,blurb:'Dodged every drill bit in the rig.',hint:'Fly 1,500 m in one flight'},
-  {id:'anvil',name:'Man of steel',ind:'Heavy industry',k:'score',v:2000,blurb:'Made of polymer, tougher than steel. Allegedly.',hint:'Fly 2,000 m in one flight'},
-  {id:'sat',name:'Orbit-ready',ind:'Space',k:'score',v:3000,blurb:'Satellite mechanisms need bushes that never seize in a vacuum.',hint:'Fly 3,000 m in one flight'},
-  {id:'planet',name:'Ringed planet',ind:'Deep space',k:'score',v:4000,blurb:'Left the atmosphere with the housing still attached.',hint:'Fly 4,000 m in one flight'},
-  {id:'crown',name:'Hilube royalty',ind:'Hilube Legend',k:'score',v:5500,blurb:'Long live the self-lubricating king of bearings.',hint:'Fly 5,500 m in one flight'},
-  {id:'star',name:'Super Bush supreme',ind:'Hilube Legend',k:'score',v:7500,blurb:'The ultimate cape. Wear: still 0.0000 mm.',hint:'Fly 7,500 m in one flight'},
-  {id:'drop',name:'Drip feed',ind:'Lubrication',k:'coins',v:8,blurb:'Eight Hilube drops. Lucky you will never need a grease gun.',hint:'Collect 8 Hilube drops in one flight'},
-  {id:'nodrop',name:'Grease-free zone',ind:'Maintenance',k:'coins',v:20,blurb:'Twenty drops. Zero grease nipples. Maintenance team on holiday.',hint:'Collect 20 Hilube drops in one flight'},
-  {id:'plane',name:'Frequent flyer',ind:'Aviation',k:'plays',v:10,blurb:'Ten flights logged. Cape in good condition.',hint:'Fly 10 times'},
-  {id:'ticket',name:'Season ticket',ind:'Aviation',k:'plays',v:25,blurb:'Twenty-five flights. You may need a bigger cape.',hint:'Fly 25 times'}
-];
-const fsvg=(id,sz=64)=>`<svg viewBox="0 0 64 64" width="${sz}" height="${sz}" aria-hidden="true">${FSVG[id]||''}</svg>`;
-let FMYT={};try{FMYT=JSON.parse(localStorage.getItem('vi4ftr')||'{}')}catch{}
-const fSave=()=>{try{localStorage.setItem('vi4ftr',JSON.stringify(FMYT))}catch{}};
-function eggAcct(v){
-  const h=[...v.querySelectorAll('h2')].find(e=>e.textContent.trim()==='Account');if(!h)return;let n=0,tm=0;
-  h.style.userSelect='none';h.style.webkitUserSelect='none';h.style.webkitTapHighlightColor='transparent';
-  h.addEventListener('click',e=>{const now=Date.now();if(now-tm>1500)n=0;tm=now;n++;
-    if(h.animate)h.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:120});
-    if(n>=10){n=0;try{navigator.vibrate&&navigator.vibrate([20,30,20,30,40])}catch{}playCape()}});
-}
-async function trophies2(v,id){
-  const mine=!id||id===ME.uid;let T=mine?FMYT:{},nm=mine?(MYN||'You'):'Player',best=0,plays=0;
-  v.innerHTML=`<a class="back" href="#/tools">← Back</a><h1>Super Bush trophies</h1><p class="mut">Loading…</p>`;
-  try{const d=await getDoc(dc('scores',mine?ME.uid:id));if(d.exists()){const r=d.data();T=r.ftrophies||{};nm=r.name||nm;best=r.fbest||0;plays=r.fplays||0;if(mine){FMYT={...FMYT,...T};T=FMYT;fSave()}}}catch{}
-  const n=FT.filter(t=>T[t.id]).length;
-  const last=FT.filter(t=>T[t.id]).sort((p,q)=>T[q.id]>T[p.id]?1:-1)[0]||FT.find(t=>!T[t.id]),C=2*Math.PI*30;
-  v.innerHTML=`<a class="back" href="#/tools" id="tbk">← Back to game</a><div class="cabh"><svg viewBox="0 0 70 70" width="74" height="74"><circle cx="35" cy="35" r="30" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="35" cy="35" r="30" fill="none" stroke="#d7263d" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C*n/FT.length).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 35 35)"/><text x="35" y="41" text-anchor="middle" font-size="18" font-weight="800" fill="currentColor">${n}</text></svg><div><h1>${mine?'Your Super Bush trophies':esc(nm)+"'s Super Bush trophies"}</h1><p class="mut">${n} of ${FT.length}${best?` · best ${best}`:''}${plays?` · ${plays} flights`:''}</p></div></div>
-  <div class="cabd" id="cabd"></div>
-  <div class="cab">${FT.map(t=>{const got=T[t.id];return `<button class="tr ${got?'got':'lk'}" data-t="${t.id}" aria-label="${got?esc(t.name):'Locked trophy'}"><span class="tm">${got?fsvg(t.id,40):'<i>?</i>'}</span></button>`}).join('')}</div>${mine&&n?'<div class="acts" style="margin-top:14px"><button class="btn bad" id="tclr">Clear trophies</button></div>':''}`;
-  document.getElementById('tbk').onclick=()=>setTimeout(playCape,60);
-  if($('#tclr'))$('#tclr').onclick=async()=>{if(!confirm('Clear all your Super Bush trophies? You will have to win them again. This cannot be undone.'))return;try{FMYT={};fSave();if(ME&&db)await updateDoc(dc('scores',ME.uid),{ftrophies:{},ftc:0}).catch(()=>alert('Cleared on this device, but the saved copy could not be updated. Check your connection and try again.'));trophies2(v,id)}catch(x){alert(x.message)}};
-  const show=id=>{const t=FT.find(z=>z.id===id),got=T[id];document.getElementById('cabd').innerHTML=`<div class="tm ${got?'on':''}">${got?fsvg(id,52):'<i>?</i>'}</div><div><b>${got?esc(t.name):'Locked'}</b>${got?`<small class="ti">${esc(t.ind)}</small>`:''}<small>${got?esc(t.blurb):esc(t.hint)}</small>${got?`<small class="td">Won ${new Date(got).toLocaleDateString()}</small>`:''}</div>`;v.querySelectorAll('.cab .tr').forEach(b=>b.classList.toggle('sel',b.dataset.t===id))};
-  v.querySelectorAll('.cab .tr').forEach(b=>b.onclick=()=>show(b.dataset.t));show(last.id);
-}
-
-/* hero drawing: x=ctx, o={t,vy,held,dead,sup,img} ; origin at body centre, facing right */
-function heroDraw(x,o){
-  const {t,vy,held,dead,sup,img}=o,ph=t*(dead?2:9),S=1.15;
-  const rr=(px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath()};
-  const OUT='#0f1a3c',BLU='#2f6be0',BLD='#1c3f9e',RED='#e0273d',RDD='#8f1427',SKIN='#f6cfa6',SKD='#c98f66';
-  x.lineJoin='round';x.lineCap='round';
-  /* ---- cape ---- */
-  const L=dead?34:62,N=10,wv=dead?0:1,dy=-vy*.06;
-  const top=[],bot=[];
-  for(let i=0;i<=N;i++){const u=i/N,cx=18-(46+L)*u;
-    top.push([cx,-30-u*30+Math.sin(ph-u*4.6)*(2+7*u)*wv+dy*u*u]);
-    bot.push([cx+4*u,14+u*10+Math.sin(ph-u*4.6+1.3)*(2+8*u)*wv+dy*u*u])}
-  x.beginPath();top.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));
-  /* scalloped tail */
-  const tp=top[N],bt=bot[N];for(let k=1;k<=4;k++){const f=k/4,px=tp[0]+(bt[0]-tp[0])*f,py=tp[1]+(bt[1]-tp[1])*f,mx=tp[0]+(bt[0]-tp[0])*(f-.125)-5,my=tp[1]+(bt[1]-tp[1])*(f-.125);x.quadraticCurveTo(mx-6,my,px,py)}
-  for(let i=N;i>=0;i--)x.lineTo(bot[i][0],bot[i][1]);x.closePath();
-  const cg=x.createLinearGradient(18,0,-46-L,0);cg.addColorStop(0,RDD);cg.addColorStop(.35,RED);cg.addColorStop(1,'#ff6277');x.fillStyle=cg;x.fill();x.strokeStyle=OUT;x.lineWidth=2.6;x.stroke();
-  x.strokeStyle='rgba(120,10,30,.45)';x.lineWidth=2;for(let i=2;i<N;i+=2){x.beginPath();x.moveTo(top[i][0],top[i][1]+6);x.quadraticCurveTo((top[i][0]+bot[i][0])/2-4,(top[i][1]+bot[i][1])/2,bot[i][0],bot[i][1]-6);x.stroke()}
-  x.strokeStyle='rgba(255,255,255,.28)';x.lineWidth=2;x.beginPath();for(let i=1;i<N-1;i++){const q=top[i];i===1?x.moveTo(q[0],q[1]+5):x.lineTo(q[0],q[1]+5)}x.stroke();
-  /* ---- legs: two chunky legs trailing back, red boots ---- */
-  const leg=(k)=>{const hy=k?11:-7,w1=Math.sin(ph*.8+k*1.6)*(dead?1:3.5),w2=Math.sin(ph*.8+k*1.6+.9)*(dead?1:4.5);
-    const P=[[-42,hy],[-64,hy+(k?3:-1)+w1],[-86,hy+(k?5:2)+w2]];
-    const cap=(w,c)=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(P[0][0],P[0][1]);x.lineTo(P[1][0],P[1][1]);x.lineTo(P[2][0],P[2][1]);x.stroke()};
-    cap(18,OUT);cap(14,BLU);x.globalAlpha=.55;cap(5,'#8fb4ff');x.globalAlpha=1;
-    const f=P[2];x.save();x.translate(f[0],f[1]);x.rotate(Math.atan2(P[2][1]-P[1][1],P[2][0]-P[1][0])+Math.PI);
-    x.fillStyle=RED;x.strokeStyle=OUT;x.lineWidth=2.6;rr(-2,-8,24,16,6.5);x.fill();x.stroke();x.fillStyle='#ffd23f';x.fillRect(13,-7.4,3.8,14.8);x.fillStyle='rgba(255,255,255,.35)';rr(2,-6,10,3.4,1.7);x.fill();x.restore()};
-  leg(0);
-  /* far arm */
-  const arm=(sy,ex,ey,wob,far)=>{const S0=[16,sy],E=[42,sy+(ey-sy)*.4+wob],H=[ex,ey+wob];
-    const cap=(w,c)=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(S0[0],S0[1]);x.quadraticCurveTo(E[0],E[1],H[0],H[1]);x.stroke()};
-    cap(18,OUT);cap(14,far?BLD:BLU);if(!far){x.globalAlpha=.5;cap(4.5,'#8fb4ff');x.globalAlpha=1}
-    /* red cuff */
-    x.save();x.translate(H[0]-9,H[1]);x.fillStyle=RED;x.strokeStyle=OUT;x.lineWidth=2.2;rr(-3.5,-9.4,8,18.8,3);x.fill();x.stroke();x.restore();
-    /* fist */
-    x.fillStyle=SKIN;x.strokeStyle=OUT;x.lineWidth=2.4;rr(H[0]-3,H[1]-8.5,19,17,7);x.fill();x.stroke();
-    x.strokeStyle=SKD;x.lineWidth=1.6;x.beginPath();x.moveTo(H[0]+5,H[1]-7);x.lineTo(H[0]+5,H[1]+7);x.moveTo(H[0]+10,H[1]-7);x.lineTo(H[0]+10,H[1]+7);x.stroke();
-    x.fillStyle=SKIN;x.beginPath();x.ellipse(H[0]+3,H[1]-9,6,3.8,.2,0,6.283);x.fill();x.strokeStyle=OUT;x.lineWidth=1.8;x.stroke()};
-  leg(1);
-  arm(12,80,17,dead?1:Math.sin(ph*.7)*1.5,true);
-  /* ---- body ---- */
-  const F=1.3;x.save();x.scale(F,F);
-  x.save();x.rotate(Math.PI/2);x.shadowColor='rgba(0,0,0,.28)';x.shadowBlur=8;x.shadowOffsetX=3;
-  if(img&&img.complete)x.drawImage(img,-30*S,-44*S,60*S,84*S);x.restore();
-  /* red trunks + yellow belt at the back end */
-  x.save();x.beginPath();x.rect(-36,-24,12,48);x.clip();x.fillStyle=RED;rr(-37.5,-23.5,14,47,7);x.fill();x.restore();
-  x.fillStyle='#ffd23f';x.strokeStyle=OUT;x.lineWidth=2;rr(-27,-23,6,46,2);x.fill();x.stroke();x.fillStyle='#fff3a8';rr(-26,-4,4,8,1.5);x.fill();x.strokeStyle='#b88a00';x.lineWidth=1;x.stroke();
-  /* chest emblem */
-  x.save();x.translate(-10.5,1);x.fillStyle='#ffd23f';x.strokeStyle=OUT;x.lineWidth=2;x.beginPath();x.moveTo(-9,-11);x.lineTo(9,-11);x.lineTo(9,2);x.lineTo(0,12);x.lineTo(-9,2);x.closePath();x.fill();x.stroke();
-  x.fillStyle=RED;x.beginPath();x.moveTo(-6,-8);x.lineTo(6,-8);x.lineTo(6,1);x.lineTo(0,8);x.lineTo(-6,1);x.closePath();x.fill();x.fillStyle='#ffd23f';x.font='800 12px system-ui,sans-serif';x.textAlign='center';x.fillText('V',0,3);x.restore();
-  /* ---- face ---- */
-  const eye=(ex,ey)=>{if(dead){x.strokeStyle=OUT;x.lineWidth=2.6;x.beginPath();x.moveTo(ex-4,ey-4);x.lineTo(ex+4,ey+4);x.moveTo(ex+4,ey-4);x.lineTo(ex-4,ey+4);x.stroke();return}
-    x.fillStyle='#fff';x.strokeStyle=OUT;x.lineWidth=2;x.beginPath();x.ellipse(ex,ey,5.4,6.4,0,0,6.283);x.fill();x.stroke();
-    x.fillStyle='#16306b';x.beginPath();x.arc(ex+1.8,ey+.4,3.4,0,6.283);x.fill();x.fillStyle=OUT;x.beginPath();x.arc(ex+2.2,ey+.5,1.8,0,6.283);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(ex+3.2,ey-1.2,1.2,0,6.283);x.fill()};
-  eye(6,0);eye(19,0);
-  x.strokeStyle=OUT;x.lineWidth=3;if(!dead){x.beginPath();x.moveTo(-.5,-9);x.lineTo(10,-6.4);x.moveTo(15,-6.4);x.lineTo(25,-9);x.stroke()}
-  x.fillStyle='rgba(255,110,110,.5)';x.beginPath();x.ellipse(2,10,3.4,2.2,0,0,6.283);x.ellipse(23,10,3.4,2.2,0,0,6.283);x.fill();
-  x.strokeStyle=OUT;x.lineWidth=2.4;
-  if(dead){x.beginPath();x.arc(12.5,15.5,4.5,Math.PI*1.1,Math.PI*1.9);x.stroke()}
-  else if(held){x.fillStyle='#7a0f20';x.beginPath();x.moveTo(5,9);x.quadraticCurveTo(12.5,21,20,9);x.closePath();x.fill();x.stroke();x.fillStyle='#fff';x.fillRect(8,9.3,9,2.2)}
-  else{x.beginPath();x.moveTo(6,11);x.quadraticCurveTo(12.5,17.5,19,11);x.stroke()}
-  /* curl */
-  x.strokeStyle=OUT;x.lineWidth=3.4;x.beginPath();x.moveTo(8,-23);x.quadraticCurveTo(10,-33,19,-30);x.quadraticCurveTo(14,-30,16,-23);x.stroke();
-  x.strokeStyle='#2b2f36';x.lineWidth=1.6;x.stroke();
-  x.restore();
-  /* near arm */
-  arm(-14,84,-22,dead?1:Math.sin(ph*.7+1)*1.5,false);
-  if(sup){x.globalAlpha=.6;x.strokeStyle='#ffe278';x.lineWidth=3;x.beginPath();x.ellipse(0,0,66,40,0,0,6.283);x.stroke();x.globalAlpha=1}
-}
-
-function playCape(){
-  if(document.getElementById('bgame'))return;
-  const root=document.createElement('div');root.id='bgame';
-  root.innerHTML='<canvas></canvas><button class="bgx" aria-label="Close">✕</button><button class="bgm" aria-label="Sound"></button><button class="bgt" aria-label="Leaderboard">🏆</button><button class="bgc" aria-label="Trophy cabinet">🏅</button><div class="bglb" hidden></div>';
-  document.body.appendChild(root);
-  const cv=root.querySelector('canvas'),x=cv.getContext('2d'),bm=root.querySelector('.bgm');
-  const FL=44,GRAV=1050,THR=-1500,VMAX=430,VMIN=-360,HOP=-150,HK=.8;let dbgNoDie=false;
-  let cw=0,ch=0,sc=1,W=420,ox=0,dpr=Math.min(devicePixelRatio||1,2),raf=0,last=0,t=0,alive=true,held=false;
-  const fit=()=>{cw=innerWidth;ch=innerHeight;cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);sc=ch/640;W=Math.min(cw/sc,440);ox=(cw/sc-W)/2};
-  fit();addEventListener('resize',fit);
-  /* sprite: the same Hilube bush as Bush Hop; heroDraw lays it on its side */
-  const notch=Array.from({length:6},(_,k)=>{const a=(90+k*60)*Math.PI/180;return `<circle cx="${(30+16*Math.cos(a)).toFixed(2)}" cy="${(20+5.1*Math.sin(a)).toFixed(2)}" r="1.9" fill="#2a2e33"/>`}).join('');
-  const lines=[210,250,290,330].map(a=>{const r=a*Math.PI/180,px=(30+16*Math.cos(r)).toFixed(2),py=(20+5.1*Math.sin(r)).toFixed(2);return `<line x1="${px}" y1="${py}" x2="${px}" y2="${(+py+11).toFixed(2)}" stroke="#555b63" stroke-width="1.6"/>`}).join('');
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 84" width="120" height="168"><defs><linearGradient id="a" x1="0" x2="1"><stop offset="0" stop-color="#cdc3a8"/><stop offset=".45" stop-color="#fffaf0"/><stop offset="1" stop-color="#c6bca0"/></linearGradient><linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#3a50b4"/><stop offset=".45" stop-color="#7389ee"/><stop offset="1" stop-color="#32459b"/></linearGradient><clipPath id="c"><ellipse cx="30" cy="20" rx="16" ry="5.1"/></clipPath></defs><path d="M10 20V68A20 6.4 0 0 0 50 68V20Z" fill="url(#a)" stroke="#b9ae90" stroke-width=".7"/><path d="M10 40V48A20 6.4 0 0 0 50 48V40A20 6.4 0 0 1 10 40Z" fill="url(#b)"/><ellipse cx="30" cy="20" rx="20" ry="6.4" fill="#fffaf0" stroke="#b9ae90" stroke-width=".7"/><ellipse cx="30" cy="20" rx="16" ry="5.1" fill="#23272c"/><g clip-path="url(#c)">${lines}</g>${notch}</svg>`;
-  const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-  const TI={};FT.forEach(z=>{const i=new Image();i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">${FSVG[z.id]}</svg>`);TI[z.id]=i});
-  /* sound */
-  let ac=null,mute=false;try{mute=localStorage.getItem('vi4gm')==='1'}catch{}
-  const icon=()=>{bm.textContent=mute?'🔇':'🔊'};icon();
-  const beep=(f,d,ty='square',v=.05,f2,dl=0)=>{if(mute)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const s=ac.currentTime+dl,o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.setValueAtTime(f,s);if(f2)o.frequency.exponentialRampToValueAtTime(f2,s+d);g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+d)}catch{}};
-  const buzz=n=>{try{navigator.vibrate&&navigator.vibrate(n)}catch{}};
-  /* saved progress */
-  let best=0;try{best=+localStorage.getItem('vi4f')||0}catch{}
-  const B={x:118,y:360,vy:0,tilt:0,spin:0};
-  const uname=()=>(ME&&(MYN||ME.displayName||(ME.email||'').split('@')[0]))||'Player';
-  let plays=0,myRank=0;const lbEl=root.querySelector('.bglb');
-  const lbLoad=async()=>{const q=await getDocs(query(col('scores'),orderBy('fbest','desc'),limit(25)));return q.docs.map(d=>({id:d.id,...d.data()}))};
-  const rankMe=async()=>{try{const l=await lbLoad(),i=l.findIndex(r=>r.id===ME.uid);myRank=i>=0?i+1:0}catch{}};
-  if(ME&&db)getDoc(dc('scores',ME.uid)).then(d=>{if(d.exists()){const r=d.data();best=Math.max(best,r.fbest||0);plays=r.fplays||0;FMYT={...(r.ftrophies||{}),...FMYT};fSave()}rankMe()}).catch(()=>{});
-  const rec=()=>({uid:ME.uid,name:uname(),email:ME.email||'',fbest:best,fplays:plays,ftrophies:FMYT,ftc:Object.keys(FMYT).length,ft:new Date().toISOString()});
-  const submit=()=>{if(!ME||!db)return;plays++;setDoc(dc('scores',ME.uid),rec(),{merge:true}).then(rankMe).catch(()=>{})};
-  const saveTr=()=>{fSave();if(!ME||!db)return;setDoc(dc('scores',ME.uid),rec(),{merge:true}).catch(()=>{})};
-  const showLb=async()=>{lbEl.hidden=false;lbEl.innerHTML='<div class="lbh"><b>🦸 Super Bush leaders</b><button class="lbx" aria-label="Back">✕</button></div><p class="lbm">Loading…</p>';lbEl.querySelector('.lbx').onclick=()=>{lbEl.hidden=true};
-    try{const l=await lbLoad();lbEl.querySelector('.lbm').outerHTML=l.length?`<ol>${l.map((r,i)=>`<li class="${r.id===ME?.uid?'me':''}" data-u="${r.id}"><i>${i+1}</i><span>${esc(r.name||r.email||'Player')}</span><em>🏅${r.ftc||Object.keys(r.ftrophies||{}).length}</em><b>${r.fbest||0} m</b><small>${r.fplays||0} flights</small></li>`).join('')}</ol>`:'<p class="lbm">No flights yet. Be the first!</p>'}catch{lbEl.querySelector('.lbm').textContent='Leaderboard unavailable. Ask the admin to publish the latest Firestore rules.'}};
-  root.querySelector('.bgt').addEventListener('click',e=>{e.stopPropagation();showLb()});
-  lbEl.addEventListener('click',e=>{const li=e.target.closest('li[data-u]');if(li){close();location.hash='#/flytro/'+li.dataset.u}});
-  root.querySelector('.bgc').addEventListener('click',e=>{e.stopPropagation();close();location.hash='#/flytro'});
-  /* world state */
-  let st='idle',obs=[],warns=[],drops=[],parts=[],pops=[],dist=0,smashed=0,score=0,cn=0,sup=false,supT=0,shake=0,flash=0,floorX=0,deadT=0,deadMsg='',newBest=false,combo=0,tro=null,ban=null,runT=[],offered={},speed=170,sky=0,chat=null,tipI=0,trail=0,spawnT=1.2,dropT=2,msI=0,nextChat=150,beam=null,star=[],clouds=[];
-  for(let i=0;i<46;i++)star.push([Math.random()*440,Math.random()*400,Math.random()*1.6+.4,Math.random()*6]);
-  for(let i=0;i<7;i++)clouds.push({x:Math.random()*520,y:50+Math.random()*330,s:.6+Math.random()*.9});
-  const bld=[];for(let i=0,px=0;i<40;i++){const w=44+Math.random()*50,h=50+Math.random()*120;bld.push({x:px,w,h,ch:Math.random()<.45,l:Math.random()});px+=w+4}
-  const bw=bld[bld.length-1].x+bld[bld.length-1].w+4;
-  const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),mix=(a,b,k)=>{const A=hex(a),Bb=hex(b);return `rgb(${A.map((v,i)=>Math.round(v+(Bb[i]-v)*k)).join(',')})`};
-  const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-  const puff=(px,py,n,cols,sp=120,life=.6,r=3,g=300)=>{for(let i=0;i<n;i++){const a=Math.random()*6.283,s=Math.random()*sp;parts.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,l:rnd(.5,1)*life,m:life,c:cols[i%cols.length],r:rnd(r*.6,r*1.4),g})}};
-  const pop=(txt,px,py,c='#fff')=>pops.push({txt,x:px,y:py,l:1,c});
-  const TIPS=['Hold to climb. Let go and gravity does the press-fit.','Gears, spanners, drills, anvils and storm clouds. All trying to ruin your day.','10 Hilube drops = 5 seconds of SUPER SLIPPERY with laser eyes.','Tolerance for error: ±0.0 mm.','Tap for a little hop. Hold for a big climb.','Watch for the red warning triangle: something fast is coming.','No grease needed. This bush is a superhero.'];
-  const CHAT=['Up, up and away!','This is a job for Hilube!','Zero grease. Zero problem.','Press-fit? More like press-FLIGHT.','Is it a bird? Is it a plane? It is a bush!','Tolerance? What tolerance!','Cape torque: nominal.','Please do not feed the gears.','Wear so far: basically nothing.','Self-lubricating AND self-propelled.','Remember: always check your shaft.','Spanner in the works? Not today.'];
-  const DEAD=['Sheared off!','Seized solid!','Out of tolerance!','Cavitation!','Kryptonite? No, rust!','Spanner in the works!','Cape snagged on a gear!','Anvil of destiny!','Thermal runaway!','Crack in the housing!','Drilled right through!','Shocking result!'];
-  const MSL=[[100,'Up, up and away!'],[250,'Faster than a speeding shaft!'],[500,'More powerful than a press!'],[750,'Leaps tall housings in a single bound!'],[1000,'ONE KILOMETRE! Wear: still zero!'],[1500,'Hilube never quits!'],[2000,'MAN OF STEEL (and polymer)!'],[3000,'Bearing royalty!'],[4000,'Orbit achieved!'],[5000,'LEGEND!']];
-  const reset=()=>{tro=null;ban=null;runT=[];offered={};obs=[];warns=[];drops=[];parts=[];pops=[];dist=0;smashed=0;score=0;cn=0;sup=false;supT=0;shake=0;combo=0;B.y=360;B.vy=0;B.tilt=0;B.spin=0;newBest=false;chat=null;beam=null;msI=0;nextChat=150;spawnT=1.4;dropT=2.2;st='idle';tipI=(tipI+1)%TIPS.length};
-  const dueT=()=>{if(st==='dead')return null;return FT.find(z=>!FMYT[z.id]&&!offered[z.id]&&(z.k==='score'?score>=z.v:z.k==='coins'?cn>=z.v:(plays>=z.v&&score>=60)))||null};
-  const medal=s=>s>=5000?['HILUBE LEGEND','#7fd0ff']:s>=2000?['MAN OF STEEL','#ffd23f']:s>=1000?['STEEL CAPE','#d6dde3']:s>=300?['COPPER CAPE','#d98a4a']:null;
-  const start=()=>{if(st==='dead'){if(t-deadT>.75){reset();start()}return}
-    if(st==='idle')st='run';
-    B.vy=Math.min(B.vy,HOP);beep(380,.1,'sine',.06,640);buzz(5)};
-  const die=()=>{
-    if(sup||st==='dead'||dbgNoDie)return;
-    st='dead';deadT=t;shake=.5;flash=.8;held=false;B.vy=-220;B.spin=rnd(-6,6);buzz([40,40,80]);beep(180,.4,'sawtooth',.11,40);
-    puff(B.x,B.y,26,['#fffaf0','#c6bca0','#3a50b4','#d7263d'],300,.9,4);
-    deadMsg=DEAD[Math.floor(Math.random()*DEAD.length)];
-    if(score>best){best=score;newBest=score>0;try{localStorage.setItem('vi4f',String(best))}catch{}}submit();
-  };
-  /* ----- hazards ----- */
-  const unlocked=()=>{const a=['gear'];if(score>=120)a.push('spanner');if(score>=250)a.push('nuts','gear');if(score>=350)a.push('drill');if(score>=500)a.push('anvil');if(score>=700)a.push('cloud');return a};
-  const spawnObs=()=>{const a=unlocked(),k=a[Math.floor(Math.random()*a.length)],lo=70,hi=640-FL-60,y=Math.random()<.5?clamp(B.y+rnd(-80,80),lo,hi):rnd(lo,hi);
-    if(k==='gear')obs.push({k,x:W+60,y,by:y,r:rnd(20,32),ph:rnd(0,6),amp:rnd(0,26),dir:Math.random()<.5?1:-1,a:0});
-    else if(k==='spanner')obs.push({k,x:W+70,y,by:y,ph:rnd(0,6),amp:rnd(0,20),a:rnd(0,6),w:(Math.random()<.5?-1:1)*rnd(1.2,2.6)});
-    else if(k==='nuts'){const n=4+Math.floor(Math.random()*3),amp=rnd(25,55),ph=rnd(0,6);for(let i=0;i<n;i++)obs.push({k:'nut',x:W+60+i*38,y:clamp(y+Math.sin(ph+i*.9)*amp,60,hi),a:i})}
-    else if(k==='drill')warns.push({k,y,l:.95});
-    else if(k==='anvil')warns.push({k,x:rnd(W*.45,W-50),l:.95});
-    else if(k==='cloud')obs.push({k,x:W+80,y:rnd(80,210),s:'idle',cd:rnd(.8,1.6),tm:0})};
-  const hitO=(o,hx,hy,hw,hh)=>{
-    const R_=(rx,ry,rw,rh)=>hx<rx+rw&&hx+hw>rx&&hy<ry+rh&&hy+hh>ry;
-    const C_=(cx,cy,r)=>{const nx=clamp(cx,hx,hx+hw),ny=clamp(cy,hy,hy+hh);return (nx-cx)*(nx-cx)+(ny-cy)*(ny-cy)<r*r};
-    switch(o.k){
-      case 'gear':return C_(o.x,o.y,o.r-3);
-      case 'nut':return C_(o.x,o.y,9);
-      case 'spanner':return [-34,0,34].some(d=>C_(o.x+Math.cos(o.a)*d,o.y+Math.sin(o.a)*d,12));
-      case 'drill':return R_(o.x-72,o.y-11,102,22);
-      case 'anvil':return R_(o.x-24,o.y-18,48,36);
-      case 'cloud':return C_(o.x-28,o.y+2,20)||C_(o.x+4,o.y-6,24)||C_(o.x+34,o.y+3,18)||(o.s==='bolt'&&R_(o.x-6,o.y+20,12,640-FL-o.y-20));
-    }return false};
-  const radOf=o=>o.k==='gear'?o.r:o.k==='spanner'?50:o.k==='drill'?60:o.k==='anvil'?26:o.k==='cloud'?44:12;
-  const smash=o=>{o.dead=true;smashed++;combo=0;puff(o.x,o.y,18,['#ff9d2e','#ffd23f','#fff','#8c97a1'],260,.7,3.5,200);pop('+5',o.x,o.y-22,'#ffd23f');beep(240,.18,'sawtooth',.08,80);buzz(12);shake=Math.max(shake,.12)};
-  const tpos=q=>({x:q.x,y:q.y});
-  const update=dt=>{
-    t+=dt;sky+=(Math.min(score/2500,1)*2-sky)*Math.min(1,dt*1.2);
-    speed=170+Math.min(score*.1,120);
-    const dead=st==='dead';
-    clouds.forEach(c=>{c.x-=(st==='run'?speed:50)*.22*c.s*dt;if(c.x<-90){c.x=W+60+Math.random()*80;c.y=50+Math.random()*330}});
-    if(st==='idle'){B.y=360+Math.sin(t*2.6)*12;B.tilt=Math.sin(t*2.6)*.06;floorX=(floorX+speed*.5*dt)%48}
-    else{
-      if(!dead){B.vy+=(held?THR:GRAV)*dt;B.vy=clamp(B.vy,VMIN,VMAX);B.tilt+=(clamp(B.vy/900,-.38,.5)-B.tilt)*Math.min(1,dt*9);floorX=(floorX+speed*dt)%48}
-      else{B.vy=Math.min(B.vy+1300*dt,700);B.tilt+=B.spin*dt}
-      B.y+=B.vy*dt;
-      if(B.y<34&&!dead){B.y=34;B.vy=Math.max(B.vy,0)}
-      const fy=640-FL-22;
-      if(B.y>fy){B.y=fy;if(!dead){if(sup){B.vy=-320;puff(B.x,fy+20,10,['#ffd23f','#fff'],160,.4,3)}else die();if(st==='dead')B.vy=-200}else{B.vy=0;B.spin*=.8}}
-      if(!dead){
-        dist+=speed*dt;score=Math.floor(dist/10)+smashed*5;
-        while(msI<MSL.length&&score>=MSL[msI][0]){const m=MSL[msI++];pop(m[1],W/2,200,'#ffd23f');flash=.35;buzz(25);for(let i=0;i<40;i++)parts.push({x:W/2+rnd(-30,30),y:210,vx:rnd(-260,260),vy:rnd(-380,-60),l:rnd(.8,1.5),m:1.5,c:['#ffd23f','#d7263d','#2f7de1','#35b34a','#fff'][i%5],r:rnd(2,4.5),g:520});[0,.1,.2].forEach((d,i)=>beep(520+i*180,.18,'triangle',.07,undefined,d))}
-        if(score>=nextChat){chat={txt:CHAT[Math.floor(Math.random()*CHAT.length)],l:2.4};nextChat=score+Math.floor(rnd(160,260))}
-        /* spawning */
-        spawnT-=dt;if(spawnT<=0){spawnObs();spawnT=Math.max(.6,1.45-score/3500)*rnd(.8,1.15)}
-        dropT-=dt;if(dropT<=0){dropT=rnd(3.4,5.8);const n=5+Math.floor(Math.random()*3),y0=rnd(110,520),amp=rnd(0,45);for(let i=0;i<n;i++)drops.push({x:W+50+i*38,y:clamp(y0+Math.sin(i*.8)*amp,60,640-FL-40),t:i*.4,got:false})}
-        for(const w of warns){w.l-=dt}
-        for(const w of warns.filter(q=>q.l<=0)){if(w.k==='drill'){obs.push({k:'drill',x:W+90,y:w.y,vx:270,a:0});beep(220,.25,'sawtooth',.05,520)}else{obs.push({k:'anvil',x:w.x,y:-40,vy:0,g:false})}}
-        warns=warns.filter(q=>q.l>0);
-        if(sup){supT-=dt;if(supT<=0){sup=false;supT=0;pop('Super mode over',B.x,B.y-60,'#9fb4c4');beep(300,.2,'triangle',.05,160)}}
-        /* move hazards */
-        for(const o of obs){o.x-=(speed+(o.vx||0))*dt;
-          if(o.k==='gear'){o.a+=o.dir*1.3*dt;o.y=o.by+Math.sin(t*1.6+o.ph)*o.amp}
-          else if(o.k==='spanner'){o.a+=o.w*dt;o.y=o.by+Math.sin(t*1.4+o.ph)*o.amp}
-          else if(o.k==='drill'){o.a+=dt*14;if(Math.random()<.6)parts.push({x:o.x+34,y:o.y+rnd(-5,5),vx:rnd(60,150),vy:rnd(-20,20),l:.35,m:.35,c:Math.random()<.5?'#ff9d2e':'#ffd23f',r:rnd(2,4),g:0})}
-          else if(o.k==='anvil'&&!o.g){o.vy+=1100*dt;o.y+=o.vy*dt;if(o.y>=640-FL-18){o.y=640-FL-18;o.g=true;shake=Math.max(shake,.18);puff(o.x,o.y+16,12,['#c9b79c','#8a7a66'],160,.5,3,0);beep(90,.2,'sawtooth',.1,50);buzz(15)}}
-          else if(o.k==='cloud'){if(o.s==='idle'){o.cd-=dt;if(o.cd<=0){o.s='charge';o.tm=.7;beep(1200,.5,'sawtooth',.03,300)}}else if(o.s==='charge'){o.tm-=dt;if(o.tm<=0){o.s='bolt';o.tm=.28;shake=Math.max(shake,.15);beep(70,.3,'sawtooth',.12,40);buzz(20)}}else{o.tm-=dt;if(o.tm<=0){o.s='idle';o.cd=rnd(1.5,2.5)}}}}
-        obs=obs.filter(o=>!o.dead&&o.x>-160);
-        /* hero collisions */
-        const hx=B.x-30,hy=B.y-17,hw=60,hh=34;
-        for(const o of obs){if(hitO(o,hx,hy,hw,hh)){if(sup)smash(o);else{die();break}}}
-        /* laser eyes in super mode */
-        if(sup&&st!=='dead'){let near=null,nd=1e9;for(const o of obs){if(o.dead||o.x<B.x+10||o.x>B.x+300||Math.abs(o.y-B.y)>radOf(o)+26||o.k==='cloud')continue;if(o.x-B.x<nd){nd=o.x-B.x;near=o}}
-          if(near){beam={tx:near.x,ty:near.y,l:.14};smash(near)}}
-        if(tro){tro.x-=speed*dt;if(tro.x<-60){delete offered[tro.id];tro=null}}
-        if(!tro){const d=dueT();if(d){offered[d.id]=1;tro={id:d.id,x:W+70,y:rnd(160,440)}}}
-        if(tro&&st!=='dead'){const q=tro,pp=tpos(q);if(Math.hypot(B.x-pp.x,B.y-pp.y)<46){const T=FT.find(z=>z.id===q.id);tro=null;FMYT[T.id]=new Date().toISOString();runT.push(T);saveTr();ban={t:T,l:2.2};flash=.15;buzz([30,40,30,40,80]);puff(pp.x,pp.y,26,['#ffd23f','#fff3c4','#7fd0ff','#d7263d','#35b34a'],300,.9,3.5);[0,.09,.18,.27,.4].forEach((d,k)=>beep(523*[1,1.25,1.5,2,2.5][k],.2,'triangle',.08,undefined,d))}}
-        for(const c of drops){c.x-=speed*dt;if(!c.got&&st!=='dead'&&Math.hypot(B.x+10-c.x,B.y-c.y)<40){c.got=true;cn++;combo++;beep(1046,.07,'square',.05);beep(1568,.12,'square',.05,undefined,.07);puff(c.x,c.y,12,['#35b34a','#b6f0bf','#fff'],170,.55,3);pop(combo>1?`+1 x${combo}`:'+1',c.x,c.y-20,'#8ff0a4');
-          if(cn%10===0){sup=true;supT=5;pop('SUPER SLIPPERY! 5 s',W/2,250,'#ffd23f');flash=.3;beep(660,.3,'triangle',.07,1320);buzz([20,20,40])}}}
-        drops=drops.filter(c=>c.x>-60&&!c.got);
-        trail-=dt;if(trail<=0){trail=held?.035:.12;parts.push({x:B.x-48,y:B.y+rnd(-8,8),vx:-speed*.9,vy:held?rnd(30,90):rnd(-10,10),l:.4,m:.4,c:held?'#e8f6fa':'rgba(255,255,255,.6)',r:held?2.6:1.6,g:0})}
-      }
-    }
-    for(const p of parts){p.l-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt}parts=parts.filter(p=>p.l>0);
-    for(const p of pops){p.l-=dt*.8;p.y-=40*dt}pops=pops.filter(p=>p.l>0);
-    if(ban){ban.l-=dt;if(ban.l<=0)ban=null}if(chat){chat.l-=dt;if(chat.l<=0)chat=null}if(beam){beam.l-=dt;if(beam.l<=0)beam=null}
-    shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt*1.6);
-    if(sup&&Math.random()<.6)parts.push({x:B.x+rnd(-40,40),y:B.y+rnd(-30,30),vx:rnd(-20,20),vy:rnd(-30,10),l:.5,m:.5,c:['#ffd23f','#fff3c4','#ff6b6b'][Math.floor(Math.random()*3)],r:2.2,g:0});
-  };
-  /* ----- drawing ----- */
-  const roundRect=(px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath()};
-  const text=(s,px,py,size,col='#fff',al='center',lw=5)=>{x.font=`800 ${size}px system-ui,-apple-system,Segoe UI,sans-serif`;x.textAlign=al;x.lineJoin='round';x.lineWidth=lw;x.strokeStyle='rgba(8,20,32,.85)';x.strokeText(s,px,py);x.fillStyle=col;x.fillText(s,px,py)};
-  const gearP=(cx,cy,ro,ri,n,rot)=>{x.beginPath();for(let i=0;i<n*4;i++){const a=rot+i*Math.PI/(n*2),r=(i%4===1||i%4===2)?ro:ri,qx=cx+r*Math.cos(a),qy=cy+r*Math.sin(a);i?x.lineTo(qx,qy):x.moveTo(qx,qy)}x.closePath()};
-  const steelV=(y0,y1)=>{const g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'#eef2f5');g.addColorStop(.5,'#a4aeb7');g.addColorStop(1,'#4d565f');return g};
-  const drawGear=o=>{const R=o.r;x.save();gearP(o.x,o.y,R,R-Math.max(7,R*.26),Math.round(R/3.2)+4,o.a);const g=x.createRadialGradient(o.x-R*.25,o.y-R*.25,3,o.x,o.y,R);g.addColorStop(0,'#eef2f5');g.addColorStop(1,'#7b8690');x.fillStyle=g;x.fill();x.strokeStyle='#2b3239';x.lineWidth=2.2;x.stroke();
-    x.beginPath();x.arc(o.x,o.y,R*.5,0,6.283);x.fillStyle='#35b34a';x.fill();x.strokeStyle='#1f8f36';x.lineWidth=2;x.stroke();x.beginPath();x.arc(o.x,o.y,R*.2,0,6.283);x.fillStyle='#23272c';x.fill();
-    for(let k=0;k<5;k++){const a=o.a*2+k*1.2566;x.beginPath();x.arc(o.x+Math.cos(a)*R*.34,o.y+Math.sin(a)*R*.34,R*.07+.6,0,6.283);x.fillStyle='#e8f6fa';x.fill()}x.restore()};
-  const drawSpanner=o=>{x.save();x.translate(o.x,o.y);x.rotate(o.a);x.lineJoin='round';
-    x.fillStyle=steelV(-14,14);x.strokeStyle='#2b3239';x.lineWidth=2.2;roundRect(-36,-6.5,72,13,6.5);x.fill();x.stroke();
-    x.beginPath();x.arc(40,0,17,0,6.283);x.fill();x.stroke();x.fillStyle='#17202a';x.fillRect(38,-7.5,22,15);
-    x.fillStyle=steelV(-14,14);x.beginPath();x.arc(-38,0,14,0,6.283);x.fill();x.stroke();x.fillStyle='#17202a';x.beginPath();x.arc(-38,0,6,0,6.283);x.fill();
-    x.fillStyle='#e8a914';x.fillRect(-12,-6.5,6,13);x.restore()};
-  const drawNut=o=>{x.save();x.translate(o.x,o.y);x.rotate(t*2+o.a);x.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;i?x.lineTo(Math.cos(a)*11,Math.sin(a)*11):x.moveTo(Math.cos(a)*11,Math.sin(a)*11)}x.closePath();x.fillStyle=steelV(-11,11);x.fill();x.strokeStyle='#2b3239';x.lineWidth=2;x.stroke();x.beginPath();x.arc(0,0,4.2,0,6.283);x.fillStyle='#17202a';x.fill();x.restore()};
-  const drawDrill=o=>{x.save();x.translate(o.x,o.y);
-    const fl=.7+.3*Math.sin(t*40);x.fillStyle='#ff6a1a';x.beginPath();x.moveTo(30,-7);x.lineTo(30+36*fl,0);x.lineTo(30,7);x.closePath();x.fill();x.fillStyle='#ffd23f';x.beginPath();x.moveTo(30,-4);x.lineTo(30+20*fl,0);x.lineTo(30,4);x.closePath();x.fill();
-    x.fillStyle='#d7263d';x.strokeStyle='#2b3239';x.lineWidth=2;x.beginPath();x.moveTo(14,-11);x.lineTo(32,-20);x.lineTo(34,-11);x.closePath();x.fill();x.stroke();x.beginPath();x.moveTo(14,11);x.lineTo(32,20);x.lineTo(34,11);x.closePath();x.fill();x.stroke();
-    x.save();x.beginPath();x.moveTo(-72,0);x.lineTo(-26,-11);x.lineTo(30,-11);x.lineTo(30,11);x.lineTo(-26,11);x.closePath();x.clip();
-    x.fillStyle=steelV(-11,11);x.fillRect(-72,-11,102,22);x.strokeStyle='rgba(40,48,56,.6)';x.lineWidth=4;const off=(o.a*6)%18;for(let xx=-90;xx<40;xx+=18){x.beginPath();x.moveTo(xx+off,-14);x.lineTo(xx+off+9,14);x.stroke()}x.restore();
-    x.strokeStyle='#2b3239';x.lineWidth=2.2;x.beginPath();x.moveTo(-72,0);x.lineTo(-26,-11);x.lineTo(30,-11);x.lineTo(30,11);x.lineTo(-26,11);x.closePath();x.stroke();x.restore()};
-  const drawAnvil=o=>{x.save();x.translate(o.x,o.y);x.fillStyle='#5c6670';x.strokeStyle='#1d2329';x.lineWidth=2.4;x.lineJoin='round';
-    x.beginPath();x.moveTo(-26,-18);x.lineTo(26,-18);x.lineTo(26,-8);x.lineTo(16,-4);x.lineTo(14,6);x.lineTo(24,18);x.lineTo(-24,18);x.lineTo(-14,6);x.lineTo(-14,-4);x.lineTo(-26,-8);x.lineTo(-44,-12);x.lineTo(-26,-18);x.closePath();x.fill();x.stroke();
-    x.fillStyle='rgba(255,255,255,.3)';x.fillRect(-24,-16,46,4);x.fillStyle='#e8a914';x.font='800 9px system-ui';x.textAlign='center';x.fillText('1 TON',0,10);x.restore()};
-  const drawCloud=o=>{const ch=o.s==='charge',fl=ch&&Math.floor(t*22)%2;x.save();x.translate(o.x,o.y);x.fillStyle=fl?'#8a8f9a':'#58616c';x.strokeStyle='#2f363e';x.lineWidth=2.2;
-    x.beginPath();x.ellipse(-28,2,24,17,0,0,6.283);x.ellipse(4,-6,28,22,0,0,6.283);x.ellipse(34,3,22,16,0,0,6.283);x.ellipse(2,8,40,14,0,0,6.283);x.fill();
-    x.fillStyle='rgba(255,255,255,.12)';x.beginPath();x.ellipse(0,-14,22,8,0,0,6.283);x.fill();
-    if(ch){x.fillStyle=`rgba(255,226,120,${.4+.5*Math.sin(t*40)**2})`;x.beginPath();x.ellipse(2,12,26,8,0,0,6.283);x.fill();x.strokeStyle='rgba(255,226,120,.4)';x.lineWidth=2;x.setLineDash([4,6]);x.beginPath();x.moveTo(0,22);x.lineTo(0,640-FL-o.y);x.stroke();x.setLineDash([])}
-    if(o.s==='bolt'){x.strokeStyle='#fff6a8';x.lineWidth=9;x.globalAlpha=.55;const pts=[];for(let y=20,i=0;y<640-FL-o.y;y+=34,i++)pts.push([ (i%2?8:-8)*(1+(i%3)*.2),y]);x.beginPath();x.moveTo(0,18);pts.forEach(q=>x.lineTo(q[0],q[1]));x.lineTo(0,640-FL-o.y);x.stroke();x.globalAlpha=1;x.strokeStyle='#fff';x.lineWidth=3.5;x.beginPath();x.moveTo(0,18);pts.forEach(q=>x.lineTo(q[0],q[1]));x.lineTo(0,640-FL-o.y);x.stroke()}
-    x.restore()};
-  const drawObs=o=>{switch(o.k){case 'gear':drawGear(o);break;case 'spanner':drawSpanner(o);break;case 'nut':drawNut(o);break;case 'drill':drawDrill(o);break;case 'anvil':drawAnvil(o);break;case 'cloud':drawCloud(o);break}};
-  const draw=()=>{
-    x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#050a10';x.fillRect(0,0,cw,ch);
-    x.setTransform(dpr*sc,0,0,dpr*sc,ox*sc*dpr,0);
-    const sx=shake>0?rnd(-1,1)*shake*26:0,sy=shake>0?rnd(-1,1)*shake*26:0;x.save();x.translate(sx,sy);
-    x.beginPath();x.rect(-30,-30,W+60,700);x.clip();
-    const p1=Math.min(sky,1),p2=Math.max(0,sky-1),top=sky<1?mix('#4aa8e8','#5b3f8c',p1):mix('#5b3f8c','#04061a',p2),bot=sky<1?mix('#dff1fb','#f4a261',p1):mix('#f4a261','#1b2d66',p2);
-    const g=x.createLinearGradient(0,0,0,640);g.addColorStop(0,top);g.addColorStop(1,bot);x.fillStyle=g;x.fillRect(-30,-30,W+60,700);
-    const night=Math.max(0,sky-1.05);
-    if(night>0){star.forEach(s=>{x.globalAlpha=night*(.5+.5*Math.sin(t*2+s[3]));x.fillStyle='#fff';x.fillRect(s[0]%W,s[1],s[2],s[2])});x.globalAlpha=1}
-    const sunY=120+sky*95;x.fillStyle=sky>1.4?'#f4f0d8':sky>.8?'#ffd9a0':'#fff6c8';x.beginPath();x.arc(W*.78,sunY,28,0,6.283);x.fill();
-    if(sky>1.5){x.globalAlpha=Math.min(1,(sky-1.5)*3);x.fillStyle='#c46a30';x.beginPath();x.arc(W*.2,230,30,0,6.283);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=4;x.beginPath();x.ellipse(W*.2,232,50,11,-.3,0,6.283);x.stroke();x.globalAlpha=1}
-    x.fillStyle=`rgba(255,255,255,${.85-Math.min(sky,2)*.32})`;for(const c of clouds){x.beginPath();x.ellipse(c.x,c.y,38*c.s,13*c.s,0,0,6.283);x.ellipse(c.x-22*c.s,c.y+4*c.s,24*c.s,10*c.s,0,0,6.283);x.ellipse(c.x+24*c.s,c.y+3*c.s,26*c.s,10*c.s,0,0,6.283);x.ellipse(c.x+4*c.s,c.y-9*c.s,22*c.s,12*c.s,0,0,6.283);x.fill()}
-    const off=(dist*.16)%bw,bc=mix('#3d6577','#0a1030',Math.min(sky/2,1));
-    for(let rep=-1;rep<2;rep++)for(const b of bld){const bx=b.x-off+rep*bw;if(bx>W+10||bx+b.w<-10)continue;x.fillStyle=bc;x.fillRect(bx,640-FL-b.h,b.w,b.h);
-      if(b.ch){x.fillRect(bx+b.w*.65,640-FL-b.h-34,10,36);for(let k=0;k<3;k++){const pt=(t*.5+k*.33+b.l)%1;x.globalAlpha=.4*(1-pt);x.fillStyle='#e8eef2';x.beginPath();x.arc(bx+b.w*.65+5+pt*18,640-FL-b.h-34-pt*46,5+pt*9,0,6.283);x.fill()}x.globalAlpha=1}
-      if(night>0){x.fillStyle='#ffd77a';x.globalAlpha=night*.8;for(let wy=640-FL-b.h+10;wy<640-FL-14;wy+=18)for(let wx=bx+7;wx<bx+b.w-9;wx+=14)if(((wx*7+wy*3+b.l*50)|0)%3)x.fillRect(wx,wy,5,7);x.globalAlpha=1}}
-    if(st==='run'){x.strokeStyle='rgba(255,255,255,.28)';x.lineWidth=2;x.lineCap='round';for(let i=0;i<9;i++){const yy=(i*71+37)%560+30,len=40+(i%3)*30,xx=W-(((t*speed*2.4)+i*97)%(W+160))+60;x.beginPath();x.moveTo(xx,yy);x.lineTo(xx+len,yy);x.stroke()}}
-    /* warnings */
-    for(const w of warns){const bl=Math.floor(t*12)%2,wx=w.k==='drill'?W-26:w.x,wy=w.k==='drill'?w.y:34;x.save();x.translate(wx,wy);x.globalAlpha=bl?1:.45;x.fillStyle='#e0273d';x.strokeStyle='#fff';x.lineWidth=3;x.lineJoin='round';x.beginPath();x.moveTo(0,-20);x.lineTo(20,16);x.lineTo(-20,16);x.closePath();x.fill();x.stroke();x.fillStyle='#fff';x.font='800 20px system-ui';x.textAlign='center';x.fillText('!',0,12);x.restore();
-      if(w.k==='anvil'){x.strokeStyle='rgba(224,39,61,.35)';x.lineWidth=2;x.setLineDash([6,8]);x.beginPath();x.moveTo(wx,60);x.lineTo(wx,640-FL);x.stroke();x.setLineDash([])}else{x.strokeStyle='rgba(224,39,61,.3)';x.lineWidth=2;x.setLineDash([6,8]);x.beginPath();x.moveTo(wx-24,wy);x.lineTo(0,wy);x.stroke();x.setLineDash([])}}
-    for(const o of obs)drawObs(o);
-    for(const c of drops){const cy=c.y+Math.sin(t*4+c.t)*4;x.save();x.translate(c.x,cy);const sw=1+Math.sin(t*5+c.t)*.06;x.scale(sw,1/sw);x.fillStyle='#1f8f36';x.beginPath();x.moveTo(0,-15);x.bezierCurveTo(11,-2,13,4,13,7);x.arc(0,7,13,0,Math.PI);x.bezierCurveTo(-13,4,-11,-2,0,-15);x.fill();x.fillStyle='#35b34a';x.beginPath();x.moveTo(0,-11);x.bezierCurveTo(8,-2,10,3,10,7);x.arc(0,7,10,0,Math.PI);x.bezierCurveTo(-10,3,-8,-2,0,-11);x.fill();x.fillStyle='#fff';x.font='800 11px system-ui,sans-serif';x.textAlign='center';x.fillText('V',0,11);x.restore()}
-    if(tro){const q=tro,pp=tpos(q),pu=.5+.5*Math.sin(t*5);x.save();x.translate(pp.x,pp.y);
-      const gl=x.createRadialGradient(0,0,4,0,0,38);gl.addColorStop(0,`rgba(255,226,120,${.5+.25*pu})`);gl.addColorStop(1,'rgba(255,226,120,0)');x.fillStyle=gl;x.beginPath();x.arc(0,0,38,0,6.283);x.fill();x.fillStyle='#15222c';x.strokeStyle='#ffd23f';x.lineWidth=2.5;x.beginPath();x.arc(0,0,22,0,6.283);x.fill();x.stroke();const im_=TI[q.id];if(im_&&im_.complete)x.drawImage(im_,-17,-17,34,34);x.restore()}
-    const fy=640-FL;x.fillStyle='#252c33';x.fillRect(-30,fy,W+60,FL+30);x.fillStyle='#ffc61a';for(let i=-2;i<W/24+3;i++){const bx=i*48-floorX;x.beginPath();x.moveTo(bx,fy+6);x.lineTo(bx+24,fy+6);x.lineTo(bx+12,fy+26);x.lineTo(bx-12,fy+26);x.closePath();x.fill()}x.fillStyle='#10151a';x.fillRect(-30,fy,W+60,6);
-    for(const p of parts){x.globalAlpha=clamp(p.l/p.m,0,1);x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill()}x.globalAlpha=1;
-    /* laser eyes */
-    if(beam){x.save();x.globalAlpha=clamp(beam.l*7,0,1);const ex=B.x+34,ey=B.y-2;x.strokeStyle='#ff2d2d';x.lineWidth=7;x.lineCap='round';x.beginPath();x.moveTo(ex,ey);x.lineTo(beam.tx,beam.ty);x.stroke();x.strokeStyle='#fff';x.lineWidth=2.5;x.stroke();x.restore()}
-    /* the hero */
-    x.save();x.translate(B.x,B.y);x.rotate(B.tilt);x.scale(HK,HK);heroDraw(x,{t,vy:B.vy,held:held&&st!=='dead',dead:st==='dead',sup,img});x.restore();
-    if(chat){const k=clamp(Math.min(chat.l,2.4-chat.l)*6,0,1);x.save();x.globalAlpha=k;x.font='800 14px system-ui,sans-serif';const tw=x.measureText(chat.txt).width+22,bx=clamp(B.x-tw/2+20,6,W-tw-6),by=B.y-90;x.fillStyle='#fff';x.strokeStyle='#23272c';x.lineWidth=2;roundRect(bx,by,tw,30,12);x.fill();x.stroke();x.beginPath();x.moveTo(B.x+4,by+29);x.lineTo(B.x+14,by+44);x.lineTo(B.x+18,by+29);x.closePath();x.fill();x.stroke();x.fillRect(B.x+5,by+27,12,4);x.fillStyle='#23272c';x.textAlign='center';x.fillText(chat.txt,bx+tw/2,by+20);x.restore()}
-    for(const p of pops){x.globalAlpha=clamp(p.l*1.4,0,1);text(p.txt,p.x,p.y,p.txt.length>6?22:20,p.c,'center',4)}x.globalAlpha=1;
-    if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.5})`;x.fillRect(-30,-30,W+60,700)}
-    x.restore();
-    if(ban){const k=clamp(Math.min(ban.l,2.2-ban.l)*5,0,1);x.save();x.globalAlpha=k*.88;x.translate(0,(1-k)*30);x.fillStyle='rgba(8,20,32,.9)';roundRect(W/2-128,492,256,50,14);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=2;x.stroke();x.fillStyle='#15222c';x.beginPath();x.arc(W/2-102,517,19,0,6.283);x.fill();x.stroke();const bi=TI[ban.t.id];if(bi&&bi.complete)x.drawImage(bi,W/2-116,503,28,28);text('TROPHY UNLOCKED',W/2+16,510,10,'#ffd23f','center',2);text(ban.t.name,W/2+16,530,ban.t.name.length>17?13:15,'#fff','center',3);x.restore()}
-    if(st!=='idle'){text(`${score} m`,W/2,92,56,'#fff','center',8);
-      text(`Best ${best} m`,W/2,122,14,'#fff','center',3);text(`Wear ${(score*0.00002).toFixed(5)} mm`,W/2,140,11,'#cfeeff','center',3);
-      text(`Hilube drops ${cn%10}/10`,14,625-FL,13,'#8ff0a4','left',3);if(sup)text(`SUPER SLIPPERY ${Math.ceil(supT)}s`,W-14,625-FL,13,supT<2?'#ffb86b':'#ffd23f','right',3)}
-    if(st==='idle'){text('SUPER BUSH',W/2,140,42,'#ffd23f','center',8);text('Hilube to the rescue!',W/2,174,18,'#fff','center',4);
-      const tp=TIPS[tipI],words=tp.split(' '),ln=[''];words.forEach(w=>{if((ln[ln.length-1]+' '+w).length>34)ln.push(w);else ln[ln.length-1]=(ln[ln.length-1]+' '+w).trim()});ln.forEach((s,i)=>text(s,W/2,206+i*20,14,'#cfeeff','center',3));
-      const yb=206+ln.length*20+22;text(best?`Best ${best} m`:'',W/2,yb,18,'#fff','center',4);text(`🏅 ${Object.keys(FMYT).length}/${FT.length} trophies`,W/2,yb+30,16,'#ffd23f','center',4);const a=.55+.45*Math.sin(t*4);x.globalAlpha=a;text('HOLD TO FLY',W/2,520,26,'#fff','center',5);x.globalAlpha=1}
-    if(st==='dead'&&t-deadT>.5){const k=clamp((t-deadT-.5)*4,0,1);x.globalAlpha=k;x.fillStyle='rgba(8,20,32,.78)';roundRect(W/2-150,150,300,282,18);x.fill();x.strokeStyle='#ffd23f';x.lineWidth=3;x.stroke();
-      text(deadMsg,W/2,194,deadMsg.length>20?20:27,'#ffd23f','center',5);text(`${score} m`,W/2,272,58,'#fff','center',8);text(newBest?'NEW BEST!':`Best ${best} m`+(myRank?`  ·  Rank #${myRank}`:''),W/2,304,18,newBest?'#8ff0a4':'#cfeeff','center',4);
-      const m=medal(score);if(m)text(m[0],W/2,336,20,m[1],'center',4);else text('Fly 300 m for a copper cape',W/2,336,15,'#aab8c4','center',3);
-      text(`Smashed ${smashed} hazards · ${cn} drops`,W/2,360,13,'#9fb4c4','center',3);text(`Wear after this flight: ${(score*0.00002).toFixed(5)} mm`,W/2,380,12,'#9fb4c4','center',3);
-      if(runT.length)text(`🏅 ${runT.length>1?runT.length+' new trophies':runT[0].name}`,W/2,402,15,'#ffd23f','center',3);if(t-deadT>.75){x.globalAlpha=k*(.6+.4*Math.sin(t*5));text('TAP TO FLY AGAIN',W/2,424,20,'#fff','center',4)}x.globalAlpha=1}
-  };
-  const loop=ts=>{if(!alive)return;const dt=Math.min(.033,(ts-(last||ts))/1000||.016);last=ts;update(dt);draw();raf=requestAnimationFrame(loop)};
-  const close=()=>{alive=false;cancelAnimationFrame(raf);removeEventListener('resize',fit);removeEventListener('keydown',key);removeEventListener('keyup',keyUp);removeEventListener('pointerup',rel);removeEventListener('pointercancel',rel);try{ac&&ac.close()}catch{}root.remove()};
-  const press=()=>{held=true;start()};
-  const rel=()=>{held=false};
-  const key=e=>{if(e.code==='Escape'){close()}else if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){e.preventDefault();if(!e.repeat)press()}else if(e.code==='KeyM'){bm.click()}};
-  const keyUp=e=>{if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')rel()};
-  addEventListener('keydown',key);addEventListener('keyup',keyUp);addEventListener('pointerup',rel);addEventListener('pointercancel',rel);
-  root.addEventListener('pointerdown',e=>{if(e.target.closest('button,.bglb'))return;e.preventDefault();press()});
-  root.addEventListener('touchstart',e=>{if(!e.target.closest('button,.bglb'))e.preventDefault()},{passive:false});
-  root.querySelector('.bgx').addEventListener('click',e=>{e.stopPropagation();close()});
-  bm.onclick=()=>{mute=!mute;try{localStorage.setItem('vi4gm',mute?'1':'0')}catch{}icon();if(!mute)beep(660,.1,'triangle',.06)};
-  if(window.__capeDbg)window.__capeDbg(()=>({B,obs,warns,drops,st,score,sup,held:()=>held,press,rel,cn,smashed,jump:m=>{dist=m*10;score=m;msI=MSL.filter(q=>q[0]<=m).length},noDie:v=>{dbgNoDie=v}}));
-  reset();raf=requestAnimationFrame(loop);
-}
 function eggTap(v){
   const el=v.querySelector('.stats div:nth-child(2)');if(!el)return;let n=0,tm=0;
   el.style.cursor='pointer';el.style.userSelect='none';el.style.webkitUserSelect='none';el.style.webkitTapHighlightColor='transparent';
@@ -920,7 +557,7 @@ function tools(v){
   <section class="card"><h2>Data sheets</h2><a class="row" href="#/datasheets"><div class="th">▤</div><div><strong>Vesconite data sheets</strong><small>${DSH.length} materials, each with its PDF</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Customer portfolio</h2><a class="row" href="#/portfolio"><div class="th">▣</div><div><strong>Make a customer proposal</strong><small>${P.length?`${P.length} application${P.length>1?'s':''} selected`:'Pick applications and make a PDF'}</small></div><span class="chip ok">Open</span></a></section>
   <section class="card"><h2>Account</h2><p class="mut">Signed in as ${esc(ME.email)} (${ROLE}).</p><div class="g2"><label>Your name<input id="myn" value="${esc(MYN)}" maxlength="60" placeholder="Full name"></label><div style="display:flex;align-items:flex-end"><button class="btn" id="mys" type="button">Save name</button></div></div><label style="margin-top:12px">Appearance on my login<select id="myt"><option value="auto">Match my device</option><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="mut">Remembered for your account, on every device you sign in on.</p><button class="btn" id="so" style="margin-top:12px">Sign out</button></section>`;
-  $('#mys').onclick=()=>saveName($('#myn').value,$('#mys'));$('#myt').value=UTM||'auto';$('#myt').onchange=e=>userTheme(e.target.value);eggAcct(v);
+  $('#mys').onclick=()=>saveName($('#myn').value,$('#mys'));$('#myt').value=UTM||'auto';$('#myt').onchange=e=>userTheme(e.target.value);
   $('#so').onclick=()=>signOut(au);
 }
 
@@ -1052,19 +689,33 @@ function upd3(st,o){
 }
 
 /* Engineering drawing (SVG in mm, A3 layout): end view, half section A-A, dimensions with tolerances, data table, notes, title block */
+/* Chamfers and the flange radius, kept inside the part: size and angle are shrunk together if they would not fit. co = OD chamfer, ci = ID chamfer ({a:along the length, b:across the wall}), fr = radius where the barrel meets the flange. */
+function bushFeat(p){
+  const rO=p.OD/2,rI=p.ID/2,w=Math.max(0,rO-rI),L=p.L,fl=!!(p.fl&&p.fl.on),T=fl?p.fl.T:0,rF=fl?p.fl.FD/2:rO,barrel=fl?L-T:L,lim=p.co?.45:.8;
+  const ok=o=>o&&o.a>0&&o.b>0?{a:o.a,b:o.b}:{a:0,b:0};
+  const fit=(o,mA,mB)=>{if(o.a<=0)return o;const k=Math.min(1,mA/o.a,mB/o.b);return{a:o.a*k,b:o.b*k}};
+  let co=p.co?ok(p.co):(p.ch>0?{a:p.ch,b:p.ch}:{a:0,b:0}),ci=ok(p.ci);
+  co=fit(co,barrel*.4,w*lim);ci=fit(ci,L*.4,w*(p.co?.45:.8));
+  let fr=fl&&p.fr>0?p.fr:0;fr=Math.max(0,Math.min(fr,(rF-rO)*.95,(barrel-co.a)*.9));
+  return{co,ci,fr};
+}
 function drawSVG(p){
   const{OD,ID,L,ch,w,H,D,press,clo,c,g,tOD,tID,tW,tL,pf,drg,G,fl,dw,logo,gz}=p,q=p.q,e=esc,Dm=fl.on?fl.FD:OD,imp=!!p.imp,fL=(x,d=2)=>imp?fx(x/25.4,d+1):fx(x,d);
   const sa=[5,2,1,.5,.2,.1,.05,.02,.01],extra=fl.on?20:24+String(q?q.lab.W:`WALL ${fL(w)} +0/−${fL(tW,3)}`).length*1.6,fitS=x=>x*Dm<=118&&x*L<=125&&80+x*(Dm/2+L)+(fl.on?52:46)+extra<=334,s=q&&q.scale>0?q.scale:(sa.find(fitS)||.01),scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
-  const cy=118,cx1=80,rO=OD*s/2,rI=ID*s/2,rF=fl.on?fl.FD*s/2:rO,cs=ch>0?Math.min(Math.max(ch*s,.8),(rO-rI)*.8):0,cx2=cx1+rF+(fl.on?52:46)+L*s/2,x0=cx2-L*s/2,x1=cx2+L*s/2,xF=x1-(fl.on?fl.T*s:0);
+  const cy=118,cx1=80,rO=OD*s/2,rI=ID*s/2,rF=fl.on?fl.FD*s/2:rO,F=bushFeat(p),wS=rO-rI,coA=F.co.a>0?Math.max(F.co.a*s,.8):0,coB=F.co.b>0?Math.min(Math.max(F.co.b*s,.8),wS*.45):0,ciA=F.ci.a>0?Math.max(F.ci.a*s,.8):0,ciB=F.ci.b>0?Math.min(Math.max(F.ci.b*s,.8),wS*.45):0,frs=F.fr*s,cs=coB,cx2=cx1+rF+(fl.on?52:46)+L*s/2,x0=cx2-L*s/2,x1=cx2+L*s/2,xF=x1-(fl.on?fl.T*s:0);
   const yTO=cy-rO,yTI=cy-rI,yBI=cy+rI,yBO=cy+rO,yTF=cy-rF,yBF=cy+rF,hh=L/2,n=v=>+v.toFixed(2),pts=a=>a.map(q=>n(q[0])+','+n(q[1])).join(' ');
   const dh=(a,b,yr,y,t)=>{const k=y>yr?1:-1;return `<line class="k2" x1="${n(a)}" y1="${n(yr+k)}" x2="${n(a)}" y2="${n(y+k*2)}"/><line class="k2" x1="${n(b)}" y1="${n(yr+k)}" x2="${n(b)}" y2="${n(y+k*2)}"/><line class="k4" x1="${n(a)}" y1="${n(y)}" x2="${n(b)}" y2="${n(y)}"/><text x="${n((a+b)/2)}" y="${n(y-1.2)}" text-anchor="middle">${e(t)}</text>`};
   const dv=(a,b,xr,x,t)=>{const k=x>xr?1:-1;return `<line class="k2" x1="${n(xr+k)}" y1="${n(a)}" x2="${n(x+k*2)}" y2="${n(a)}"/><line class="k2" x1="${n(xr+k)}" y1="${n(b)}" x2="${n(x+k*2)}" y2="${n(b)}"/><line class="k4" x1="${n(x)}" y1="${n(a)}" x2="${n(x)}" y2="${n(b)}"/><text transform="translate(${n(x-2.6)} ${n((a+b)/2)}) rotate(-90)" text-anchor="middle">${e(t)}</text>`};
   const cell=(x,y,wd,h,l,t,sz=3.6)=>`<rect class="k1" x="${x}" y="${y}" width="${wd}" height="${h}"/><text class="lb" x="${x+1}" y="${y+2.6}">${l}</text><text x="${x+1.5}" y="${y+h-1.7}" style="font-size:${Math.min(sz,(wd-3)/Math.max(1,String(t).replace(/&[#a-z0-9]+;/g,"x").length*.5)).toFixed(2)}px">${t}</text>`;
-  const inner=(th,sgn)=>{const a=[];for(let k=0;k<=160;k++)a.push([x0+(x1-x0)*k/160,(sgn<0?yTI:yBI)+(sgn<0?-1:1)*gz(th,-hh+L*k/160)*s]);return a};
-  const topOut=fl.on?[[x0,yTO+cs],[x0+cs,yTO],[xF,yTO],[xF,yTF],[x1,yTF]]:[[x0,yTO+cs],[x0+cs,yTO],[x1-cs,yTO],[x1,yTO+cs]];
-  const botOut=fl.on?[[x0,yBO-cs],[x0+cs,yBO],[xF,yBO],[xF,yBF],[x1,yBF]]:[[x0,yBO-cs],[x0+cs,yBO],[x1-cs,yBO],[x1,yBO-cs]];
+  const zs=(()=>{const a=[];for(let k=0;k<=160;k++)a.push(L*k/160);if(F.ci.a>0)[F.ci.a,L-F.ci.a].forEach(z=>{if(z>1e-9&&z<L-1e-9)a.push(z)});return[...new Set(a)].sort((u,v)=>u-v)})();
+  const icx=z=>F.ci.a>0?Math.max(0,F.ci.b*(1-Math.min(z,L-z)/F.ci.a)):0;
+  const inner=(th,sgn)=>zs.map(z=>[x0+z*s,(sgn<0?yTI:yBI)+(sgn<0?-1:1)*Math.max(gz(th,-hh+z),icx(z))*s]);
+  const fil=(yE,sg)=>{const a=[];if(frs>0)for(let k=0;k<=12;k++){const th=(90-90*k/12)*Math.PI/180;a.push([xF-frs+frs*Math.cos(th),yE+sg*(frs*Math.sin(th)-frs)])}return a};
+  const topOut=fl.on?[[x0,yTO+coB],[x0+coA,yTO],...(frs>0?fil(yTO,1):[[xF,yTO]]),[xF,yTF],[x1,yTF]]:[[x0,yTO+coB],[x0+coA,yTO],[x1-coA,yTO],[x1,yTO+coB]];
+  const botOut=fl.on?[[x0,yBO-coB],[x0+coA,yBO],...(frs>0?fil(yBO,-1):[[xF,yBO]]),[xF,yBF],[x1,yBF]]:[[x0,yBO-coB],[x0+coA,yBO],[x1-coA,yBO],[x1,yBO-coB]];
   const ti=inner(Math.PI/2,-1),bi=inner(3*Math.PI/2,1),topP=[...topOut,...ti.slice().reverse()],botP=[...botOut,...bi.slice().reverse()];
   const idEnd=G.type==='none'?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI)}"/>`:`<path class="k1" d="M${Array.from({length:720},(_,k)=>{const t=2*Math.PI*k/720,r=rI+gz(t,hh)*s;return n(cx1+r*Math.cos(t))+','+n(cy-r*Math.sin(t))}).join('L')}Z"/>`;
+  const idEndAll=idEnd+(ciB>0?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rI+ciB)}"/>`:'');
   const lab=q?q.lab:{OD:`OD Ø${fL(OD)} ±${fL(tOD,3)}`,ID:`ID Ø${fL(ID)} ±${fL(tID,3)}`,L:`${fL(L)} +0/−${fL(tL)}`,W:`WALL ${fL(w)} +0/−${fL(tW,3)}`,FD:`Ø${fL(fl.FD)}`,T:`${fL(fl.T)}`};
   const gw=G.type==='none'?0:grooveWidth(G.d,G.r);
   const ex=p.ex||0,fit=[[p.Hmin>0?'HOUSING Ø MAX':'HOUSING Ø',fL(H)]];if(p.Hmin>0)fit.push(['HOUSING Ø MIN',fL(p.Hmin)]);fit.push(['SHAFT Ø',fL(D)],['PRESS FIT',pf&&!(p.gap>0)?fL(press,3):'NONE'],['BORE CLOSURE',fL(clo,3)],['ASSEMBLY CLEARANCE',fL(c,3)]);if(ex>0)fit.push(['ADDITIONAL CLEARANCE',fL(ex,3)]);if(p.gap>0)fit.push(['EXPANSION GAP',fL(p.gap,2)]);fit.push(['FITTED INSIDE Ø',fL(D+c+ex,3)]);if(!q)fit.push(['BEARING OUTSIDE Ø (OD)',`${fL(OD)} ±${fL(tOD,3)}`],['BEARING INSIDE Ø (ID)',`${fL(ID)} ±${fL(tID,3)}`],['WALL THICKNESS',`${fL(w)} +0/−${fL(tW,3)}`]);else fit.push(['WALL',fL(w)]);
@@ -1107,21 +758,25 @@ ${lines.map((t,i)=>`<text class="sm" x="340" y="${n(ty+i*3.6)}">${e(t)}</text>`)
 <pattern id="vh" width="1.6" height="1.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.6" stroke="#000" stroke-width=".2"/></pattern></defs>
 <rect width="420" height="297" fill="#fff"/><rect class="k2" x="5" y="5" width="410" height="287"/><rect x="10" y="10" width="400" height="277" fill="none" stroke="#000" stroke-width=".7"/>
 <g>
-${fl.on?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rF)}"/><circle class="k6" cx="${cx1}" cy="${cy}" r="${n(rO)}"/>`:`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO)}"/>${cs>0?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO-cs)}"/>`:''}`}${idEnd}
+${fl.on?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rF)}"/><circle class="k6" cx="${cx1}" cy="${cy}" r="${n(rO)}"/>`:`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO)}"/>${cs>0?`<circle class="k1" cx="${cx1}" cy="${cy}" r="${n(rO-cs)}"/>`:''}`}${idEndAll}
 <line class="k3" x1="${n(cx1-rF-7)}" y1="${cy}" x2="${n(cx1+rF+7)}" y2="${cy}"/>
 <line class="k5" x1="${cx1}" y1="${n(cy-rF-12)}" x2="${cx1}" y2="${n(cy+rF+12)}"/>
 <path class="k1" d="M${cx1} ${n(cy-rF-12)}H${cx1+8}" marker-end="url(#vA)"/><path class="k1" d="M${cx1} ${n(cy+rF+12)}H${cx1+8}" marker-end="url(#vA)"/>
 <text x="${cx1-4.5}" y="${n(cy-rF-12)}" class="tt">A</text><text x="${cx1-4.5}" y="${n(cy+rF+15)}" class="tt">A</text>
 <text x="${cx1}" y="${n(cy+rF+27)}" text-anchor="middle" class="tt">END VIEW${fl.on?' (FLANGE END)':''}</text>
 <polygon class="k1" style="fill:url(#vh)" points="${pts(topP)}"/><polygon class="k1" style="fill:url(#vh)" points="${pts(botP)}"/>
-<line class="k1" x1="${n(x0)}" y1="${n(ti[0][1])}" x2="${n(x0)}" y2="${n(bi[0][1])}"/><line class="k1" x1="${n(x1)}" y1="${n(ti[160][1])}" x2="${n(x1)}" y2="${n(bi[160][1])}"/>
+<line class="k1" x1="${n(x0)}" y1="${n(ti[0][1])}" x2="${n(x0)}" y2="${n(bi[0][1])}"/><line class="k1" x1="${n(x1)}" y1="${n(ti[ti.length-1][1])}" x2="${n(x1)}" y2="${n(bi[bi.length-1][1])}"/>
 <line class="k3" x1="${n(x0-9)}" y1="${cy}" x2="${n(x1+4)}" y2="${cy}"/>
 <text x="${n(cx2)}" y="${n(yBF+27)}" text-anchor="middle" class="tt">SECTION A–A</text>
 ${dh(x0,x1,yBF,yBF+11,lab.L)}
-${dv(yTI,yBI,x0,x0-13,lab.ID)}
-${fl.on?dv(yTO,yBO,x0,x0-27,lab.OD)+dv(yTF,yBF,x1,x1+13,lab.FD)+dh(xF,x1,yTF,yTF-11,lab.T):dv(yTO,yBO,x1,x1+11,lab.OD)+(()=>{const x=x1+20;return `<line class="k2" x1="${n(x1+1)}" y1="${n(yTO)}" x2="${n(x+2)}" y2="${n(yTO)}"/><line class="k2" x1="${n(x1+1)}" y1="${n(yTI)}" x2="${n(x+2)}" y2="${n(yTI)}"/><line class="k4" x1="${n(x)}" y1="${n(yTO)}" x2="${n(x)}" y2="${n(yTI)}"/><text x="${n(x+3)}" y="${n((yTO+yTI)/2+1.2)}" style="font-size:3px">${e(lab.W)}</text>`})()}
-${cs>0?`<polyline class="k2" marker-start="url(#vA)" points="${n(x0+cs*.4)},${n(yTO+cs*.4)} ${n(x0-6)},${n(fl.on?yTF-21:yTO-12)} ${n(x0)},${n(fl.on?yTF-21:yTO-12)}"/>
+${q&&q.dm==='wall'?'':dv(yTI,yBI,x0,x0-13,lab.ID)}
+${fl.on?dv(yTO,yBO,x0,x0-27,lab.OD)+dv(yTF,yBF,x1,x1+13,lab.FD)+dh(xF,x1,yTF,yTF-11,lab.T)+(q&&q.dm==='wall'?dv(yTO,yTI,x0,x0-13,lab.W):''):dv(yTO,yBO,x1,x1+11,lab.OD)+(q&&q.dm==='id'?'':(()=>{const x=x1+20;return `<line class="k2" x1="${n(x1+1)}" y1="${n(yTO)}" x2="${n(x+2)}" y2="${n(yTO)}"/><line class="k2" x1="${n(x1+1)}" y1="${n(yTI)}" x2="${n(x+2)}" y2="${n(yTI)}"/><line class="k4" x1="${n(x)}" y1="${n(yTO)}" x2="${n(x)}" y2="${n(yTI)}"/><text x="${n(x+3)}" y="${n((yTO+yTI)/2+1.2)}" style="font-size:3px">${e(lab.W)}</text>`})())}
+${(coA>0||coB>0)?`<polyline class="k2" marker-start="url(#vA)" points="${n(x0+coA*.45)},${n(yTO+coB*.55)} ${n(x0-6)},${n(fl.on?yTF-21:yTO-12)} ${n(x0)},${n(fl.on?yTF-21:yTO-12)}"/>
 <text x="${n(x0+1)}" y="${n(fl.on?yTF-22:yTO-13)}">${e(q&&q.chText?q.chText:`${fL(ch,1)} × 30° CHAMFER, OD LEAD-IN`)}</text>`:''}
+${(ciA>0||ciB>0)?`<polyline class="k2" marker-start="url(#vA)" points="${n(x0+ciA*.45)},${n(yBI+ciB*.55)} ${n(x0-6)},${n(yBF+20.5)} ${n(x0)},${n(yBF+20.5)}"/>
+<text x="${n(x0+1)}" y="${n(yBF+19.7)}">${e(q&&q.ciText?q.ciText:'ID CHAMFER')}</text>`:''}
+${frs>0?`<polyline class="k2" marker-start="url(#vA)" points="${n(xF-frs*.293)},${n(yTO-frs*.293)} ${n(xF-8)},${n(yTF-16.5)} ${n(xF-14)},${n(yTF-16.5)}"/>
+<text x="${n(xF-15)}" y="${n(yTF-17.3)}" text-anchor="end">${e(q&&q.frText?q.frText:'R'+fL(F.fr,2))}</text>`:''}
 ${gdim}${call}
 </g>
 ${dw.fit?`<g><rect class="k1" x="338" y="16" width="68" height="${n(rowH*(fitRows.length+1)+1)}"/><text x="340" y="20" class="sm" style="font-weight:bold;font-size:3px">FIT AND FEATURE DATA (${imp?'in':'mm'})</text>${fitRows.map((r,i)=>`<line class="k2" x1="338" y1="${n(21+i*rowH)}" x2="406" y2="${n(21+i*rowH)}"/><text class="sm" x="340" y="${n(24.4+i*rowH)}">${e(String(r[0]).slice(0,24))}</text><text class="sm" x="404" y="${n(24.4+i*rowH)}" text-anchor="end">${e(String(r[1]).slice(0,28))}</text>`).join('')}</g>`:''}
@@ -1162,9 +817,11 @@ function wrapLines(t,maxMm,fs,bold){_mc.font=`${bold?'bold ':''}100px Arial`;con
 /* ---------- STEP (ISO 10303-21, AP214) export. Solid B-rep that opens in common CAD programs: the outside is made of true planes, cylinders and cones (with seam edges), and when grooves exist the bore is a closed skin of small flat faces on real line edges. ---------- */
 function stepFile(p){
   const rO=p.OD/2,rI=p.ID/2,L=p.L,fl=p.fl&&p.fl.on,rF=fl?p.fl.FD/2:rO,T=fl?p.fl.T:0,G=p.G||{type:'none'},gz=p.gz,hh=L/2,hasG=G.type!=='none'&&typeof gz==='function';
-  const c=Math.max(0,Math.min(p.ch||0,(rO-rI)*.8,(L-T)*.4));
-  const OP=[];if(c>0)OP.push([rO-c,0],[rO,c]);else OP.push([rO,0]);
-  if(fl)OP.push([rO,L-T],[rF,L-T],[rF,L]);else if(c>0)OP.push([rO,L-c],[rO-c,L]);else OP.push([rO,L]);
+  const FE=bushFeat(p),co=FE.co,ci=FE.ci,fr=FE.fr;
+  const OP=[];if(co.a>0)OP.push([rO-co.b,0],[rO,co.a]);else OP.push([rO,0]);
+  if(fl){if(fr>0)OP.push([rO,L-T-fr],[rO+fr,L-T,1]);else OP.push([rO,L-T]);OP.push([rF,L-T],[rF,L])}else if(co.a>0)OP.push([rO,L-co.a],[rO-co.b,L]);else OP.push([rO,L]);
+  const IP=[];if(ci.a>0)IP.push([rI+ci.b,0],[rI,ci.a],[rI,L-ci.a],[rI+ci.b,L]);else IP.push([rI,0],[rI,L]);
+  const icx=z=>ci.a>0?Math.max(0,ci.b*(1-Math.min(z,L-z)/ci.a)):0;
   const r6=x=>{x=Math.round(x*1e6)/1e6;return Object.is(x,-0)?0:x},fm=x=>{const s=r6(x).toFixed(6).replace(/0+$/,'');return s};
   const E=[];let n=0;const add=s=>{E.push(`#${++n}=${s};`);return n};
   const PC=new Map(),DC=new Map(),VC=new Map(),LC=new Map(),CC=new Map();
@@ -1194,24 +851,30 @@ function stepFile(p){
     const norm=a=>{a=a%(2*Math.PI);return a<0?a+2*Math.PI:a};
     angs=[...new Set(angs.map(a=>Math.round(norm(a)*1e7)/1e7))].sort((a,b)=>a-b).filter((a,i,s)=>i===0||a-s[i-1]>2e-6);
     if(angs.length>1&&2*Math.PI-angs[angs.length-1]+angs[0]<2e-6)angs.pop();
-    rows=ys.map(y=>{const rr=angs.map(t=>rI+gz(t,y));return{z:y+hh,rr,vs:angs.map((t,i)=>vt(rr[i]*Math.cos(t),rr[i]*Math.sin(t),y+hh))}});
+    if(ci.a>0)ys=[...new Set([...ys,r6(-hh+ci.a),r6(hh-ci.a)])].sort((a,b)=>a-b);
+    rows=ys.map(y=>{const rr=angs.map(t=>rI+Math.max(gz(t,y),icx(y+hh)));return{z:y+hh,rr,vs:angs.map((t,i)=>vt(rr[i]*Math.cos(t),rr[i]*Math.sin(t),y+hh))}});
   }
   const inner0=hasG?rows[0].vs:null,inner1=hasG?rows[rows.length-1].vs:null;
   const Z=[[0,0,1]],ringLoop=(vs,rev)=>{const N=vs.length,it=[];for(let i=0;i<N;i++){const a=vs[i],b=vs[(i+1)%N];it.push(ln(a,b))}return rev?it.map(([e,s])=>[e,s==='.T.'?'.F.':'.T.']).reverse():it};
   const plane=(z,sg)=>add(`PLANE('',#${ax([0,0,z],[0,0,sg],[1,0,0])})`);
   /* bottom end face (normal -z) */
-  {const oc=ce(OP[0][0],0);face([[oc.e,'.F.']],hasG?ringLoop(inner0,false):[[ce(rI,0).e,'.T.']],plane(0,-1),'.T.')}
+  {const oc=ce(OP[0][0],0);face([[oc.e,'.F.']],hasG?ringLoop(inner0,false):[[ce(IP[0][0],0).e,'.T.']],plane(0,-1),'.T.')}
   /* outside: planes, cylinders and cones between consecutive outer nodes */
   for(let i=0;i<OP.length-1;i++){const a=OP[i],b=OP[i+1];
     if(a[1]===b[1]){const big=Math.max(a[0],b[0]),sm=Math.min(a[0],b[0]),dn=b[0]>a[0],bo=ce(big,a[1]),so=ce(sm,a[1]);face([[bo.e,dn?'.F.':'.T.']],[[so.e,dn?'.T.':'.F.']],plane(a[1],dn?-1:1),'.T.')}
+    else if(b[2]){const R=b[0]-a[0],c0=ce(a[0],a[1]),c1=ce(b[0],b[1]),ci_=add(`CIRCLE('',#${ax([b[0],0,a[1]],[0,1,0],[-1,0,0])},${fm(R)})`),se=add(`EDGE_CURVE('',#${c0.v.id},#${c1.v.id},#${ci_},.T.)`);
+      face([[c0.e,'.T.'],[se,'.T.'],[c1.e,'.F.'],[se,'.F.']],null,add(`TOROIDAL_SURFACE('',#${ax([0,0,a[1]],[0,0,1],[1,0,0])},${fm(b[0])},${fm(R)})`),'.F.')}
     else{const c0=ce(a[0],a[1]),c1=ce(b[0],b[1]),up=ln(c0.v,c1.v),dw=ln(c1.v,c0.v),it=[[c0.e,'.T.'],up,[c1.e,'.F.'],dw];let sf;
       if(a[0]===b[0])sf=add(`CYLINDRICAL_SURFACE('',#${ax([0,0,0],[0,0,1],[1,0,0])},${fm(a[0])})`);
       else{const al=Math.atan(Math.abs(b[0]-a[0])/(b[1]-a[1])).toFixed(8);sf=b[0]>a[0]?add(`CONICAL_SURFACE('',#${ax([0,0,a[1]],[0,0,1],[1,0,0])},${fm(a[0])},${al})`):add(`CONICAL_SURFACE('',#${ax([0,0,b[1]],[0,0,-1],[1,0,0])},${fm(b[0])},${al})`)}
       face(it,null,sf,'.T.')}}
   /* top end face (normal +z) */
-  {const oc=ce(OP[OP.length-1][0],L);face([[oc.e,'.T.']],hasG?ringLoop(inner1,true):[[ce(rI,L).e,'.F.']],plane(L,1),'.T.')}
+  {const oc=ce(OP[OP.length-1][0],L);face([[oc.e,'.T.']],hasG?ringLoop(inner1,true):[[ce(IP[IP.length-1][0],L).e,'.F.']],plane(L,1),'.T.')}
   /* bore */
-  if(!hasG){const c0=ce(rI,0),c1=ce(rI,L),up=ln(c0.v,c1.v),dw=ln(c1.v,c0.v);face([[c0.e,'.F.'],up,[c1.e,'.T.'],dw],null,add(`CYLINDRICAL_SURFACE('',#${ax([0,0,0],[0,0,1],[1,0,0])},${fm(rI)})`),'.F.')}
+  if(!hasG){for(let i=0;i<IP.length-1;i++){const a=IP[i],b=IP[i+1],c0=ce(a[0],a[1]),c1=ce(b[0],b[1]),up=ln(c0.v,c1.v),dw=ln(c1.v,c0.v);let sf;
+      if(a[0]===b[0])sf=add(`CYLINDRICAL_SURFACE('',#${ax([0,0,0],[0,0,1],[1,0,0])},${fm(a[0])})`);
+      else{const al=Math.atan(Math.abs(b[0]-a[0])/(b[1]-a[1])).toFixed(8);sf=b[0]>a[0]?add(`CONICAL_SURFACE('',#${ax([0,0,a[1]],[0,0,1],[1,0,0])},${fm(a[0])},${al})`):add(`CONICAL_SURFACE('',#${ax([0,0,b[1]],[0,0,-1],[1,0,0])},${fm(b[0])},${al})`)}
+      face([[c0.e,'.F.'],up,[c1.e,'.T.'],dw],null,sf,'.F.')}}
   else{
     const poly=vs=>{const N=vs.length;let nx=0,ny=0,nz=0;for(let i=0;i<N;i++){const a=vs[i].p,b=vs[(i+1)%N].p;nx+=(a[1]-b[1])*(a[2]+b[2]);ny+=(a[2]-b[2])*(a[0]+b[0]);nz+=(a[0]-b[0])*(a[1]+b[1])}
       const m=Math.hypot(nx,ny,nz)||1,nv=[nx/m,ny/m,nz/m],o=vs[0].p,e1=[vs[1].p[0]-o[0],vs[1].p[1]-o[1],vs[1].p[2]-o[2]],dt=e1[0]*nv[0]+e1[1]*nv[1]+e1[2]*nv[2],rf=[e1[0]-dt*nv[0],e1[1]-dt*nv[1],e1[2]-dt*nv[2]];
@@ -1230,7 +893,7 @@ function stepFile(p){
   add(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${rep})`);add(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#${ac})`);add(`PRODUCT_RELATED_PRODUCT_CATEGORY('part','',(#${pr}))`);
   return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence bush, solid B-rep${hasG?', grooves as flat faces':''}'),'2;1');\nFILE_NAME('${nm}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
 }
-const stepDownload=()=>{if(!LAST||!LAST.step)return;deliver(new Blob([stepFile(LAST.step)],{type:'application/octet-stream'}),LAST.drg+'.step');log('Downloaded STEP',LAST.drg)};
+const stepDownload=()=>{if(!LAST||!(LAST.step||LAST.plate))return;deliver(new Blob([LAST.plate?plateStep(LAST.plate.g,LAST.plate.T,LAST.plate.name):stepFile(LAST.step)],{type:'application/octet-stream'}),LAST.drg+'.step');log('Downloaded STEP',LAST.drg)};
 
 /* Files: iOS home-screen apps cannot download directly, so use the share sheet when available */
 async function deliver(blob,name,o={}){
@@ -1251,6 +914,133 @@ async function pdfStep(b){   /* tap 1 builds the PDF, tap 2 opens the share shee
   const t=b.textContent;b.disabled=true;b.textContent='Building…';
   try{b._b=await makeDrawingPdf();b.textContent='Open PDF';log('Made drawing PDF',LAST.drg)}catch(x){alert('Could not build the PDF: '+(x.message||x));b.textContent=t}
   b.disabled=false;
+}
+/* ---------- Flat plates and wear pads: outline geometry, drawing, STEP and DXF ---------- */
+function plateGeom(P){
+  const warn=[],nm=a=>{a%=2*Math.PI;return a<0?a+2*Math.PI:a},angOf=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0]);
+  let pts=P.kind==='rect'?[[0,0,P.R||0],[P.W,0,P.R||0],[P.W,P.H,P.R||0],[0,P.H,P.R||0]]:P.pts.map(a=>[a[0],a[1],a[2]||0]);
+  pts=pts.filter((a,i)=>{const b=pts[(i+pts.length-1)%pts.length];return Math.hypot(a[0]-b[0],a[1]-b[1])>1e-6});
+  if(pts.length<3)return{err:'Enter at least three outline points.'};
+  const N=pts.length,d3=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  for(let i=0;i<N;i++)for(let j=i+2;j<N;j++){if(i===0&&j===N-1)continue;const p1=pts[i],p2=pts[(i+1)%N],p3=pts[j],p4=pts[(j+1)%N];if(d3(p3,p4,p1)*d3(p3,p4,p2)<0&&d3(p1,p2,p3)*d3(p1,p2,p4)<0)return{err:'The outline crosses itself. Enter the points in order around the shape.'}}
+  let A=0;pts.forEach((a,i)=>{const b=pts[(i+1)%N];A+=a[0]*b[1]-b[0]*a[1]});
+  if(Math.abs(A)<1e-6)return{err:'The outline has no area. Check the points.'};
+  if(A<0)pts=pts.slice().reverse();
+  let clip=false;
+  const V=pts.map((c,i)=>{const p=pts[(i+N-1)%N],q=pts[(i+1)%N];let r=c[2]||0;if(!(r>0))return{p:c,r:0};
+    const u1=[p[0]-c[0],p[1]-c[1]],l1=Math.hypot(...u1),u2=[q[0]-c[0],q[1]-c[1]],l2=Math.hypot(...u2);u1[0]/=l1;u1[1]/=l1;u2[0]/=l2;u2[1]/=l2;
+    const phi=Math.acos(Math.max(-1,Math.min(1,u1[0]*u2[0]+u1[1]*u2[1])));if(phi<1e-3||Math.PI-phi<1e-3)return{p:c,r:0};
+    let d=r/Math.tan(phi/2);const lim=.5*Math.min(l1,l2);if(d>lim){d=lim;r=d*Math.tan(phi/2);clip=true}
+    const bx=u1[0]+u2[0],by=u1[1]+u2[1],bl=Math.hypot(bx,by),k=r/Math.sin(phi/2);
+    return{p:c,r,t1:[c[0]+u1[0]*d,c[1]+u1[1]*d],t2:[c[0]+u2[0]*d,c[1]+u2[1]*d],cc:[c[0]+bx/bl*k,c[1]+by/bl*k],ccw:((c[0]-p[0])*(q[1]-c[1])-(c[1]-p[1])*(q[0]-c[0]))>0}});
+  if(clip)warn.push('A corner radius is too big for the edge length. It has been reduced to fit.');
+  let outer=[];
+  V.forEach((v,i)=>{const w=V[(i+1)%N];if(v.r>0)outer.push({t:'A',a:v.t1,b:v.t2,c:v.cc,r:v.r,ccw:v.ccw});
+    const ex=v.r>0?v.t2:v.p,en=w.r>0?w.t1:w.p;if(Math.hypot(en[0]-ex[0],en[1]-ex[1])>1e-9)outer.push({t:'L',a:ex,b:en})});
+  const loops=[],hs=[];let nh=0,ns=0;
+  (P.holes||[]).forEach(h=>{if(!(h[2]>0))return;const r=h[2]/2;nh++;hs.push({kind:'hole',tag:'H'+nh,x:h[0],y:h[1],d:h[2],loop:[{t:'C',c:[h[0],h[1]],r,a:[h[0]+r,h[1]],b:[h[0]+r,h[1]],ccw:false}]})});
+  (P.slots||[]).forEach(s=>{let[x,y,l,w,ang]=s;if(!(w>0))return;if(!(l>w)){warn.push('A slot has a length that is not larger than its width. It was drawn as a round hole.');const r=w/2;nh++;hs.push({kind:'hole',tag:'H'+nh,x,y,d:w,loop:[{t:'C',c:[x,y],r,a:[x+r,y],b:[x+r,y],ccw:false}]});return}
+    const h=(l-w)/2,r=w/2,th=(ang||0)*Math.PI/180,co=Math.cos(th),si=Math.sin(th),T=(u,v)=>[x+u*co-v*si,y+u*si+v*co];ns++;
+    hs.push({kind:'slot',tag:'S'+ns,x,y,l,w,ang:ang||0,loop:[{t:'L',a:T(-h,r),b:T(h,r)},{t:'A',a:T(h,r),b:T(h,-r),c:T(h,0),r,ccw:false},{t:'L',a:T(h,-r),b:T(-h,-r)},{t:'A',a:T(-h,-r),b:T(-h,r),c:T(-h,0),r,ccw:false}]})});
+  let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;const ext=p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])};
+  outer.forEach(s=>{ext(s.a);ext(s.b);if(s.t==='A'){const sa=s.ccw?angOf(s.c,s.a):angOf(s.c,s.b),span=nm((s.ccw?angOf(s.c,s.b):angOf(s.c,s.a))-sa);for(let k=0;k<4;k++){const th=k*Math.PI/2;if(nm(th-sa)<=span+1e-9)ext([s.c[0]+s.r*Math.cos(th),s.c[1]+s.r*Math.sin(th)])}}});
+  const tp=p=>p&&[p[0]-x0,p[1]-y0],ts=s=>({...s,a:tp(s.a),b:tp(s.b),c:tp(s.c)});
+  outer=outer.map(ts);hs.forEach(h=>{h.loop=h.loop.map(ts);h.x-=x0;h.y-=y0;if(h.kind==='hole')h.loop[0].c=tp(h.loop[0].c)});
+  const tess=lp=>{const o=[];lp.forEach(s=>{o.push(s.a);if(s.t==='A'){const a0=angOf(s.c,s.a),dd=s.ccw?nm(angOf(s.c,s.b)-a0):-nm(a0-angOf(s.c,s.b));for(let k=1;k<16;k++){const th=a0+dd*k/16;o.push([s.c[0]+s.r*Math.cos(th),s.c[1]+s.r*Math.sin(th)])}}});return o};
+  const poly=tess(outer),inside=(p)=>{let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+  const dist=p=>{let m=1e18;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l2));m=Math.min(m,Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy))}return m};
+  hs.forEach(h=>{const r=h.kind==='hole'?h.d/2:h.w/2,cs=h.kind==='hole'?[[h.x,h.y]]:(()=>{const hh=(h.l-h.w)/2,th=h.ang*Math.PI/180;return[[h.x+hh*Math.cos(th),h.y+hh*Math.sin(th)],[h.x-hh*Math.cos(th),h.y-hh*Math.sin(th)]]})();
+    if(cs.some(c=>!inside(c)||dist(c)<r-1e-6))warn.push(`${h.tag} touches or crosses the edge of the plate.`)});
+  for(let i=0;i<hs.length;i++)for(let j=i+1;j<hs.length;j++){const a=hs[i],b=hs[j];if(a.kind==='hole'&&b.kind==='hole'&&Math.hypot(a.x-b.x,a.y-b.y)<(a.d+b.d)/2-1e-6)warn.push(`${a.tag} and ${b.tag} overlap.`)}
+  return{outer,holes:hs,W:x1-x0,H:y1-y0,pts:pts.map(a=>[a[0]-x0,a[1]-y0,a[2]||0]),warn};
+}
+function plateSvg(p){
+  const{g,T,dw,logo,q,drg,imp}=p,e=esc,n=v=>+v.toFixed(2),fL=(x,d=2)=>imp?fx(x/25.4,d+1):fx(x,d),W=g.W,H=g.H;
+  const sa=[20,10,5,4,2,1.5,1,.5,.4,.25,.2,.1,.05,.02,.01],X0=50,YT=46,gapV=44,fitS=s=>W*s+gapV+T*s<=268&&H*s<=168,s=q&&q.scale>0?q.scale:(sa.find(fitS)||.01),scl=s>=1?`${s}:1`:`1:${Math.round(1/s)}`;
+  const yb=YT+H*s,X=x=>X0+x*s,Y=y=>yb-y*s,xs0=X0+W*s+gapV,xs1=xs0+T*s;
+  const dh=(a,b,yr,y,t)=>{const k=y>yr?1:-1;return `<line class="k2" x1="${n(a)}" y1="${n(yr+k)}" x2="${n(a)}" y2="${n(y+k*2)}"/><line class="k2" x1="${n(b)}" y1="${n(yr+k)}" x2="${n(b)}" y2="${n(y+k*2)}"/><line class="k4" x1="${n(a)}" y1="${n(y)}" x2="${n(b)}" y2="${n(y)}"/><text x="${n((a+b)/2)}" y="${n(y-1.2)}" text-anchor="middle">${e(t)}</text>`};
+  const dv=(a,b,xr,x,t)=>{const k=x>xr?1:-1;return `<line class="k2" x1="${n(xr+k)}" y1="${n(a)}" x2="${n(x+k*2)}" y2="${n(a)}"/><line class="k2" x1="${n(xr+k)}" y1="${n(b)}" x2="${n(x+k*2)}" y2="${n(b)}"/><line class="k4" x1="${n(x)}" y1="${n(a)}" x2="${n(x)}" y2="${n(b)}"/><text transform="translate(${n(x+(k>0?4:-2.6))} ${n((a+b)/2)}) rotate(-90)" text-anchor="middle">${e(t)}</text>`};
+  const cell=(x,y,wd,h,l,t,sz=3.6)=>`<rect class="k1" x="${x}" y="${y}" width="${wd}" height="${h}"/><text class="lb" x="${x+1}" y="${y+2.6}">${l}</text><text x="${x+1.5}" y="${y+h-1.7}" style="font-size:${Math.min(sz,(wd-3)/Math.max(1,String(t).replace(/&[#a-z0-9]+;/g,"x").length*.5)).toFixed(2)}px">${t}</text>`;
+  const pd=lp=>{if(lp[0].t==='C'){const c=lp[0],r=c.r*s,cx=X(c.c[0]),cy=Y(c.c[1]);return `M${n(cx+r)},${n(cy)}A${n(r)},${n(r)} 0 1 1 ${n(cx-r)},${n(cy)}A${n(r)},${n(r)} 0 1 1 ${n(cx+r)},${n(cy)}Z`}
+    let d=`M${n(X(lp[0].a[0]))},${n(Y(lp[0].a[1]))}`;lp.forEach(sg=>{d+=sg.t==='L'?`L${n(X(sg.b[0]))},${n(Y(sg.b[1]))}`:`A${n(sg.r*s)},${n(sg.r*s)} 0 0 ${sg.ccw?0:1} ${n(X(sg.b[0]))},${n(Y(sg.b[1]))}`});return d+'Z'};
+  let plan=`<path class="k1" d="${pd(g.outer)}"/>`,hid='',tags='';
+  g.holes.forEach(h=>{plan+=`<path class="k1" d="${pd(h.loop)}"/>`;const cx=X(h.x),cy=Y(h.y);
+    if(h.kind==='hole'){const r=h.d/2*s;plan+=`<line class="k3" x1="${n(cx-r-2.5)}" y1="${n(cy)}" x2="${n(cx+r+2.5)}" y2="${n(cy)}"/><line class="k3" x1="${n(cx)}" y1="${n(cy-r-2.5)}" x2="${n(cx)}" y2="${n(cy+r+2.5)}"/>`;
+      hid+=`<line class="k6" x1="${n(xs0-3)}" y1="${n(Y(h.y+h.d/2))}" x2="${n(xs1+3)}" y2="${n(Y(h.y+h.d/2))}"/><line class="k6" x1="${n(xs0-3)}" y1="${n(Y(h.y-h.d/2))}" x2="${n(xs1+3)}" y2="${n(Y(h.y-h.d/2))}"/>`;tags+=`<text class="sm" x="${n(cx+r*.75+.8)}" y="${n(cy-r*.75-.8)}">${h.tag}</text>`}
+    else{const th=h.ang*Math.PI/180,L2=h.l/2*s+2.5,W2=h.w/2*s+2.5,co=Math.cos(th),si=Math.sin(th);
+      plan+=`<line class="k3" x1="${n(cx-L2*co)}" y1="${n(cy+L2*si)}" x2="${n(cx+L2*co)}" y2="${n(cy-L2*si)}"/><line class="k3" x1="${n(cx+W2*si)}" y1="${n(cy+W2*co)}" x2="${n(cx-W2*si)}" y2="${n(cy-W2*co)}"/>`;
+      const ye=Math.abs((h.l-h.w)/2*Math.sin(th))+h.w/2;hid+=`<line class="k6" x1="${n(xs0-3)}" y1="${n(Y(h.y+ye))}" x2="${n(xs1+3)}" y2="${n(Y(h.y+ye))}"/><line class="k6" x1="${n(xs0-3)}" y1="${n(Y(h.y-ye))}" x2="${n(xs1+3)}" y2="${n(Y(h.y-ye))}"/>`;tags+=`<text class="sm" x="${n(cx+3)}" y="${n(cy-3)}">${h.tag}</text>`}});
+  const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ',custom=!!p.custom&&g.pts.length<=26;
+  if(custom){const gx=g.pts.reduce((a,b)=>a+b[0],0)/g.pts.length,gy=g.pts.reduce((a,b)=>a+b[1],0)/g.pts.length;
+    g.pts.forEach((c,i)=>{let dx=X(c[0])-X(gx),dy=Y(c[1])-Y(gy);const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;tags+=`<circle class="k2" cx="${n(X(c[0]))}" cy="${n(Y(c[1]))}" r=".7"/><text class="sm" x="${n(X(c[0])+dx*3.2)}" y="${n(Y(c[1])+dy*3.2+1)}" text-anchor="middle">${letters[i]}</text>`})}
+  const hasBoth=a=>a.length;
+  const notes=dw.notes?['NOTES',...(imp?dw.noteText.replace(/ALL DIMENSIONS IN mm/i,'ALL DIMENSIONS IN INCHES'):dw.noteText).split('\n').slice(0,11)]:[],rowH=4.8;
+  const lgBox=logo&&dw.showLogo?(()=>{const wd=Math.min(38,12*logo.r),ht=wd/logo.r;return `<image href="${logo.u}" xlink:href="${logo.u}" x="${n(220+(42-wd)/2)}" y="${n(245+(16-ht)/2)}" width="${n(wd)}" height="${n(ht)}" preserveAspectRatio="xMidYMid meet"/>`})():`<text x="241" y="254.5" text-anchor="middle" style="font-size:3.4px;font-weight:bold">${e(dw.company)}</text>`;
+  const fitRows=q.table,title=q.title;let yy=16+rowH*(fitRows.length+1)+1+5,sched='';
+  const box=(ttl,cols,rows)=>{if(!rows.length)return;const rh=4.1,room=Math.max(0,Math.floor((234-yy-6)/rh)),shown=rows.slice(0,Math.max(1,room)),more=rows.length-shown.length;
+    sched+=`<g><rect class="k1" x="338" y="${n(yy)}" width="68" height="${n(rh*(shown.length+1+(more?1:0))+1.5)}"/><text x="340" y="${n(yy+3.6)}" class="sm" style="font-weight:bold;font-size:2.8px">${e(ttl)}</text>`+shown.map((r,i)=>{const y=yy+4.9+i*rh;return `<line class="k2" x1="338" y1="${n(y)}" x2="406" y2="${n(y)}"/>`+cols.map((c,j)=>`<text class="sm" style="font-size:2.5px" x="${c[0]}" y="${n(y+3)}" text-anchor="${c[1]}">${e(String(r[j]))}</text>`).join('')}).join('')+(more?`<text class="sm" style="font-size:2.5px" x="340" y="${n(yy+4.9+shown.length*rh+3)}">… ${more} more (see the DXF or STEP file)</text>`:'')+'</g>';
+    yy+=rh*(shown.length+1+(more?1:0))+6.5};
+  box(`HOLE AND SLOT SCHEDULE (${imp?'in':'mm'})`,[[340,'start'],[362,'end'],[378,'end'],[404,'end']],g.holes.map(h=>[h.tag,fL(h.x),fL(h.y),h.kind==='hole'?'Ø'+fL(h.d):`${fL(h.l)}×${fL(h.w)} @ ${fx(h.ang,0)}°`]));
+  if(custom)box(`OUTLINE POINTS (${imp?'in':'mm'})`,[[340,'start'],[362,'end'],[378,'end'],[404,'end']],g.pts.map((c,i)=>[letters[i],fL(c[0]),fL(c[1]),c[2]>0?'R'+fL(c[2]):'']));
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="vd" width="420mm" height="297mm" viewBox="0 0 420 297" font-family="Arial Narrow,Arial,Helvetica,sans-serif">
+<defs><style>svg.vd .k1{stroke:#000;stroke-width:.5;fill:none}svg.vd .k2{stroke:#000;stroke-width:.25;fill:none}svg.vd .k3{stroke:#000;stroke-width:.25;stroke-dasharray:8 1.5 1.5 1.5;fill:none}svg.vd .k4{stroke:#000;stroke-width:.25;marker-start:url(#vA);marker-end:url(#vA)}svg.vd .k6{stroke:#000;stroke-width:.25;stroke-dasharray:3 1.5;fill:none}svg.vd text{font-size:3.5px;fill:#000}svg.vd .lb{font-size:2px;fill:#444}svg.vd .tt{font-size:5px;font-weight:bold}svg.vd .sm{font-size:2.7px}</style>
+<marker id="vA" viewBox="0 0 10 4" refX="10" refY="2" markerWidth="3.2" markerHeight="1.28" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0L10,2L0,4z" fill="#000"/></marker></defs>
+<rect width="420" height="297" fill="#fff"/><rect class="k2" x="5" y="5" width="410" height="287"/><rect x="10" y="10" width="400" height="277" fill="none" stroke="#000" stroke-width=".7"/>
+<g>${plan}${tags}</g>
+<rect class="k1" x="${n(xs0)}" y="${n(YT)}" width="${n(T*s)}" height="${n(H*s)}"/>${hid}
+<text x="${n(X0+W*s/2)}" y="${n(YT-22)}" text-anchor="middle" class="tt">PLAN VIEW</text><text x="${n((xs0+xs1)/2)}" y="${n(YT-22)}" text-anchor="middle" class="tt">SIDE VIEW</text>
+${dh(X(0),X(W),YT,YT-11,q.lab.W)}${dv(Y(H),Y(0),X(W),X(W)+14,q.lab.H)}${dh(xs0,xs1,YT,YT-11,q.lab.T)}
+${dw.fit?`<g><rect class="k1" x="338" y="16" width="68" height="${n(rowH*(fitRows.length+1)+1)}"/><text x="340" y="20" class="sm" style="font-weight:bold;font-size:3px">FEATURE DATA (${imp?'in':'mm'})</text>${fitRows.map((r,i)=>`<line class="k2" x1="338" y1="${n(21+i*rowH)}" x2="406" y2="${n(21+i*rowH)}"/><text class="sm" x="340" y="${n(24.4+i*rowH)}">${e(String(r[0]).slice(0,24))}</text><text class="sm" x="404" y="${n(24.4+i*rowH)}" text-anchor="end">${e(String(r[1]).slice(0,28))}</text>`).join('')}</g>`:''}
+${sched}
+<g>${notes.map((t,i)=>`<text x="14" y="${236+i*4.4}" style="font-size:${i?3:3.8}px;${i?'':'font-weight:bold'}" xml:space="preserve">${e(t.length>118?t.slice(0,117)+"…":t)}</text>`).join('')}</g>
+<g><rect class="k1" x="220" y="245" width="185" height="16"/><line class="k1" x1="262" y1="245" x2="262" y2="261"/>${lgBox}<text class="lb" x="263" y="247.6">TITLE</text><text x="264" y="257" style="font-size:${Math.min(4.6,138/Math.max(1,title.length*.52)).toFixed(2)}px">${e(title)}</text>
+${cell(220,261,46,12,'MATERIAL',e(q.material),3.2)}${cell(266,261,46,12,'SCALE',scl)}${cell(312,261,46,12,'SIZE',e(dw.paper.toUpperCase()))}${cell(358,261,47,12,'SHEET','1 OF 1')}${cell(220,273,68,14,'DRAWING NO.',e(drg),3.2)}${cell(288,273,16,14,'REV',e(dw.rev))}${cell(304,273,50,14,'DATE',e(p.date))}${cell(354,273,51,14,'DRAWN BY',e(p.who),2.8)}</g>
+</svg>`;
+}
+function plateStep(g,T,name){
+  const r6=x=>{x=Math.round(x*1e6)/1e6;return Object.is(x,-0)?0:x},fm=x=>r6(x).toFixed(6).replace(/0+$/,'');
+  const E=[];let n=0;const add=s=>{E.push(`#${++n}=${s};`);return n};
+  const PC=new Map(),DC=new Map(),VC=new Map(),VE=new Map();
+  const cp=(x,y,z)=>{const k=fm(x)+','+fm(y)+','+fm(z);let i=PC.get(k);if(!i){i=add(`CARTESIAN_POINT('',(${k}))`);PC.set(k,i)}return i};
+  const di=(x,y,z)=>{const m=Math.hypot(x,y,z)||1,k=fm(x/m)+','+fm(y/m)+','+fm(z/m);let i=DC.get(k);if(!i){i=add(`DIRECTION('',(${k}))`);DC.set(k,i)}return i};
+  const ax=(o,d,r)=>add(`AXIS2_PLACEMENT_3D('',#${cp(...o)},#${di(...d)},#${di(...r)})`);
+  const vt=(x,y,z)=>{x=r6(x);y=r6(y);z=r6(z);const k=x+','+y+','+z;let v=VC.get(k);if(!v){const pid=cp(x,y,z);v={id:add(`VERTEX_POINT('',#${pid})`),pid,p:[x,y,z]};VC.set(k,v)}return v};
+  const lineEdge=(a,b)=>{const d=[b.p[0]-a.p[0],b.p[1]-a.p[1],b.p[2]-a.p[2]],len=Math.hypot(...d),ve=add(`VECTOR('',#${di(...d)},${fm(len)})`),li=add(`LINE('',#${a.pid},#${ve})`);return add(`EDGE_CURVE('',#${a.id},#${b.id},#${li},.T.)`)};
+  const circEdge=(c,r,z,va,vb)=>{const ci=add(`CIRCLE('',#${ax([c[0],c[1],z],[0,0,1],[1,0,0])},${fm(r)})`);return add(`EDGE_CURVE('',#${va.id},#${vb.id},#${ci},.T.)`)};
+  const vert=(v0,v1)=>{let e=VE.get(v0.id);if(!e){e=lineEdge(v0,v1);VE.set(v0.id,e)}return e};
+  const loop=it=>add(`EDGE_LOOP('',(${it.map(([e,s])=>'#'+add(`ORIENTED_EDGE('',*,*,#${e},${s})`)).join(',')}))`);
+  const faces=[],face=(bounds,surf,sense)=>faces.push(add(`ADVANCED_FACE('',(${bounds.map((b,i)=>`#${add(`${i?'FACE_BOUND':'FACE_OUTER_BOUND'}('',#${loop(b)},.T.)`)}`).join(',')}),#${surf},${sense})`));
+  const flip=l=>l.map(([e,s])=>[e,s==='.T.'?'.F.':'.T.']).reverse();
+  const prep=lp=>{const bot=[],top=[];lp.forEach(s=>{const A0=vt(s.a[0],s.a[1],0),B0=vt(s.b[0],s.b[1],0),A1=vt(s.a[0],s.a[1],T),B1=vt(s.b[0],s.b[1],T);let eb,et,fwd;
+      if(s.t==='L'){eb=lineEdge(A0,B0);et=lineEdge(A1,B1);fwd=true}
+      else if(s.t==='A'){const va=s.ccw?A0:B0,vb=s.ccw?B0:A0,ua=s.ccw?A1:B1,ub=s.ccw?B1:A1;eb=circEdge(s.c,s.r,0,va,vb);et=circEdge(s.c,s.r,T,ua,ub);fwd=s.ccw}
+      else{eb=circEdge(s.c,s.r,0,A0,A0);et=circEdge(s.c,s.r,T,A1,A1);fwd=false}
+      const va=vert(A0,A1),vb=vert(B0,B1),sg=fwd?'.T.':'.F.',ns=fwd?'.F.':'.T.';
+      let surf,sense='.T.';
+      if(s.t==='L'){const dx=s.b[0]-s.a[0],dy=s.b[1]-s.a[1];surf=add(`PLANE('',#${ax([s.a[0],s.a[1],0],[dy,-dx,0],[dx,dy,0])})`)}
+      else{surf=add(`CYLINDRICAL_SURFACE('',#${ax([s.c[0],s.c[1],0],[0,0,1],[1,0,0])},${fm(s.r)})`);sense=s.t==='C'||!s.ccw?'.F.':'.T.'}
+      face([[[eb,sg],[vb,'.T.'],[et,ns],[va,'.F.']]],surf,sense);bot.push([eb,sg]);top.push([et,sg])});return{bot,top}};
+  const O=prep(g.outer),Hs=g.holes.map(h=>prep(h.loop));
+  face([flip(O.bot),...Hs.map(h=>flip(h.bot))],add(`PLANE('',#${ax([0,0,0],[0,0,-1],[1,0,0])})`),'.T.');
+  face([O.top,...Hs.map(h=>h.top)],add(`PLANE('',#${ax([0,0,T],[0,0,1],[1,0,0])})`),'.T.');
+  const nmS=String(name||'PLATE').replace(/[^\x20-\x7E]/g,'').replace(/'/g,"''")||'PLATE';
+  const shell=add(`CLOSED_SHELL('',(${faces.map(x=>'#'+x).join(',')}))`),brep=add(`MANIFOLD_SOLID_BREP('${nmS}',#${shell})`);
+  const len=add("(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.))"),ang=add("(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.))"),sa=add("(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT())");
+  const unc=add(`UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#${len},'distance_accuracy_value','confusion accuracy')`);
+  const ctx=add(`(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#${unc}))GLOBAL_UNIT_ASSIGNED_CONTEXT((#${len},#${ang},#${sa}))REPRESENTATION_CONTEXT('Context3d','3D Context with UNIT and UNCERTAINTY'))`);
+  const a0=ax([0,0,0],[0,0,1],[1,0,0]),rep=add(`ADVANCED_BREP_SHAPE_REPRESENTATION('',(#${a0},#${brep}),#${ctx})`);
+  const ac=add("APPLICATION_CONTEXT('core data for automotive mechanical design processes')"),pc=add(`PRODUCT_CONTEXT('',#${ac},'mechanical')`),pr=add(`PRODUCT('${nmS}','${nmS}','',(#${pc}))`);
+  const pf=add(`PRODUCT_DEFINITION_FORMATION('','',#${pr})`),pdc=add(`PRODUCT_DEFINITION_CONTEXT('part definition',#${ac},'design')`),pd=add(`PRODUCT_DEFINITION('design','',#${pf},#${pdc})`),pds=add(`PRODUCT_DEFINITION_SHAPE('','',#${pd})`);
+  add(`SHAPE_DEFINITION_REPRESENTATION(#${pds},#${rep})`);add(`APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#${ac})`);add(`PRODUCT_RELATED_PRODUCT_CATEGORY('part','',(#${pr}))`);
+  return `ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION(('Vesco Intelligence flat plate, solid B-rep'),'2;1');\nFILE_NAME('${nmS}.step','${new Date().toISOString().slice(0,19)}',('Vesco Intelligence'),(''),'Vesco Intelligence','Vesco Intelligence','');\nFILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));\nENDSEC;\nDATA;\n${E.join('\n')}\nENDSEC;\nEND-ISO-10303-21;\n`;
+}
+function plateDxf(g){
+  const f=x=>(Math.round(x*1e6)/1e6).toString(),o=[],deg=r=>{let d=r*180/Math.PI%360;return f(d<0?d+360:d)},ag=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0]);
+  const ent=(layer,lp)=>lp.forEach(s=>{if(s.t==='L')o.push('0','LINE','8',layer,'10',f(s.a[0]),'20',f(s.a[1]),'30','0','11',f(s.b[0]),'21',f(s.b[1]),'31','0');
+    else if(s.t==='C')o.push('0','CIRCLE','8',layer,'10',f(s.c[0]),'20',f(s.c[1]),'30','0','40',f(s.r));
+    else o.push('0','ARC','8',layer,'10',f(s.c[0]),'20',f(s.c[1]),'30','0','40',f(s.r),'50',deg(ag(s.c,s.ccw?s.a:s.b)),'51',deg(ag(s.c,s.ccw?s.b:s.a)))});
+  ent('OUTLINE',g.outer);g.holes.forEach(h=>ent('HOLES',h.loop));
+  return ['0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC','0','SECTION','2','TABLES','0','TABLE','2','LTYPE','70','1','0','LTYPE','2','CONTINUOUS','70','0','3','Solid line','72','65','73','0','40','0.0','0','ENDTAB','0','TABLE','2','LAYER','70','2','0','LAYER','2','OUTLINE','70','0','62','7','6','CONTINUOUS','0','LAYER','2','HOLES','70','0','62','1','6','CONTINUOUS','0','ENDTAB','0','ENDSEC','0','SECTION','2','ENTITIES',...o,'0','ENDSEC','0','EOF',''].join('\n');
 }
 function openDrawing(){
   if(!LAST)return;const o=document.createElement('div');o.className='ov';
@@ -1644,53 +1434,110 @@ function quickdraw(v){
   const today=new Date().toLocaleDateString(),dw=S.dw;
   v.innerHTML=`<a class="back" href="#/tools">← Tools</a><h1>QuickDraw</h1><div class="seg un" id="UN"><button type="button" data-u="m" class="${im?'':'on'}">Metric · mm</button><button type="button" data-u="i" class="${im?'on':''}">Imperial · in</button></div><p class="mut">Type the sizes and get a full engineering drawing you can export to PDF. Every field below can be edited, including the dimension text, data table and notes.</p>
   <form class="card" id="QF">
+  <label>What are you drawing<select id="qKind"><option value="b">Bush (round)</option><option value="p">Flat plate or wear pad</option></select></label>
   <h2>Part</h2><div class="g2">${txt('qName','Part name / title','BEARING BUSH')}${txt('qMat','Material / grade','VESCONITE')}${txt('qDrg','Drawing number','','Auto')}${txt('qRev','Revision',dw.rev)}${txt('qCo','Company (when no logo)',dw.company)}${txt('qWho','Drawn by',(ME?.email||'').split('@')[0])}${txt('qDate','Date',today)}
   <label>Paper size<select id="qPaper"><option value="a3">A3</option><option value="a4" ${dw.paper==='a4'?'selected':''}>A4</option></select></label>
   <label>Scale<select id="qScale"><option value="0">Auto</option><option value="5">5:1</option><option value="2">2:1</option><option value="1">1:1</option><option value="0.5">1:2</option><option value="0.2">1:5</option><option value="0.1">1:10</option><option value="0.05">1:20</option></select></label></div>
-  <h2>Sizes <span class="mut" style="font:400 14px var(--f2)"><span id="qhu">${im?'in':'mm'}</span>, with tolerances</span></h2>
+  <div id="qB"><h2>Sizes <span class="mut" style="font:400 14px var(--f2)"><span id="qhu">${im?'in':'mm'}</span>, with tolerances</span></h2>
   <div class="g2">${num('qOD','Outside diameter (OD)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qODp','OD tolerance +')}${num('qODm','OD tolerance −')}</div>
-  ${num('qID','Inside diameter (ID)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qIDp','ID tolerance +')}${num('qIDm','ID tolerance −')}</div>
+  <label style="grid-column:1/-1">Show the bore on the drawing as<select id="qDm"><option value="id">Inside diameter (ID)</option><option value="wall">Wall thickness</option></select></label>
+  <div data-qm="id" style="grid-column:1/-1"><div class="g2">${num('qID','Inside diameter (ID)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qIDp','ID tolerance +')}${num('qIDm','ID tolerance −')}</div></div></div>
+  <div data-qm="wall" style="grid-column:1/-1" hidden><div class="g2">${num('qWt','Wall thickness')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qWp','Wall tolerance +')}${num('qWm','Wall tolerance −')}</div></div></div>
   ${num('qL','Length (overall)')}<div class="g2" style="grid-column:1/-1;margin-top:-6px">${num('qLp','Length tolerance +')}${num('qLm','Length tolerance −')}</div></div>
   <div class="acts" style="margin-top:0"><button type="button" class="btn" id="qstd">Fill standard Vesconite tolerances</button></div>
   <label>Shape<select id="qFl"><option value="n">Straight</option><option value="y">Flanged</option></select></label>
-  <div data-qf hidden><div class="g2">${num('qFD','Flange OD')}${num('qT','Flange length (thickness)')}${num('qFDp','Flange OD tolerance +')}${num('qFDm','Flange OD tolerance −')}${num('qTp','Flange length tolerance +')}${num('qTm','Flange length tolerance −')}</div></div>
-  <div class="g2">${num('qCh','OD chamfer size (0 = none)')}</div>
+  <div data-qf hidden><div class="g2">${num('qFD','Flange OD')}${num('qT','Flange length (thickness)')}${num('qFDp','Flange OD tolerance +')}${num('qFDm','Flange OD tolerance −')}${num('qTp','Flange length tolerance +')}${num('qTm','Flange length tolerance −')}${num('qFR','Radius where the barrel meets the flange (0 = none)')}</div></div>
+  <h2>Chamfers <span class="mut" style="font:400 14px var(--f2)">optional, both ends</span></h2>
+  <label>Chamfer size is measured<select id="qChB"><option value="a">Along the bush length</option><option value="r">Across the wall (radial)</option></select></label>
+  <div class="g2">${num('qCh','OD chamfer size (0 = none)')}${num('qChA','OD chamfer angle, ° from the bush axis','','45','')}${num('qCi','ID chamfer size (0 = none)')}${num('qCiA','ID chamfer angle, ° from the bush axis','','45','')}</div>
+  <p class="mut" style="margin:0 0 4px">An angle of 45° gives an equal chamfer along and across. A smaller angle gives a longer, shallower lead-in. On a flanged bush the OD chamfer is on the free end only.</p>
   <h2>Grooves <span class="mut" style="font:400 14px var(--f2)">optional</span></h2>
   <label>Groove type<select id="qG"><option value="none">None</option><option value="spiral">Spiral</option><option value="blind">Blind radial</option><option value="long">Longitudinal</option></select></label>
   <div data-qg hidden><div class="g2">${num('qGn','Number of grooves','','','')}${num('qGd','Groove depth','mm')}${num('qGr','Groove radius','mm')}<div data-qgt="spiral" hidden>${num('qGp','Spiral pitch','mm')}</div><div data-qgt="blind" hidden>${num('qGl','Groove length','mm')}</div></div>
   <div class="acts" style="margin-top:0"><button type="button" class="btn" id="qrec">Suggest from the manual's table</button></div></div>
-  <details class="card" style="margin:14px 0"><summary class="btn">Edit dimension text</summary><p class="mut" style="margin:10px 0">Leave blank to use the text made from your sizes and tolerances.</p><div class="g2">${txt('qlOD','OD text')}${txt('qlID','ID text')}${txt('qlL','Length text')}${txt('qlFD','Flange OD text')}${txt('qlT','Flange length text')}${txt('qlW','Wall text')}${txt('qlCh','Chamfer note')}</div></details>
-  <h2>Data table</h2><p class="mut" style="margin:0 0 6px">One row per line as LABEL | VALUE. It updates from your sizes until you edit it.</p><textarea id="qTab" rows="7"></textarea>
+  </div><div id="qPl" hidden>
+  <h2>Plate or pad <span class="mut" style="font:400 14px var(--f2)"><span data-u="L">${im?'in':'mm'}</span>, with tolerances</span></h2>
+  <label>Outline<select id="qPs"><option value="r">Rectangle</option><option value="c">Custom outline (type the corner points)</option></select></label>
+  <div data-qps="r"><div class="g2">${num('qPW','Width (overall)')}${num('qPH','Height (overall)')}${num('qPR','Corner radius (0 = square corners)')}</div></div>
+  <div data-qps="c" hidden><label>Outline points, one per line: X, Y (or X, Y, corner radius). Go round the shape in order, starting anywhere.<textarea id="qPpts" data-ta="p" rows="7" placeholder="0, 0&#10;120, 0&#10;120, 60, 8&#10;40, 90&#10;0, 60"></textarea></label>
+  <p class="mut" style="margin:0 0 6px">The drawing moves the lower left of the shape to 0, 0 and shows each point in a table. A radius on a point rounds that corner.</p></div>
+  <div class="g2">${num('qPWp','Width tolerance +')}${num('qPWm','Width tolerance −')}${num('qPHp','Height tolerance +')}${num('qPHm','Height tolerance −')}${num('qPT','Thickness')}<span></span>${num('qPTp','Thickness tolerance +')}${num('qPTm','Thickness tolerance −')}</div>
+  <h2>Holes and slots <span class="mut" style="font:400 14px var(--f2)">optional</span></h2>
+  <label>Round holes, one per line: X, Y, diameter. Measured from the lower left corner of the shape, same as the outline.<textarea id="qPh" data-ta="h" rows="4" placeholder="15, 15, 8&#10;105, 15, 8"></textarea></label>
+  <label>Slots, one per line: X, Y, overall length, width, angle in degrees. X, Y is the centre of the slot.<textarea id="qPsl" data-ta="s" rows="3" placeholder="60, 30, 30, 8, 0"></textarea></label>
+  <div class="g2">${num('qPdp','Hole and slot width tolerance +')}${num('qPdm','Hole and slot width tolerance −')}</div>
+  <details class="card" style="margin:14px 0"><summary class="btn">Edit dimension text</summary><p class="mut" style="margin:10px 0">Leave blank to use the text made from your sizes and tolerances.</p><div class="g2">${txt('qlPW','Width text')}${txt('qlPH','Height text')}${txt('qlPT','Thickness text')}</div></details>
+  </div><div id="qB2">
+  <details class="card" style="margin:14px 0"><summary class="btn">Edit dimension text</summary><p class="mut" style="margin:10px 0">Leave blank to use the text made from your sizes and tolerances.</p><div class="g2">${txt('qlOD','OD text')}${txt('qlID','ID text')}${txt('qlL','Length text')}${txt('qlFD','Flange OD text')}${txt('qlT','Flange length text')}${txt('qlW','Wall text')}${txt('qlCh','OD chamfer note')}${txt('qlCi','ID chamfer note')}${txt('qlFR','Flange radius note')}</div></details>
+  </div><h2>Data table</h2><p class="mut" style="margin:0 0 6px">One row per line as LABEL | VALUE. It updates from your sizes until you edit it.</p><textarea id="qTab" rows="7"></textarea>
   <div class="acts" style="margin-top:6px"><button type="button" class="btn" id="qtr">Reset table</button></div>
   <h2>Notes</h2><textarea id="qNotes" rows="5">${esc(QNOTES)}</textarea>
   <div style="margin-top:8px"><label class="ck"><input type="checkbox" id="qLg" ${dw.showLogo?'checked':''}>Show logo</label><label class="ck"><input type="checkbox" id="qSt" checked>Show data table</label><label class="ck"><input type="checkbox" id="qSn" checked>Show notes</label></div>
   </form><div id="QM"></div>
-  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. </p><p class="mut" id="qsn" style="margin:6px 0 0"></p></div>`;
+  <div class="card" id="QP" hidden><div class="mdr" id="QV"></div><div class="acts"><button type="button" class="btn pri" id="qx">Expand to drawing</button><button type="button" class="btn" id="qp">Make PDF</button><button type="button" class="btn" id="qs">SVG</button><button type="button" class="btn" id="qstp">STEP file</button><button type="button" class="btn" id="qdxf" hidden>DXF file</button></div><p class="mut" style="margin:0">Make PDF, wait for it to change to Open PDF, then tap again to open or save it. </p><p class="mut" id="qsn" style="margin:6px 0 0"></p></div>`;
   const gv=id=>$('#'+id).value,gn=id=>{const e=$('#'+id),x=parseFloat(e.value);if(!e.dataset.q||!im)return x;if(e.dataset.mv!==undefined&&e.value===e.dataset.dv)return +e.dataset.mv;return x*25.4};
   const put=(id,x)=>{const e=$('#'+id);if(!e)return;delete e.dataset.mv;delete e.dataset.dv;if(x==null||!Number.isFinite(+x)){e.value='';return}if(e.dataset.q&&im){e.value=+(+x/25.4).toFixed(4);e.dataset.mv=x;e.dataset.dv=e.value}else e.value=+(+x).toFixed(6)};
   const tS=(p,m)=>{p=nz(p);m=nz(m);return !p&&!m?'':p===m?`±${fq(p,3)}`:`+${fq(p,3)}/−${fq(m,3)}`};
   let lastQ='none',autoQ=false;
+  const taConv=to=>$$('#QF textarea[data-ta]').forEach(t=>{const f=to?1/25.4:25.4;t.value=t.value.split('\n').map(l=>{const a=l.split(/[,;]/).map(x=>x.trim());return a.map((x,i)=>{const v=parseFloat(x);if(!Number.isFinite(v)||x===''||(t.dataset.ta==='s'&&i===4))return x;return String(+(v*f).toFixed(to?6:4))}).join(', ')}).join('\n')});
+  const genPlate=()=>{
+    const M=$('#QM'),P=$('#QP'),stop=m=>{P.hidden=true;M.innerHTML=m},K=im?25.4:1,ps=gv('qPs');$$('[data-qps]').forEach(x=>x.hidden=x.dataset.qps!==ps);
+    const rd=(id,min,label)=>{const out=[];const lines=gv(id).split('\n').map(l=>l.trim()).filter(Boolean);for(let i=0;i<lines.length;i++){const a=lines[i].split(/[,;\s]+/).filter(Boolean).map(parseFloat);if(a.length<min||a.some(v=>!Number.isFinite(v)))return{err:`${label}, line ${i+1}: "${lines[i]}" needs at least ${min} numbers separated by commas.`};out.push(a)}return{out}};
+    const T=gn('qPT'),W0=gn('qPW'),H0=gn('qPH'),R0=nz(gn('qPR'));
+    if(!(T>0))return stop('<p class="mut">Enter the thickness'+(ps==='r'?', width and height':' and the outline points')+' to see the drawing.</p>');
+    let pts=[],warn=[];
+    if(ps==='r'){if(!(W0>0&&H0>0))return stop('<p class="mut">Enter the thickness, width and height to see the drawing.</p>')}
+    else{const r=rd('qPpts',2,'Outline points');if(r.err)return stop(`<p class="note bad">${esc(r.err)}</p>`);pts=r.out.map(a=>[a[0]*K,a[1]*K,(a[2]||0)*K]);if(pts.length<3)return stop('<p class="mut">Enter at least three outline points, one per line as X, Y.</p>')}
+    const rh=rd('qPh',3,'Holes'),rs=rd('qPsl',4,'Slots');if(rh.err||rs.err)return stop(`<p class="note bad">${esc(rh.err||rs.err)}</p>`);
+    const R=ps==='r'?Math.min(R0,Math.min(W0,H0)/2):0;if(ps==='r'&&R0>R+1e-9)warn.push('The corner radius is more than half the shorter side. It has been reduced to fit.');
+    const g=plateGeom({kind:ps==='r'?'rect':'poly',W:W0,H:H0,R,pts,holes:rh.out.map(a=>[a[0]*K,a[1]*K,a[2]*K]),slots:rs.out.map(a=>[a[0]*K,a[1]*K,a[2]*K,a[3]*K,a[4]||0])});
+    if(g.err)return stop(`<p class="note bad">${esc(g.err)}</p>`);
+    warn.push(...g.warn);M.innerHTML=warn.map(t=>`<p class="note warn">⚠ ${esc(t)}</p>`).join('');
+    const tx=(base,p,m,pre='')=>`${pre}${fq(base)}${tS(p,m)?' '+tS(p,m):''}`,custom=ps==='c',dp=gn('qPdp'),dm=gn('qPdm');
+    const lab={W:gv('qlPW').trim()||tx(g.W,gn('qPWp'),gn('qPWm')),H:gv('qlPH').trim()||tx(g.H,gn('qPHp'),gn('qPHm')),T:gv('qlPT').trim()||tx(T,gn('qPTp'),gn('qPTm'))};
+    const auto=[[custom?'WIDTH (OVERALL)':'WIDTH',lab.W],[custom?'HEIGHT (OVERALL)':'HEIGHT',lab.H],['THICKNESS',lab.T]];
+    if(!custom&&R>0)auto.push(['CORNER RADIUS',`R${fq(R)} (4 PLACES)`]);
+    if(custom){const rc={};g.pts.forEach(c=>{if(c[2]>0){const k=fq(c[2]);rc[k]=(rc[k]||0)+1}});Object.entries(rc).slice(0,3).forEach(([k,c])=>auto.push(['CORNER RADIUS',`R${k} (${c} PLACE${c>1?'S':''})`]))}
+    const hg={};g.holes.filter(h=>h.kind==='hole').forEach(h=>{const k=fq(h.d);hg[k]=(hg[k]||0)+1});Object.entries(hg).slice(0,4).forEach(([k,c])=>auto.push(['HOLES',`${c} × Ø${k}${tS(dp,dm)?' '+tS(dp,dm):''} THRU`]));
+    const sg={};g.holes.filter(h=>h.kind==='slot').forEach(h=>{const k=`${fq(h.l)} × ${fq(h.w)}`;sg[k]=(sg[k]||0)+1});Object.entries(sg).slice(0,3).forEach(([k,c])=>auto.push(['SLOTS',`${c} × ${k}${tS(dp,dm)?' (W '+tS(dp,dm)+')':''}`]));
+    if(!edited)$('#qTab').value=auto.map(r=>r.join(' | ')).join('\n');
+    const table=gv('qTab').split('\n').map(l=>l.trim()).filter(Boolean).slice(0,20).map(l=>{const k=l.indexOf('|');return k<0?[l,'']:[l.slice(0,k).trim(),l.slice(k+1).trim()]});
+    const name=gv('qName').trim()||'WEAR PAD',mat=gv('qMat').trim()||'—',date=gv('qDate'),drg=gv('qDrg').trim()||`QD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-P${Math.round(g.W)}x${Math.round(g.H)}x${Math.round(T)}`,
+      dwq={...S.dw,company:gv('qCo'),rev:gv('qRev'),paper:gv('qPaper'),showLogo:$('#qLg').checked,fit:$('#qSt').checked,notes:$('#qSn').checked,noteText:gv('qNotes')},logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
+    LAST={drg,paper:gv('qPaper'),plate:{g,T,name:name.replace(/\s+/g,'-')},svg:plateSvg({g,T,custom,drg,dw:dwq,logo,date,who:gv('qWho'),imp:im,q:{lab,table,title:name,material:mat,scale:parseFloat(gv('qScale'))||0}})};
+    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file (always in millimetres): the plate as a solid with true arcs and round holes. DXF file: the outline and holes as flat 2D lines and arcs in millimetres, ready for a cutting machine.';
+  };
   const gen=()=>{
+    const kind=gv('qKind');$('#qB').hidden=$('#qB2').hidden=kind==='p';$('#qPl').hidden=kind!=='p';$('#qdxf').hidden=kind!=='p';
+    if(kind==='p')return genPlate();
     const fl0=gv('qFl')==='y',gt=gv('qG');
     $$('[data-qf]').forEach(x=>x.hidden=!fl0);$$('[data-qg]').forEach(x=>x.hidden=gt==='none');$$('[data-qgt]').forEach(x=>x.hidden=x.dataset.qgt!==gt);
-    const OD=gn('qOD'),ID=gn('qID'),L=gn('qL'),M=$('#QM'),P=$('#QP'),stop=m=>{P.hidden=true;M.innerHTML=m};
-    if(!(OD>0&&ID>0&&L>0))return stop('<p class="mut">Enter the outside diameter, inside diameter and length to see the drawing.</p>');
-    if(OD<=ID)return stop('<p class="note bad">The outside diameter must be larger than the inside diameter.</p>');
+    const md=gv('qDm');$$('[data-qm]').forEach(x=>x.hidden=x.dataset.qm!==md);
+    const OD=gn('qOD'),L=gn('qL'),M=$('#QM'),P=$('#QP'),stop=m=>{P.hidden=true;M.innerHTML=m},wIn=gn('qWt'),ID=md==='wall'?OD-2*wIn:gn('qID');
+    if(!(OD>0&&(md==='wall'?wIn>0:ID>0)&&L>0))return stop(`<p class="mut">Enter the outside diameter, ${md==='wall'?'wall thickness':'inside diameter'} and length to see the drawing.</p>`);
+    if(OD<=ID||!(ID>0))return stop(md==='wall'?'<p class="note bad">The wall thickness must be less than half the outside diameter.</p>':'<p class="note bad">The outside diameter must be larger than the inside diameter.</p>');
     const w=(OD-ID)/2,fl={on:fl0,FD:gn('qFD'),T:gn('qT')};
     if(gt!==lastQ){lastQ=gt;autoQ=false}
     if(gt!=='none'&&!autoQ){const rc=recGroove(gt,ID,w,L);if(rc){autoQ=true;let ch=false;const set=(id,x)=>{if(!(+$('#'+id).value>0)&&x!=null){put(id,x);ch=true}};set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);if(ch)return gen()}}
     if(fl0&&!(fl.FD>OD&&fl.T>0&&fl.T<L))return stop('<p class="note bad">For a flanged part, enter a flange OD larger than the OD and a flange length shorter than the overall length.</p>');
     const G={type:gt,n:gn('qGn'),d:gn('qGd'),r:gn('qGr'),pitch:gn('qGp'),len:gn('qGl')},gOK=gt==='none'||(G.n>0&&G.d>0&&G.r>0&&(gt!=='spiral'||G.pitch>0)&&(gt!=='blind'||G.len>0)),Gu=gOK?G:{type:'none'};
-    const ch=nz(gn('qCh')),warn=[];
+    const chB=gv('qChB'),cAB=(sz,an)=>{sz=nz(sz);if(!(sz>0))return{a:0,b:0};const al=Math.min(89,Math.max(1,an>0?an:45))*Math.PI/180,tn=Math.tan(al);return chB==='r'?{a:sz/tn,b:sz}:{a:sz,b:sz*tn}};
+    const ch=nz(gn('qCh')),chA=gn('qChA')>0?gn('qChA'):45,ci=nz(gn('qCi')),ciA=gn('qCiA')>0?gn('qCiA'):45,fr=fl0?nz(gn('qFR')):0,co2=cAB(ch,chA),ci2=cAB(ci,ciA),warn=[];
+    const FE=bushFeat({OD,ID,L,fl,co:co2,ci:ci2,fr}),shr=(o,n)=>o.a>0&&n.a<o.a-1e-9;
     if(gt!=='none'&&!gOK)warn.push('Enter the groove number, depth and radius (and pitch or length) to draw the grooves.');
     if(gOK&&gt!=='none'&&G.d>=w/2)warn.push(`Groove depth ${fq(G.d)} ${uu()} is half the wall (${fq(w)} ${uu()}) or more.`);
-    if(ch>0&&ch>=w)warn.push('The chamfer is as large as the wall thickness.');
+    if(shr(co2,FE.co))warn.push('The OD chamfer is too big for the part. It has been reduced to fit (same angle).');
+    if(shr(ci2,FE.ci))warn.push('The ID chamfer is too big for the part. It has been reduced to fit (same angle).');
+    if(fr>0&&FE.fr<fr-1e-9)warn.push(`The flange radius is too big for the flange height or barrel length. It has been reduced to ${fq(FE.fr,2)} ${uu()}.`);
     M.innerHTML=warn.map(t=>`<p class="note warn">⚠ ${esc(t)}</p>`).join('');
     const tx=(base,p,m,pre='')=>`${pre}${fq(base)}${tS(p,m)?' '+tS(p,m):''}`;
-    const lab={OD:gv('qlOD').trim()||tx(OD,gn('qODp'),gn('qODm'),'Ø'),ID:gv('qlID').trim()||tx(ID,gn('qIDp'),gn('qIDm'),'Ø'),L:gv('qlL').trim()||tx(L,gn('qLp'),gn('qLm')),W:gv('qlW').trim()||`(${fq(w)})`,FD:gv('qlFD').trim()||tx(fl.FD,gn('qFDp'),gn('qFDm'),'Ø'),T:gv('qlT').trim()||tx(fl.T,gn('qTp'),gn('qTm'))};
-    const auto=[['OUTSIDE Ø',lab.OD.replace(/^Ø/,'')],['INSIDE Ø',lab.ID.replace(/^Ø/,'')],['LENGTH',lab.L],['WALL (REF)',fq(w)]];
+    const lab={OD:gv('qlOD').trim()||tx(OD,gn('qODp'),gn('qODm'),'Ø'),ID:gv('qlID').trim()||tx(ID,gn('qIDp'),gn('qIDm'),'Ø'),L:gv('qlL').trim()||tx(L,gn('qLp'),gn('qLm')),W:gv('qlW').trim()||(md==='wall'?tx(w,gn('qWp'),gn('qWm')):`(${fq(w)})`),FD:gv('qlFD').trim()||tx(fl.FD,gn('qFDp'),gn('qFDm'),'Ø'),T:gv('qlT').trim()||tx(fl.T,gn('qTp'),gn('qTm'))};
+    const auto=[['OUTSIDE Ø',lab.OD.replace(/^Ø/,'')],md==='wall'?['WALL THICKNESS',lab.W]:['INSIDE Ø',lab.ID.replace(/^Ø/,'')],['LENGTH',lab.L]];
     if(fl0)auto.push(['FLANGE Ø',lab.FD.replace(/^Ø/,'')],['FLANGE LENGTH',lab.T]);
-    if(ch>0)auto.push(['OD CHAMFER',fq(ch,2)]);
+    const chS=(sz,an)=>`${fq(sz,2)} × ${fx(an,0)}°`,chW=chB==='r'?'RADIAL':'AXIAL';
+    if(ch>0)auto.push(['OD CHAMFER',chS(ch,chA)]);
+    if(ci>0)auto.push(['ID CHAMFER',chS(ci,ciA)]);
+    if(fr>0)auto.push(['FLANGE RADIUS','R'+fq(FE.fr,2)]);
     if(Gu.type!=='none'){auto.push(['GROOVE TYPE',GTYPES[gt]],['GROOVE QTY',String(G.n)],['GROOVE DEPTH',fq(G.d)],['GROOVE RADIUS',fq(G.r)],['GROOVE WIDTH',fq(grooveWidth(G.d,G.r))]);if(gt==='spiral')auto.push(['SPIRAL PITCH',fq(G.pitch)]);if(gt==='blind')auto.push(['GROOVE LENGTH',fq(G.len)])}
     if(!edited)$('#qTab').value=auto.map(r=>r.join(' | ')).join('\n');
     const table=gv('qTab').split('\n').map(l=>l.trim()).filter(Boolean).slice(0,20).map(l=>{const k=l.indexOf('|');return k<0?[l,'']:[l.slice(0,k).trim(),l.slice(k+1).trim()]});
@@ -1698,18 +1545,22 @@ function quickdraw(v){
       drg=gv('qDrg').trim()||`QD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.round(OD)}-${Math.round(ID)}-${Math.round(L)}`,
       dwq={...S.dw,company:gv('qCo'),rev:gv('qRev'),paper:gv('qPaper'),showLogo:$('#qLg').checked,fit:$('#qSt').checked,notes:$('#qSn').checked,noteText:gv('qNotes')},
       logo=S.dw.logo?{u:S.dw.logo,r:S.dw.logoR||1}:window.__rl||null;
-    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,ch,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,ch,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,chText:gv('qlCh').trim()||(ch>0?`${fq(ch,2)} × 45° CHAMFER`:'')},imp:im})};
-    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file (always in millimetres) contains: the bush body'+(fl0?', flange':'')+(ch>0?', chamfer':'')+(Gu.type!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
+    LAST={drg,paper:gv('qPaper'),step:{name:name.replace(/\s+/g,'-'),OD,ID,L,co:co2,ci:ci2,fr,fl,G:Gu,gz:grooveFn(Gu,ID/2)},svg:drawSVG({OD,ID,L,co:co2,ci:ci2,fr,w,g:'v',pf:true,drg,G:Gu,fl,dw:dwq,logo,gz:grooveFn(Gu,ID/2),date,who:gv('qWho'),q:{lab,table,title:name+(fl0?' (FLANGED)':''),material:mat,scale:parseFloat(gv('qScale'))||0,dm:md,chText:gv('qlCh').trim()||(ch>0?`${chS(ch,chA)} ${chW} OD CHAMFER`:''),ciText:gv('qlCi').trim()||(ci>0?`${chS(ci,ciA)} ${chW} ID CHAMFER`:''),frText:gv('qlFR').trim()||''},imp:im})};
+    $('#QV').innerHTML=LAST.svg;P.hidden=false;$('#qsn').textContent='STEP file (always in millimetres) contains: the bush body'+(fl0?', flange':'')+(ch>0||ci>0?', chamfer'+(ch>0&&ci>0?'s':''):'')+(fr>0?', flange radius':'')+(Gu.type!=='none'?`, and ${G.n} ${GTYPES[gt].toLowerCase()} groove${G.n>1?'s':''} (depth ${fx(G.d)}, radius R${fx(G.r)}).`:'. No grooves are set.');const pb=$('#qp');pb._b=null;pb.textContent='Make PDF';
   };
   if(!S.dw.logo&&!window.__rl)repoLogo().then(r=>{if(r){window.__rl=r;gen()}});
   $('#QF').onsubmit=e=>e.preventDefault();
   $('#qTab').addEventListener('input',e=>{if(e.isTrusted)edited=true});
   $('#qtr').onclick=()=>{edited=false;gen()};
-  $('#qstd').onclick=()=>{const OD=gn('qOD'),ID=gn('qID'),L=gn('qL'),set=(id,x)=>put(id,x?+x.toFixed(3):null);if(OD>0){set('qODp',tol(OD,.1,.025));set('qODm',tol(OD,.1,.025))}if(ID>0){set('qIDp',tol(ID,.1,.025));set('qIDm',tol(ID,.1,.025))}if(L>0){set('qLp',0);set('qLm',tol(L,.5,.3))}gen()};
+  $('#qstd').onclick=()=>{const OD=gn('qOD'),ID=gn('qID'),L=gn('qL'),set=(id,x)=>put(id,x?+x.toFixed(3):null);if(OD>0){set('qODp',tol(OD,.1,.025));set('qODm',tol(OD,.1,.025))}if(ID>0){set('qIDp',tol(ID,.1,.025));set('qIDm',tol(ID,.1,.025))}const WT=gn('qWt');if(WT>0){set('qWp',0);set('qWm',tol(WT,.5,.025))}if(L>0){set('qLp',0);set('qLm',tol(L,.5,.3))}gen()};
   $('#qrec').onclick=()=>{const ID=gn('qID'),OD=gn('qOD'),L=gn('qL'),gt=gv('qG'),rc=ID>0&&OD>ID?recGroove(gt,ID,(OD-ID)/2,L):null;if(!rc){alert('Enter the OD, ID and length first. The manual\'s groove table covers shaft diameters of 20–200 mm.');return}const set=(id,x)=>put(id,x);set('qGn',rc.n);set('qGd',rc.d);set('qGr',rc.r);if(gt==='spiral')set('qGp',rc.pitch);if(gt==='blind')set('qGl',rc.len);gen()};
-  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#QF input[data-q]').map(e=>[e.id,e.value===''?null:gn(e.id)]);im=ni;try{localStorage.setItem('vi4u_qd',u)}catch{}vals.forEach(([id,x])=>put(id,x));$$('#QF [data-u]').forEach(x=>x.textContent=im?'in':'mm');$('#qhu').textContent=im?'in':'mm';$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));gen()};
+  const setU=u=>{const ni=u==='i';if(ni===im)return;const vals=$$('#QF input[data-q]').map(e=>[e.id,e.value===''?null:gn(e.id)]);im=ni;try{localStorage.setItem('vi4u_qd',u)}catch{}vals.forEach(([id,x])=>put(id,x));taConv(ni);$$('#QF [data-u]').forEach(x=>x.textContent=im?'in':'mm');$('#qhu').textContent=im?'in':'mm';$$('#UN button').forEach(b=>b.classList.toggle('on',b.dataset.u===u));gen()};
   $$('#UN button').forEach(b=>b.onclick=()=>setU(b.dataset.u));
-  $('#qx').onclick=openDrawing;$('#qp').onclick=e=>pdfStep(e.currentTarget);$('#qs').onclick=()=>deliver(svgBlob(),LAST.drg+'.svg');$('#qstp').onclick=stepDownload;
+  $('#qx').onclick=openDrawing;$('#qp').onclick=e=>pdfStep(e.currentTarget);$('#qs').onclick=()=>deliver(svgBlob(),LAST.drg+'.svg');$('#qstp').onclick=stepDownload;$('#qdxf').onclick=()=>{if(LAST&&LAST.plate)deliver(new Blob([plateDxf(LAST.plate.g)],{type:'application/dxf'}),LAST.drg+'.dxf')};
+  $('#qKind').addEventListener('change',()=>{const k=gv('qKind'),nmE=$('#qName');if(k==='p'&&nmE.value==='BEARING BUSH')nmE.value='WEAR PAD';if(k==='b'&&nmE.value==='WEAR PAD')nmE.value='BEARING BUSH';edited=false});
+  $('#qDm').addEventListener('change',()=>{const OD=gn('qOD'),m=gv('qDm');
+    if(m==='wall'&&!($('#qWt').value!=='')&&OD>0&&gn('qID')>0&&OD>gn('qID')){put('qWt',(OD-gn('qID'))/2)}
+    if(m==='id'&&!($('#qID').value!=='')&&OD>0&&gn('qWt')>0&&OD>2*gn('qWt')){put('qID',OD-2*gn('qWt'))}});
   $$('#QF input,#QF select,#QF textarea').forEach(i=>{i.addEventListener('input',gen);i.addEventListener('change',gen)});gen();
 }
 
@@ -1867,7 +1718,7 @@ function render(){
   if(ROLE==='verify')return verify(v);
   if(ROLE==='blocked')return blocked(v);
   if(!['admin','editor','viewer'].includes(ROLE))return pending(v);
-  const ed=can('edit'),m={'':home,library,new:form,edit:form,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,fits:S.feat.pv?fits:home,trophies,flytro:trophies2,chats,chat,chatnew,admin};
+  const ed=can('edit'),m={'':home,library,new:form,edit:form,app:detail,insights:S.feat.ins?insights:home,oem:S.feat.oem?oem:home,tools,design:S.feat.pv?design:home,quickdraw:S.feat.pv?quickdraw:home,datasheets,datasheet,portfolio,freezer:S.feat.pv?freezer:home,fits:S.feat.pv?fits:home,trophies,chats,chat,chatnew,admin};
   (m[p]||home)(v,id);
   $$('.tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#/'+(p==='app'||p==='edit'||p==='oem'?'library':p==='design'||p==='quickdraw'||p==='fits'||p==='freezer'||p==='datasheets'||p==='datasheet'||p==='portfolio'?'tools':p==='chat'||p==='chatnew'?'chats':p)));
   $('.tabs .add').hidden=false;scrollTo(0,0);
