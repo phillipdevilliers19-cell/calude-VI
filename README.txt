@@ -1,3 +1,5 @@
+SECRET GAME 2 (do not tell anyone): tap the word "Account" on the Tools page 10 times in a row. Super Bush: your Hilube bush with a cape, arms and legs flies free across the sky. Hold anywhere to climb, let go to fall. Dodge gears, spanners, nuts, drill missiles, anvils and storm clouds, grab Hilube drops (10 = 5 s of laser eyes), earn 16 trophies and a separate leaderboard. It saves into the same "scores" records, so firestore.rules does NOT need republishing. Upload: app.js and index.html.
+
 SIGNS ON PHONES
 Fits and tolerances now uses Plus tolerance and Minus tolerance boxes (type plain numbers; the minus box is taken as a minus). Temperature boxes in the Design tool and Freezer tool have a +/- button because phone number pads have no minus key. Upload app.js and style.css.
 
